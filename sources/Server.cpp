@@ -6,25 +6,25 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/14 09:03:40 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/16 13:37:09 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Server.hpp"
 #include "../includes/Config.hpp"
+#include "../includes/Request.hpp"
 #include "../includes/Response.hpp"
+#include <cstddef>
 #include <iostream>
 
 Server ::Server(std::string config_file)
 {
-    Config& config = Config::getInstance();
-
-    config.parseFile(config_file);
+	Config::parseFile(config_file);
 }
 
 Server ::~Server()
 {
-    for (int i = 0; i < _fds.size(); i++)
+    for (size_t i = 0; i < _fds.size(); i++)
         close(_fds[i].fd);
 }
 
@@ -35,9 +35,7 @@ void Server ::init()
      * store it in our _fds vector. Information for the config will come for the
      * Config singleton*/
 
-    Config& config = Config::getInstance();
-
-    for (int i = 0; i < config.getPorts().size(); i++)
+    for (size_t i = 0; i < Config::getPorts().size(); i++)
     {
         int sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0)
@@ -47,7 +45,7 @@ void Server ::init()
         std::memset(&address, 0, sizeof(address));
         address.sin_family = AF_INET;
         address.sin_addr.s_addr = INADDR_ANY;
-        address.sin_port = htons(config.getPorts()[i]);
+        address.sin_port = htons(Config::getPorts()[i]);
 
         if (bind(sockfd, (struct sockaddr*)&address, sizeof(address)) < 0)
             throw ServerError("Fail binding the socket");
@@ -65,8 +63,8 @@ void Server ::init()
     }
 
     std::cout << "server listening on ports ";
-    for (int i = 0; i < config.getPorts().size(); i++)
-        std::cout << config.getPorts()[i] << " ";
+    for (size_t i = 0; i < Config::getPorts().size(); i++)
+        std::cout << Config::getPorts()[i] << " ";
     std::cout << std::endl;
 }
 
@@ -86,9 +84,8 @@ void Server ::start(void)
 
 void Server ::_acceptIncomingConnections(void)
 {
-    Config& config = Config::getInstance();
     /* listen for event on the server socket*/
-    for (int i = 0; i < config.getPorts().size(); i++)
+    for (size_t i = 0; i < Config::getPorts().size(); i++)
     {
         /* If we detect an events on the server socket, add an fd in the poll
          * list for client connection*/
@@ -111,9 +108,7 @@ void Server ::_serveClients(void)
 {
     /*listen for client events, skip the first fd that are for the server socket
      */
-    Config& config = Config::getInstance();
-
-    for (int i = config.getPorts().size(); i < _fds.size(); ++i)
+    for (size_t i = Config::getPorts().size(); i < _fds.size(); ++i)
     {
         if (_fds[i].revents & POLLIN)
         {
@@ -129,9 +124,8 @@ void Server ::_serveClients(void)
                 continue;
             }
 
-			/*TODO: parse the buff into a request object
-             * Request request(buffer);
-			 */
+		
+			Request request(buffer);
 
             // TODO: build the response according to the request. the
             // response will take a request in its constructor

@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 20:08:09 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/14 09:06:16 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/14 11:41:30 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 		printUsage();
     try
     {
-		Server server("dummy_file");
+		Server server(argv[1]);
 
         server.init();
         server.start();

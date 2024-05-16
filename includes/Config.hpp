@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:13:18 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/14 08:49:22 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/16 13:35:09 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,12 +20,12 @@
 class Config
 {
     public:
-        void parseFile(std::string file);
         static Config& getInstance(void);
+        static void parseFile(std::string file);
         ~Config();
 
-		std::vector<int> getPorts(void) const;
-		std::map<std::string, std::string> getResources(void) const;
+		static std::vector<int> getPorts(void);
+		static std::map<std::string, std::string> getResources(void);
 
     private:
         Config(void);

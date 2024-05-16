@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 3.8)
 project(${This} C CXX)
 set(CMAKE_CXX_STANDARD 98)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Werror")
+
 #executable
 set(This webserv)
 
@@ -12,13 +14,15 @@ set(inc_dir includes/)
 
 set(srcs 
 	${src_dir}Server.cpp
-	${src_dir}Response.cpp
 	${src_dir}Config.cpp
+	${src_dir}Request.cpp
+	${src_dir}Response.cpp
 	${src_dir}main.cpp)
 
 set(headers
 	${inc_dir}Server.hpp
 	${inc_dir}Config.hpp
+	${inc_dir}Request.hpp
 	${inc_dir}Response.hpp)
 
 #we will perform some testing

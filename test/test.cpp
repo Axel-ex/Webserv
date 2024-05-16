@@ -6,16 +6,14 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/25 11:38:11 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/14 08:50:24 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/16 13:40:53 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "gtest/gtest.h"
-#include "../includes/Server.hpp"
 #include "../includes/Config.hpp"
+#include "../includes/Request.hpp"
 
-//PUT YOUR TEST HERE
-//
 TEST(dummytests, test_addition)
 {
 	int a = 2 + 2;
@@ -23,22 +21,48 @@ TEST(dummytests, test_addition)
 	ASSERT_EQ(a, 4);
 }
 
-TEST(config, instanciation)
+TEST(Config, instanciation)
 {
-	Config &config = Config::getInstance();
+	Config::parseFile("dummy_file");
 
-	config.parseFile("dummy_file");
-
-	ASSERT_EQ(config.getPorts()[0], 8080);
-	ASSERT_EQ(config.getPorts()[1], 9000);
-
-	Config &config2 = Config::getInstance();
-
-	ASSERT_EQ(config2.getPorts()[0], 8080);
-	ASSERT_EQ(config2.getPorts()[1], 9000);
-
+	ASSERT_EQ(Config::getPorts()[0], 8080);
+	ASSERT_EQ(Config::getPorts()[1], 9000);
 }
 
+TEST(Request, simple_request)
+{
+	std::string buff("GET / HTTP/1.1\r\nHost: whatever\r\nAccept:whatever\r\ncontent-length: 40");
+	Request request(buff);
+
+	ASSERT_EQ(request.getMethod(), "GET");
+	ASSERT_EQ(request.getResource(), "/");
+	ASSERT_EQ(request.getProtocol(), "HTTP/1.1");
+	ASSERT_EQ(request.getHeaders(), "\r\nHost: whatever\r\nAccept:whatever\r\ncontent-length: 40");
+}
+
+TEST(Request, request_with_body)
+{
+	std::string buff("POST file_to_post HTTP/1.1\r\nHost: whatever\r\nAccept:whatever\r\ncontent-length: 40\n\nbody");
+	Request request(buff);
+
+	ASSERT_EQ(request.getMethod(), "POST");
+	ASSERT_EQ(request.getResource(), "file_to_post");
+	ASSERT_EQ(request.getProtocol(), "HTTP/1.1");
+	ASSERT_EQ(request.getHeaders(), "\r\nHost: whatever\r\nAccept:whatever\r\ncontent-length: 40");
+	ASSERT_EQ(request.getBody(), "body");
+}
+
+TEST(Request, icomplete_request)
+{
+	std::string buff("POST HTTP/1.1\r\nHost: whatever\r\nAccept:whatever\r\ncontent-length: 40\n\nbody");
+	Request request(buff);
+
+	ASSERT_EQ(request.getMethod(), "POST");
+	ASSERT_EQ(request.getResource(), "HTTP/1.1");
+	ASSERT_EQ(request.getProtocol(), "Host:");
+	ASSERT_EQ(request.getHeaders(), " whatever\r\nAccept:whatever\r\ncontent-length: 40");
+	ASSERT_EQ(request.getBody(), "body");
+}
 int main(int argc, char **argv)
 {
 	testing::InitGoogleTest(&argc, argv);

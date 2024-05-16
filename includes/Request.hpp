@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 14:28:23 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/14 09:27:59 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/14 11:11:27 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,16 +19,20 @@ class Request
 {
     public:
         // TODO: Parse the request in the constructor
-        Request(const char& buffer);
+        Request(std::string buffer);
         ~Request();
 
-        const std::string& get_method(void);
-        const std::string& get_resource(void);
-        const std::string& get_protocol(void);
+        const std::string& getMethod(void) const;
+        const std::string& getResource(void) const;
+        const std::string& getProtocol(void) const;
+        const std::string& getHeaders(void) const;
+        const std::string& getBody(void) const;
 
     private:
         std::string _method;   // GET POST DELETE
         std::string _resource; // / (root) /whatever
+        std::string _protocol;
+        std::string _headers;
         std::string _body;
 };
 
