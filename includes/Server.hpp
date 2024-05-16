@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/14 08:54:57 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/16 13:54:04 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,8 +23,6 @@
 #include <vector>
 
 #define MAX_CLIENT 50
-
-typedef struct sockaddr_in sockaddr_in;
 
 class Server
 {

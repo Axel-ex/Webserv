@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/25 11:38:11 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/16 13:40:53 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/16 14:51:42 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,6 +63,7 @@ TEST(Request, icomplete_request)
 	ASSERT_EQ(request.getHeaders(), " whatever\r\nAccept:whatever\r\ncontent-length: 40");
 	ASSERT_EQ(request.getBody(), "body");
 }
+
 int main(int argc, char **argv)
 {
 	testing::InitGoogleTest(&argc, argv);

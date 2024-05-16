@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 14:43:01 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/14 09:22:31 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/16 14:54:05 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@ class Response
     public:
         Response(void);
         ~Response();
+
         const char* get_body(void);
 		std::string get_headers(void);
 
