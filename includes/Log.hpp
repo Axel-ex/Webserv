@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:08:45 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/18 12:11:23 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/18 13:04:09 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,6 @@ class Log
         static void setLoglevel(e_log_level level);
         static void log(e_log_level level, const std::string& msg);
 		static void clearScreen(void);
-        static void printCurrentDirectory(void);
 
     private:
         e_log_level _log_level;

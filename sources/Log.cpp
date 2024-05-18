@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:11:30 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/18 12:14:53 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/18 13:04:01 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,15 +23,6 @@ Log& Log::getInstance()
     static Log instance;
 
     return (instance);
-}
-
-void Log::printCurrentDirectory(void)
-{
-    char buff[1024];
-    if (getcwd(buff, sizeof(buff)) != NULL)
-        std::cout << buff << std::endl;
-    else
-        std::cout << "error getting dir" << std::endl;
 }
 
 void Log::setLoglevel(s_log_level level) { getInstance()._log_level = level; }

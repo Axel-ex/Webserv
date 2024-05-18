@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/18 12:28:36 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/18 14:06:42 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,9 +44,9 @@ void Server ::init()
         if (sockfd < 0)
             throw ServerError("Fail creating socket");
         /* OS define a TIME_WAIT to reuse socket to make sure that all TCP
-         * packet are send before reusing the port/socket for another purpose.
-         * setting this option enables us to launch or server straight after
-         * again closing it*/
+         * packets are send before reusing the port/socket for another purpose.
+         * setting this option enables us to launch our server again straight
+         * after closing it*/
         int optval = 1;
         setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
@@ -81,7 +81,7 @@ void Server ::start(void)
 {
     while (true)
     {
-        /* Check for incoming connections */
+        /* Check for any change in our file descriptors */
         int activity = poll(_fds.data(), MAX_CLIENT, -1);
         if (activity < 0)
             throw ServerError("Error in poll");
@@ -93,11 +93,11 @@ void Server ::start(void)
 
 void Server ::_acceptIncomingConnections(void)
 {
-    /* listen for event on the server socket*/
+    /* listen for event on the server sockets*/
     for (size_t i = 0; i < Config::getPorts().size(); i++)
     {
-        /* If we detect an events on the server socket, add an fd in the poll
-         * list for client connection*/
+        /* If we detect any events on the server socket, add an fd in the poll
+         * list for client connections*/
         if ((_fds[i].revents & POLLIN))
         {
             int newfd = accept(_fds[i].fd, NULL, NULL);
@@ -115,7 +115,7 @@ void Server ::_acceptIncomingConnections(void)
 
 void Server ::_serveClients(void)
 {
-    /*listen for client events, skip the first fd that are for the server socket
+    /*listen for client events, skip the first fds that are for the server sockets
      */
     for (size_t i = Config::getPorts().size(); i < _fds.size(); ++i)
     {
@@ -137,7 +137,6 @@ void Server ::_serveClients(void)
             Response response(request);
 
             Log::log(DEBUG, buffer);
-            /* Send the response as first headers and body*/
             send(_fds[i].fd, response.getHeaders().c_str(),
                  response.getHeaders().size(), 0);
             send(_fds[i].fd, response.getBody().c_str(),
