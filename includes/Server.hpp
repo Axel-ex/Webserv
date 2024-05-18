@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/16 13:54:04 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/17 11:44:26 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
+
+typedef struct pollfd t_pollfd;
+typedef struct sockaddr_in t_sockaddr_in;
+typedef struct sockaddr t_sockaddr;
 
 #define MAX_CLIENT 50
 
@@ -45,7 +49,7 @@ class Server
         };
 
     private:
-        std::vector<struct pollfd> _fds;
+        std::vector<t_pollfd> _fds;
 
         void _acceptIncomingConnections(void);
         void _serveClients(void);
