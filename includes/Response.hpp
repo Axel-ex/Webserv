@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 14:43:01 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/17 10:18:16 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/20 10:49:08 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,17 +26,15 @@ class Response
         Response(const Request& request);
         ~Response();
 
-        const std::string &getBody(void) const;
-        const std::string &getHeaders(void) const;
+        const std::string& getBody(void) const;
+        const std::string& getHeaders(void) const;
+
+        void setHeaders(const std::string& headers);
+        void setBody(const std::string& body);
 
     private:
         std::string _headers;
         std::string _body;
-
-        void _createErrorResponse(int error_code);
-        void _createGetResponse(const Request& request);
-        void _createPostResponse(void);
-        void _createDeleteResponse(void);
 };
 
 #endif // RESPONSE_HPP_

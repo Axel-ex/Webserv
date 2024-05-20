@@ -17,6 +17,7 @@ set(srcs
 	${src_dir}Config.cpp
 	${src_dir}Log.cpp
 	${src_dir}Request.cpp
+	${src_dir}RequestHandlers.cpp
 	${src_dir}Response.cpp
 	${src_dir}main.cpp)
 
@@ -25,6 +26,7 @@ set(headers
 	${inc_dir}Log.hpp
 	${inc_dir}Config.hpp
 	${inc_dir}Request.hpp
+	${inc_dir}RequestHandlers.hpp
 	${inc_dir}Response.hpp)
 
 #we will perform some testing
