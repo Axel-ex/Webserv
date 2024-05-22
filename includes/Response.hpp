@@ -6,13 +6,14 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 14:43:01 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/16 14:54:05 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/20 10:49:08 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef RESPONSE_HPP_
 #define RESPONSE_HPP_
 
+#include "../includes/Request.hpp"
 #include <string>
 
 #define DUMMY_RESPONSE                                                         \
@@ -22,11 +23,14 @@
 class Response
 {
     public:
-        Response(void);
+        Response(const Request& request);
         ~Response();
 
-        const char* get_body(void);
-		std::string get_headers(void);
+        const std::string& getBody(void) const;
+        const std::string& getHeaders(void) const;
+
+        void setHeaders(const std::string& headers);
+        void setBody(const std::string& body);
 
     private:
         std::string _headers;

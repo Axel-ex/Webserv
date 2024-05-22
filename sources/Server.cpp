@@ -6,20 +6,23 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/16 14:35:47 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/18 14:06:42 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Server.hpp"
 #include "../includes/Config.hpp"
+#include "../includes/Log.hpp"
 #include "../includes/Request.hpp"
 #include "../includes/Response.hpp"
 #include <cstddef>
-#include <iostream>
+#include <string>
 
 Server ::Server(std::string config_file)
 {
-	Config::parseFile(config_file);
+    Config::parseFile(config_file);
+    Log::setLoglevel(DEBUG);
+    Log::clearScreen();
 }
 
 Server ::~Server()
@@ -40,14 +43,20 @@ void Server ::init()
         int sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0)
             throw ServerError("Fail creating socket");
+        /* OS define a TIME_WAIT to reuse socket to make sure that all TCP
+         * packets are send before reusing the port/socket for another purpose.
+         * setting this option enables us to launch our server again straight
+         * after closing it*/
+        int optval = 1;
+        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
-        struct sockaddr_in address;
+        t_sockaddr_in address;
         std::memset(&address, 0, sizeof(address));
         address.sin_family = AF_INET;
         address.sin_addr.s_addr = INADDR_ANY;
         address.sin_port = htons(Config::getPorts()[i]);
 
-        if (bind(sockfd, (struct sockaddr*)&address, sizeof(address)) < 0)
+        if (bind(sockfd, (t_sockaddr*)&address, sizeof(address)) < 0)
             throw ServerError("Fail binding the socket");
 
         if (listen(sockfd, MAX_CLIENT) < 0)
@@ -55,24 +64,24 @@ void Server ::init()
 
         /* socket fd is stored in the _fds to poll to detect incoming
          * connection*/
-        struct pollfd new_fd;
+        t_pollfd new_fd;
         std::memset(&new_fd, 0, sizeof(new_fd));
         new_fd.fd = sockfd;
         new_fd.events = POLLIN;
         _fds.push_back(new_fd);
     }
 
-    std::cout << "server listening on ports ";
+    std::string port_info = "server listening on ports:";
     for (size_t i = 0; i < Config::getPorts().size(); i++)
-        std::cout << Config::getPorts()[i] << " ";
-    std::cout << std::endl;
+        port_info += " " + std::to_string(Config::getPorts()[i]);
+    Log::log(INFO, port_info);
 }
 
 void Server ::start(void)
 {
     while (true)
     {
-        /* Check for incoming connections */
+        /* Check for any change in our file descriptors */
         int activity = poll(_fds.data(), MAX_CLIENT, -1);
         if (activity < 0)
             throw ServerError("Error in poll");
@@ -84,18 +93,18 @@ void Server ::start(void)
 
 void Server ::_acceptIncomingConnections(void)
 {
-    /* listen for event on the server socket*/
+    /* listen for event on the server sockets*/
     for (size_t i = 0; i < Config::getPorts().size(); i++)
     {
-        /* If we detect an events on the server socket, add an fd in the poll
-         * list for client connection*/
+        /* If we detect any events on the server socket, add an fd in the poll
+         * list for client connections*/
         if ((_fds[i].revents & POLLIN))
         {
             int newfd = accept(_fds[i].fd, NULL, NULL);
             if (newfd < 0)
                 throw ServerError("Error accepting connection");
 
-            struct pollfd new_pollfd;
+            t_pollfd new_pollfd;
             std::memset(&new_pollfd, 0, sizeof(new_pollfd));
             new_pollfd.fd = newfd;
             new_pollfd.revents = POLLIN;
@@ -106,7 +115,7 @@ void Server ::_acceptIncomingConnections(void)
 
 void Server ::_serveClients(void)
 {
-    /*listen for client events, skip the first fd that are for the server socket
+    /*listen for client events, skip the first fds that are for the server sockets
      */
     for (size_t i = Config::getPorts().size(); i < _fds.size(); ++i)
     {
@@ -120,28 +129,18 @@ void Server ::_serveClients(void)
             {
                 close(_fds[i].fd);
                 _fds.erase(_fds.begin() + i);
-                std::cerr << "error: reading client request" << std::endl;
+                Log::log(ERROR, "reading client request");
                 continue;
             }
 
-		
-			Request request(buffer);
+            Request request(buffer);
+            Response response(request);
 
-            // TODO: build the response according to the request. the
-            // response will take a request in its constructor
-            // Response response(request);
-            Response response;
-
-            /* Print the request*/
-            std::cout << buffer << std::endl;
-
-			/* Send the response as first headers and body*/
-            send(_fds[i].fd, response.get_headers().c_str(),
-                 response.get_headers().size(), 0);
-            send(_fds[i].fd, response.get_body(), strlen(response.get_body()),
-                 0);
-
-            /* Close connection */
+            Log::log(DEBUG, buffer);
+            send(_fds[i].fd, response.getHeaders().c_str(),
+                 response.getHeaders().size(), 0);
+            send(_fds[i].fd, response.getBody().c_str(),
+                 response.getBody().size(), 0);
             close(_fds[i].fd);
             _fds.erase(_fds.begin() + i);
         }

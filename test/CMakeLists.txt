@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.8)
 set(This webserv_test)
 
 set(Sources
+	request_test.cpp
+	Response_test.cpp
     test.cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Werror")
