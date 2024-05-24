@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:17:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/18 10:24:16 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/24 08:49:37 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,7 @@ Config& Config::getInstance(void)
 }
 
 Config ::~Config(void) {}
+
 
 void Config ::parseFile(std::string file)
 {
@@ -58,6 +59,16 @@ void Config ::parseFile(std::string file)
     std::stringstream buff;
     buff << ifs.rdbuf();
     getInstance()._resources.insert(std::make_pair("/form", buff.str()));
+	
+	ifs.close();
+	ifs.clear();
+	ifs.open("resources/form2.html");
+	if (!ifs)
+		throw std::runtime_error("Couldn't open the file");
+	buff.clear();
+	buff.str("");
+	buff << ifs.rdbuf();
+	getInstance()._resources.insert(std::make_pair("/form2", buff.str()));
 }
 
 std::vector<int>& Config::getPorts(void) { return (getInstance()._ports); }

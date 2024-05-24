@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/17 11:44:26 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/24 12:50:48 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <exception>
 #include <netinet/in.h>
 #include <strings.h>
+#include <sys/_types/_ssize_t.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -50,9 +51,10 @@ class Server
 
     private:
         std::vector<t_pollfd> _fds;
-
+	
         void _acceptIncomingConnections(void);
         void _serveClients(void);
+		ssize_t _readFd(int fd, char *buffer, size_t buffer_size);
 };
 
 #endif // SERVER_HPP

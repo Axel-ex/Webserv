@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/18 14:06:42 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/24 13:20:38 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include "../includes/Log.hpp"
 #include "../includes/Request.hpp"
 #include "../includes/Response.hpp"
+#include "../includes/Connection.hpp"
 #include <cstddef>
 #include <string>
 
@@ -113,36 +114,49 @@ void Server ::_acceptIncomingConnections(void)
     }
 }
 
+ssize_t Server ::_readFd(int fd_index, char* buffer, size_t buffer_size)
+{
+    ssize_t n = recv(_fds[fd_index].fd, buffer, buffer_size, 0);
+    if (n < 0)
+    {
+        close(_fds[fd_index].fd);
+        _fds.erase(_fds.begin() + fd_index);
+        Log::log(ERROR, "reading client request");
+    }
+    return (n);
+}
+
 void Server ::_serveClients(void)
 {
-    /*listen for client events, skip the first fds that are for the server sockets
-     */
+    /*listen for client events, skip the first fds that are for the server
+     * sockets */
     for (size_t i = Config::getPorts().size(); i < _fds.size(); ++i)
     {
         if (_fds[i].revents & POLLIN)
         {
-            char buffer[1024];
+            char buffer[5000];
+            Connection connection;
 
-            std::memset(buffer, 0, sizeof(buffer));
-            ssize_t n = recv(_fds[i].fd, buffer, sizeof(buffer), 0);
-            if (n < 0)
+            while (!connection.isRequestOver())
             {
-                close(_fds[i].fd);
-                _fds.erase(_fds.begin() + i);
-                Log::log(ERROR, "reading client request");
-                continue;
+				std::memset(buffer, 0, sizeof(buffer));
+                ssize_t n = _readFd(i, buffer, sizeof(buffer));
+                if (n < 0)
+                    continue;
+				connection.appendBuffer(buffer, n);
+                Log::log(DEBUG, connection.getBuffer());
             }
 
-            Request request(buffer);
-            Response response(request);
+			Log::log(DEBUG, connection.getBuffer());
+			Request request(connection.getBuffer());
+			Response response(request);
 
-            Log::log(DEBUG, buffer);
-            send(_fds[i].fd, response.getHeaders().c_str(),
-                 response.getHeaders().size(), 0);
-            send(_fds[i].fd, response.getBody().c_str(),
-                 response.getBody().size(), 0);
-            close(_fds[i].fd);
-            _fds.erase(_fds.begin() + i);
+			send(_fds[i].fd, response.getHeaders().c_str(),
+					response.getHeaders().size(), 0);
+			send(_fds[i].fd, response.getBody().c_str(),
+					response.getBody().size(), 0);
+			close(_fds[i].fd);
+			_fds.erase(_fds.begin() + i);
         }
     }
 }

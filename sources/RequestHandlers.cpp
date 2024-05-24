@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/20 10:47:05 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/24 11:14:26 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,7 @@ void ARequestHandler ::createErrorResponse(int error_code,
 /* GET */
 bool GetRequestHandler ::canProcess(const Request& request) const
 {
-    return (request.getMethod() == "GET");
+    return (request.getMethod() == "GET" && request.getMethod().find(".cgi") == std::string::npos);
 }
 
 void GetRequestHandler ::processRequest(const Request& request,
@@ -63,13 +63,12 @@ void GetRequestHandler ::processRequest(const Request& request,
 {
     std::map<std::string, std::string>::iterator it;
     std::string headers;
-
+	
+	if (request.getProtocol() != "HTTP/1.1")
+		return createErrorResponse(400, response);
     it = Config::getResources().find(request.getResource());
     if (it == Config::getResources().end())
-    {
-        createErrorResponse(404, response);
-        return;
-    }
+        return (createErrorResponse(404, response));
 
     response.setBody(it->second);
     headers = "HTTP/1.1 200 OK\r\n";
@@ -81,9 +80,9 @@ void GetRequestHandler ::processRequest(const Request& request,
 }
 
 /* POST*/
-bool PostRequestHandler ::canProcess(const Request& request) const
+bool PostRequestHandler ::canProcess(const Request &request) const
 {
-    return (request.getMethod() == "POST");
+    return (request.getMethod() == "POST" && request.getResource().find(".cgi") == std::string::npos);
 }
 
 void PostRequestHandler ::processRequest(const Request& request,
@@ -111,7 +110,7 @@ void DeleteRequestHandler ::processRequest(const Request& request,
 /*CGI*/
 bool CgiRequestHandler ::canProcess(const Request& request) const
 {
-    return (request.getMethod() == "CGI");
+    return (request.getResource().find(".cgi") != std::string::npos);
 }
 
 void CgiRequestHandler ::processRequest(const Request& request,
