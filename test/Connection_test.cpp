@@ -6,12 +6,12 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/24 10:24:12 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/24 13:15:37 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/24 14:00:13 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "gtest/gtest.h"
-#include "../includes/Connection.hpp"
+#include "../includes/RequestBuffer.hpp"
 
 std::string buffer = "POST /upload HTTP/1.1"
 "Host: localhost:8080"
@@ -44,7 +44,7 @@ std::string buffer2 = "-----------------------------3791682029664909416148049362
 
 TEST(Connection, content_size)
 {
-	Connection connection;
+	RequestBuffer connection;
 
 	connection.appendBuffer(buffer, buffer.size());
 	ASSERT_EQ(connection.getContentLength(), 316);
@@ -52,7 +52,7 @@ TEST(Connection, content_size)
 
 TEST(Connection, isRequestOver)
 {
-	Connection connection;
+	RequestBuffer connection;
 
 	connection.appendBuffer(buffer, buffer.size());
 	connection.appendBuffer(buffer2, buffer2.size());

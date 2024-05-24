@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/24 13:20:38 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/24 14:02:58 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 #include "../includes/Log.hpp"
 #include "../includes/Request.hpp"
 #include "../includes/Response.hpp"
-#include "../includes/Connection.hpp"
+#include "../includes/RequestBuffer.hpp"
 #include <cstddef>
 #include <string>
 
@@ -134,21 +134,20 @@ void Server ::_serveClients(void)
     {
         if (_fds[i].revents & POLLIN)
         {
-            char buffer[5000];
-            Connection connection;
+            char read_buffer[5000];
+            RequestBuffer request_buffer;
 
-            while (!connection.isRequestOver())
+            while (!request_buffer.isRequestOver())
             {
-				std::memset(buffer, 0, sizeof(buffer));
-                ssize_t n = _readFd(i, buffer, sizeof(buffer));
+				std::memset(read_buffer, 0, sizeof(read_buffer));
+                ssize_t n = _readFd(i, read_buffer, sizeof(read_buffer));
                 if (n < 0)
                     continue;
-				connection.appendBuffer(buffer, n);
-                Log::log(DEBUG, connection.getBuffer());
+				request_buffer.appendBuffer(read_buffer, n);
             }
 
-			Log::log(DEBUG, connection.getBuffer());
-			Request request(connection.getBuffer());
+			Log::log(DEBUG, request_buffer.getBuffer());
+			Request request(request_buffer.getBuffer());
 			Response response(request);
 
 			send(_fds[i].fd, response.getHeaders().c_str(),

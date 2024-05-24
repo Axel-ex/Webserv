@@ -1,39 +1,39 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Connection.cpp                                     :+:      :+:    :+:   */
+/*   RequestBuffer.cpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/24 10:31:17 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/24 13:18:35 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/24 13:59:54 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/Connection.hpp"
+#include "../includes/RequestBuffer.hpp"
 #include "../includes/Log.hpp"
 #include <iterator>
 
-Connection ::Connection(void)
+RequestBuffer ::RequestBuffer(void)
     : _content_length(0), _current_length(0), _connection_over(false){};
 
-Connection ::~Connection(void) {}
+RequestBuffer ::~RequestBuffer(void) {}
 
-std::string& Connection::getBuffer(void) { return (_buffer); }
+std::string& RequestBuffer::getBuffer(void) { return (_buffer); }
 
-size_t Connection::getContentLength(void) const { return (_content_length); }
+size_t RequestBuffer::getContentLength(void) const { return (_content_length); }
 
-size_t Connection::getCurrentLength(void) const { return (_current_length); }
+size_t RequestBuffer::getCurrentLength(void) const { return (_current_length); }
 
-bool Connection ::isRequestOver(void) const { return (_connection_over); }
+bool RequestBuffer ::isRequestOver(void) const { return (_connection_over); }
 
-void Connection ::appendBuffer(const std::string& buffer, size_t size)
+void RequestBuffer ::appendBuffer(const std::string& buffer, size_t size)
 {
     _buffer.append(buffer.c_str(), size);
     _getContentLength();
 }
 
-void Connection::_getContentLength(void)
+void RequestBuffer::_getContentLength(void)
 {
     std::string to_find("Content-Length: ");
 

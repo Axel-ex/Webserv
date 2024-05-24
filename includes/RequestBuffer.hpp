@@ -1,25 +1,25 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Connection.hpp                                     :+:      :+:    :+:   */
+/*   RequestBuffer.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/24 10:25:36 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/24 12:01:41 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/24 13:59:42 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef CONNECTION_HPP_
-#define CONNECTION_HPP_
+#ifndef REQUESTBUFFER_HPP_
+#define REQUESTBUFFER_HPP_
 
 #include <string>
 
-class Connection
+class RequestBuffer
 {
     public:
-        Connection(void);
-        ~Connection(void);
+        RequestBuffer(void);
+        ~RequestBuffer(void);
 
 		bool isRequestOver(void) const;
 		void appendBuffer(const std::string &buffer, size_t size);
