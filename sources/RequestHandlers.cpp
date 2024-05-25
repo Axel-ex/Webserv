@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/24 11:14:26 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/24 21:04:48 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,23 +16,27 @@
 #include <map>
 
 /* ABSTRACT REQUEST HANDLER*/
-
 ARequestHandler ::ARequestHandler(void) : _next(nullptr) {}
 
 ARequestHandler ::~ARequestHandler(void) {}
 
+// TODO: check protocol of request here
 void ARequestHandler ::handleRequest(const Request& request, Response& response)
 {
+	if (request.getProtocol() != "HTTP/1.1")
+		return createErrorResponse(BAD_REQUEST, response);
+
     if (canProcess(request))
         processRequest(request, response);
     else if (_next)
         _next->handleRequest(request, response);
     else
-        createErrorResponse(400, response);
+        createErrorResponse(BAD_REQUEST, response);
 }
 
 void ARequestHandler::setNextHandler(ARequestHandler* next) { _next = next; }
 
+//TODO: createOkReponse 
 void ARequestHandler ::createErrorResponse(int error_code,
                                            Response& response) const
 {
@@ -64,11 +68,9 @@ void GetRequestHandler ::processRequest(const Request& request,
     std::map<std::string, std::string>::iterator it;
     std::string headers;
 	
-	if (request.getProtocol() != "HTTP/1.1")
-		return createErrorResponse(400, response);
     it = Config::getResources().find(request.getResource());
     if (it == Config::getResources().end())
-        return (createErrorResponse(404, response));
+        return (createErrorResponse(NOT_FOUND, response));
 
     response.setBody(it->second);
     headers = "HTTP/1.1 200 OK\r\n";
@@ -88,8 +90,8 @@ bool PostRequestHandler ::canProcess(const Request &request) const
 void PostRequestHandler ::processRequest(const Request& request,
                                          Response& response) const
 {
-    (void)request;
-    (void)response;
+	(void)request;
+	(void)response;
     std::cout << "hello world from post" << std::endl;
 }
 

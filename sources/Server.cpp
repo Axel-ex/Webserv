@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/24 14:02:58 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/24 21:03:28 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,9 +134,10 @@ void Server ::_serveClients(void)
     {
         if (_fds[i].revents & POLLIN)
         {
-            char read_buffer[5000];
+            char read_buffer[1024];
             RequestBuffer request_buffer;
-
+			
+			//TODO: set a timeout
             while (!request_buffer.isRequestOver())
             {
 				std::memset(read_buffer, 0, sizeof(read_buffer));

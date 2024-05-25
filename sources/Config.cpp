@@ -6,12 +6,11 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:17:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/24 08:49:37 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/24 18:39:22 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Config.hpp"
-#include "../includes/Log.hpp"
 #include "../includes/Response.hpp"
 #include <fstream>
 #include <iostream>
