@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 
 #language used for the project
 project(${This} C CXX)
-set(CMAKE_CXX_STANDARD 98)
+set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Werror")
 
@@ -23,6 +23,7 @@ set(srcs
 	${src_dir}main.cpp)
 
 set(headers
+	${inc_dir}utils.hpp
 	${inc_dir}Server.hpp
 	${inc_dir}Log.hpp
 	${inc_dir}Config.hpp

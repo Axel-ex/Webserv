@@ -6,13 +6,14 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/24 10:31:17 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/24 13:59:54 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/25 14:27:37 by achabrer         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/RequestBuffer.hpp"
 #include "../includes/Log.hpp"
 #include <iterator>
+#include <cstdlib>
 
 RequestBuffer ::RequestBuffer(void)
     : _content_length(0), _current_length(0), _connection_over(false){};

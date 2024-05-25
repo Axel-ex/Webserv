@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/24 21:03:28 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/25 14:24:17 by achabrer         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,10 @@
 #include "../includes/Request.hpp"
 #include "../includes/Response.hpp"
 #include "../includes/RequestBuffer.hpp"
+#include "../includes/utils.hpp"
 #include <cstddef>
+#include <cstring>
+#include <cstdlib>
 #include <string>
 
 Server ::Server(std::string config_file)
@@ -74,7 +77,7 @@ void Server ::init()
 
     std::string port_info = "server listening on ports:";
     for (size_t i = 0; i < Config::getPorts().size(); i++)
-        port_info += " " + std::to_string(Config::getPorts()[i]);
+        port_info += " " + toString(Config::getPorts()[i]);
     Log::log(INFO, port_info);
 }
 

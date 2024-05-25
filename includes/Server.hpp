@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/24 12:50:48 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/25 14:09:26 by achabrer         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,12 +16,12 @@
 #include <exception>
 #include <netinet/in.h>
 #include <strings.h>
-#include <sys/_types/_ssize_t.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
+#include <string>
 
 typedef struct pollfd t_pollfd;
 typedef struct sockaddr_in t_sockaddr_in;
