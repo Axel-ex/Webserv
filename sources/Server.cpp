@@ -36,7 +36,7 @@ void sigHandler(int signum)
 Server ::Server(std::string config_file)
 {
     Config::parseFile(config_file);
-    Log::setLoglevel(DEBUG);
+    Log::setLoglevel(INFO);
     Log::clearScreen();
 	std::signal(SIGINT, sigHandler);
 }
