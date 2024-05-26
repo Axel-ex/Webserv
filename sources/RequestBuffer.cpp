@@ -6,11 +6,11 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/24 10:31:17 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/25 14:27:37 by achabrer         ###   ########.fr       */
+/*   Updated: 2024/05/26 14:28:20 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/RequestBuffer.hpp"
+#include "../includes/Request.hpp"
 #include "../includes/Log.hpp"
 #include <iterator>
 #include <cstdlib>

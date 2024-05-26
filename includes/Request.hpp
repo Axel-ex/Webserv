@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 14:28:23 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/25 15:31:21 by achabrer         ###   ########.fr       */
+/*   Updated: 2024/05/26 14:28:03 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,6 @@
 class Request
 {
     public:
-        // TODO: Parse the request in the constructor
         Request(std::string buffer);
         ~Request();
 
@@ -34,6 +33,28 @@ class Request
         std::string _protocol;
         std::string _headers;
         std::string _body;
+};
+
+class RequestBuffer
+{
+    public:
+        RequestBuffer(void);
+        ~RequestBuffer(void);
+
+		bool isRequestOver(void) const;
+		void appendBuffer(const std::string &buffer, size_t size);
+		std::string &getBuffer(void);
+
+		size_t getContentLength(void) const;
+		size_t getCurrentLength(void) const;
+
+    private:
+        std::string _buffer;
+        size_t _content_length;
+        size_t _current_length;
+		bool _connection_over;
+
+		void _getContentLength(void);
 };
 
 #endif // INCLUDE_INCLUDES_REQUEST_HPP_

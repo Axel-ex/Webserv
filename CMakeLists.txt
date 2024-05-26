@@ -27,7 +27,6 @@ set(headers
 	${inc_dir}Server.hpp
 	${inc_dir}Log.hpp
 	${inc_dir}Config.hpp
-	${inc_dir}RequestBuffer.hpp
 	${inc_dir}Request.hpp
 	${inc_dir}RequestHandlers.hpp
 	${inc_dir}Response.hpp)

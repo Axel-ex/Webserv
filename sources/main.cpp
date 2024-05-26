@@ -6,13 +6,14 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 20:08:09 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/18 14:11:35 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/26 11:20:06 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Log.hpp"
 #include "../includes/Server.hpp"
 #include <cstdlib>
+#include <cstring>
 #include <exception>
 #include <iostream>
 
@@ -39,7 +40,9 @@ int main(int argc, char** argv)
     }
     catch (const std::exception& e)
     {
-        Log::log(ERROR, e.what());
+		std::string err("exception: ");
+		err.append(e.what(), std::strlen(e.what()));
+        Log::log(ERROR, err);
     }
-    return (EXIT_FAILURE);
+    return (EXIT_SUCCESS);
 }

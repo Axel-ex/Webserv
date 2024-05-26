@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 10:52:09 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/26 14:28:55 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,9 +15,9 @@
 #include "../includes/Log.hpp"
 #include "../includes/Request.hpp"
 #include "../includes/Response.hpp"
-#include "../includes/RequestBuffer.hpp"
 #include "../includes/utils.hpp"
 #include <cstddef>
+#include <ctime>
 #include <cstring>
 #include <cstdlib>
 #include <string>
@@ -36,7 +36,7 @@ void sigHandler(int signum)
 Server ::Server(std::string config_file)
 {
     Config::parseFile(config_file);
-    Log::setLoglevel(INFO);
+    Log::setLoglevel(DEBUG);
     Log::clearScreen();
 	std::signal(SIGINT, sigHandler);
 }
@@ -152,10 +152,16 @@ void Server ::_serveClients(void)
         {
             char read_buffer[1024];
             RequestBuffer request_buffer;
+			clock_t	start = clock();
 			
-			//TODO: set a timeout
+			//Read from client chunks. set a TIMEOUT for long request.
             while (!request_buffer.isRequestOver())
             {
+				clock_t curr = clock();
+				double elapsed = static_cast<double>(curr - start) / CLOCKS_PER_SEC;
+				if (elapsed > SERVER_TIMEOUT)
+					break ;
+
 				std::memset(read_buffer, 0, sizeof(read_buffer));
                 ssize_t n = _readFd(i, read_buffer, sizeof(read_buffer));
                 if (n < 0)
@@ -163,10 +169,10 @@ void Server ::_serveClients(void)
 				request_buffer.appendBuffer(read_buffer, n);
             }
 
-			Log::log(DEBUG, request_buffer.getBuffer());
 			Request request(request_buffer.getBuffer());
-			Response response(request);
 			Log::logRequest(request);
+			Log::log(DEBUG, request_buffer.getBuffer());
+			Response response(request);
 
 			send(_fds[i].fd, response.getHeaders().c_str(),
 					response.getHeaders().size(), 0);

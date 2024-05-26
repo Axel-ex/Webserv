@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:41:40 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/20 10:55:10 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/26 16:10:19 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@ class ARequestHandler
 
     protected:
         void createErrorResponse(int error_code, Response& response) const;
+		void createOkResponse(std::string resource, Response &response) const;
         virtual bool canProcess(const Request& request) const = 0;
         virtual void processRequest(const Request& request,
                                     Response& response) const = 0;
@@ -47,6 +48,11 @@ class PostRequestHandler : public ARequestHandler
     public:
         bool canProcess(const Request& request) const;
         void processRequest(const Request& request, Response& response) const;
+
+    private:
+        std::string _getBoundary(const std::string& headers) const;
+        std::string _getFileContent(const std::string& body, const std::string &boundary) const;
+        std::string _getFileName(const std::string& body) const;
 };
 
 class DeleteRequestHandler : public ARequestHandler
@@ -63,4 +69,4 @@ class CgiRequestHandler : public ARequestHandler
         void processRequest(const Request& request, Response& response) const;
 };
 
-#endif  // REQUESTHANDLERS_HPP_
+#endif // REQUESTHANDLERS_HPP_

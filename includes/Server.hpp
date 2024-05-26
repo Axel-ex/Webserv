@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/25 14:09:26 by achabrer         ###   ########.fr       */
+/*   Updated: 2024/05/26 11:15:40 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ typedef struct sockaddr_in t_sockaddr_in;
 typedef struct sockaddr t_sockaddr;
 
 #define MAX_CLIENT 50
+#define SERVER_TIMEOUT 4
 
 class Server
 {

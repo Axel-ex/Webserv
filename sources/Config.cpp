@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:17:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/24 18:39:22 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/26 16:11:40 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,6 +68,16 @@ void Config ::parseFile(std::string file)
 	buff.str("");
 	buff << ifs.rdbuf();
 	getInstance()._resources.insert(std::make_pair("/form2", buff.str()));
+
+	ifs.close();
+	ifs.clear();
+	ifs.open("resources/okresponse.html");
+	if (!ifs)
+		throw std::runtime_error("Couldn't open the file");
+	buff.clear();
+	buff.str("");
+	buff << ifs.rdbuf();
+	getInstance()._resources.insert(std::make_pair("posted", buff.str()));
 }
 
 std::vector<int>& Config::getPorts(void) { return (getInstance()._ports); }

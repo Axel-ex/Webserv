@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:11:30 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 10:30:43 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/26 12:15:29 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,5 +107,5 @@ void Log ::_printTimeStamp(void)
 	std::memset(buffer, 0, sizeof(buffer));
 
     std::strftime(buffer, sizeof(buffer), "[%H:%M:%S]", time_mark);
-    std::cout << buffer << std::flush;
+    std::cout << buffer;
 }
