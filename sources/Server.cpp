@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/25 14:24:17 by achabrer         ###   ########.fr       */
+/*   Updated: 2024/05/26 10:52:09 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,18 +21,31 @@
 #include <cstring>
 #include <cstdlib>
 #include <string>
+#include <csignal>
+#include <atomic>
+#include <csignal>
+
+std::atomic<bool> stopFlag(false);
+
+void sigHandler(int signum)
+{
+    if (signum == SIGINT)
+		stopFlag = true;
+}
 
 Server ::Server(std::string config_file)
 {
     Config::parseFile(config_file);
-    Log::setLoglevel(DEBUG);
+    Log::setLoglevel(INFO);
     Log::clearScreen();
+	std::signal(SIGINT, sigHandler);
 }
 
 Server ::~Server()
 {
     for (size_t i = 0; i < _fds.size(); i++)
         close(_fds[i].fd);
+	Log::log(INFO, "Server shutting down");
 }
 
 void Server ::init()
@@ -83,11 +96,11 @@ void Server ::init()
 
 void Server ::start(void)
 {
-    while (true)
+    while (!stopFlag)
     {
         /* Check for any change in our file descriptors */
-        int activity = poll(_fds.data(), MAX_CLIENT, -1);
-        if (activity < 0)
+        int activity = poll(_fds.data(), MAX_CLIENT, 1000);
+        if (activity < 0 && !stopFlag)
             throw ServerError("Error in poll");
 
         _acceptIncomingConnections();
@@ -105,7 +118,7 @@ void Server ::_acceptIncomingConnections(void)
         if ((_fds[i].revents & POLLIN))
         {
             int newfd = accept(_fds[i].fd, NULL, NULL);
-            if (newfd < 0)
+            if (newfd < 0 && !stopFlag)
                 throw ServerError("Error accepting connection");
 
             t_pollfd new_pollfd;
@@ -153,6 +166,7 @@ void Server ::_serveClients(void)
 			Log::log(DEBUG, request_buffer.getBuffer());
 			Request request(request_buffer.getBuffer());
 			Response response(request);
+			Log::logRequest(request);
 
 			send(_fds[i].fd, response.getHeaders().c_str(),
 					response.getHeaders().size(), 0);
