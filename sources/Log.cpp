@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:11:30 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 18:12:49 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/26 18:28:36 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -115,7 +115,7 @@ void Log ::_printTimeStamp(void)
 
 std::string Log::_formatField(std::string field)
 {
-    for (int i = field.size(); i < 8; i++)
+    for (int i = field.size(); i < 10; i++)
         field += " ";
     return field;
 }

@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 18:15:32 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/26 18:36:57 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <sys/stat.h>
 
 // =============================================================================
 //                               ABSTRACT HANDLER
@@ -32,7 +33,7 @@ void ARequestHandler ::handleRequest(const Request& request, Response& response)
     if (request.getProtocol() != "HTTP/1.1")
         return createErrorResponse(BAD_REQUEST, response);
 
-    if (canProcess(request))
+    if (_canProcess(request))
         processRequest(request, response);
     else if (_next)
         _next->handleRequest(request, response);
@@ -42,18 +43,20 @@ void ARequestHandler ::handleRequest(const Request& request, Response& response)
 
 void ARequestHandler::setNextHandler(ARequestHandler* next) { _next = next; }
 
-void ARequestHandler::createOkResponse(std::string resource, Response& response) const
+void ARequestHandler::createOkResponse(std::string resource,
+                                       Response& response) const
 {
-	std::map<std::string, std::string>::iterator it;
-	std::string headers;
+    std::map<std::string, std::string>::iterator it;
+    std::string headers;
 
-	it = Config::getResources().find(resource);
-	response.setBody(it->second);
+    it = Config::getResources().find(resource);
+    response.setBody(it->second);
     headers = "HTTP/1.1 200 OK\r\n";
     headers += "Content-Type: text/html\r\n";
-    headers += "Content-Length: " + std::to_string(response.getBody().length()) + "\r\n\r\n";
+    headers +=
+        "Content-Length: " + std::to_string(response.getBody().length()) +
+        "\r\n\r\n";
     response.setHeaders(headers);
-
 }
 
 void ARequestHandler ::createErrorResponse(int error_code,
@@ -79,7 +82,7 @@ void ARequestHandler ::createErrorResponse(int error_code,
 //                               GET
 // =============================================================================
 
-bool GetRequestHandler ::canProcess(const Request& request) const
+bool GetRequestHandler ::_canProcess(const Request& request) const
 {
     return (request.getMethod() == "GET" &&
             request.getMethod().find(".cgi") == std::string::npos);
@@ -105,7 +108,7 @@ void GetRequestHandler ::processRequest(const Request& request,
 }
 
 /* POST*/
-bool PostRequestHandler ::canProcess(const Request& request) const
+bool PostRequestHandler ::_canProcess(const Request& request) const
 {
     return (request.getMethod() == "POST" &&
             request.getResource().find(".cgi") == std::string::npos);
@@ -163,6 +166,17 @@ std::string PostRequestHandler ::_getFileName(const std::string& body) const
     return (file_name);
 }
 
+void PostRequestHandler ::_createDir(std::string dir_name) const
+{
+    struct stat info;
+
+    if (stat(dir_name.c_str(), &info) != 0)
+    {
+        if (mkdir(dir_name.c_str(), 0777))
+            Log::log(ERROR, "couldn't create " + dir_name + " directory");
+    }
+}
+
 void PostRequestHandler::processRequest(const Request& request,
                                         Response& response) const
 {
@@ -174,30 +188,32 @@ void PostRequestHandler::processRequest(const Request& request,
     if (boundary.empty())
     {
         createErrorResponse(BAD_REQUEST, response);
-        return (Log::log(ERROR, "couldn't get content boundaries"));
+        return (Log::log(WARNING, "couldn't get content boundaries"));
     }
 
     std::string file_content = _getFileContent(request.getBody(), boundary);
     std::string file_name = _getFileName(request.getBody());
     if (file_content.empty() || file_name.empty())
     {
-        createErrorResponse(400, response);
-        return (Log::log(ERROR, "couldn't process the file"));
+        createErrorResponse(BAD_REQUEST, response);
+        return (Log::log(WARNING, "couldn't process the file"));
     }
 
     // Write the file content to the file
-    std::ofstream ofs(file_name, std::ios_base::out | std::ios_base::trunc);
+    _createDir("uploads");
+    std::ofstream ofs("uploads/" + file_name,
+                      std::ios_base::out | std::ios_base::trunc);
     if (!ofs)
-        return (Log::log(ERROR, "Couldn't write to file"));
+        return (Log::log(WARNING, "Couldn't write to file"));
     ofs << file_content;
-	createOkResponse("posted", response);
+    createOkResponse("posted", response);
 }
 
 // =============================================================================
 //                               DELETE
 // =============================================================================
 
-bool DeleteRequestHandler ::canProcess(const Request& request) const
+bool DeleteRequestHandler ::_canProcess(const Request& request) const
 {
     return (request.getMethod() == "DELETE");
 }
@@ -214,7 +230,7 @@ void DeleteRequestHandler ::processRequest(const Request& request,
 //                               CGI
 // =============================================================================
 
-bool CgiRequestHandler ::canProcess(const Request& request) const
+bool CgiRequestHandler ::_canProcess(const Request& request) const
 {
     return (request.getResource().find(".cgi") != std::string::npos);
 }
