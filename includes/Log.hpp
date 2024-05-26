@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:08:45 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 10:13:13 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/26 18:08:13 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,7 @@ class Log
         void _logInfo(const std::string &msg) const;
 
 		static void _printTimeStamp(void);
+		static std::string _formatField(std::string field);
 };
 
 #endif // LOG_HPP_

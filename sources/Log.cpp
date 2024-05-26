@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:11:30 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 12:15:29 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/26 18:12:49 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,8 @@ void Log::_logError(const std::string& msg) const
     if (getInstance()._log_level < ERROR)
         return;
     _printTimeStamp();
-    std::cerr << "[" << RED << "ERROR" << RESET << "] " << msg << std::endl;
+    std::string level = "[ERROR]";
+    std::cerr << RED << _formatField(level) << RESET << msg << std::endl;
 }
 
 void Log::_logWarning(const std::string& msg) const
@@ -64,8 +65,8 @@ void Log::_logWarning(const std::string& msg) const
     if (getInstance()._log_level < WARNING)
         return;
     _printTimeStamp();
-    std::cout << "[" << YELLOW << "WARNING" << RESET << "] " << msg
-              << std::endl;
+    std::string level = "[WARNING]";
+    std::cout << YELLOW << _formatField(level) << RESET << msg << std::endl;
 }
 
 void Log::_logInfo(const std::string& msg) const
@@ -73,9 +74,8 @@ void Log::_logInfo(const std::string& msg) const
     if (getInstance()._log_level < INFO)
         return;
     _printTimeStamp();
-    std::cout << "["
-              << "INFO"
-              << "] " << msg << std::endl;
+    std::string level = "[INFO]";
+    std::cout << _formatField(level) << msg << std::endl;
 }
 
 void Log::_logDebug(const std::string& msg) const
@@ -83,20 +83,23 @@ void Log::_logDebug(const std::string& msg) const
     if (getInstance()._log_level < DEBUG)
         return;
     _printTimeStamp();
-    std::cout << "[" << CYAN << "DEBUG" << RESET << "] " << msg << std::endl;
+    std::string level = "[DEBUG]";
+    std::cout << CYAN << _formatField(level) << RESET << msg << std::endl;
 }
 
 void Log ::logRequest(const Request& request)
 {
     size_t host_pos = request.getHeaders().find("Host: ") + 6;
     size_t return_pos = request.getHeaders().find('\r', host_pos);
-    std::string host = request.getHeaders().substr(host_pos, return_pos - host_pos);
+    std::string host =
+        request.getHeaders().substr(host_pos, return_pos - host_pos);
 
-	std::cout << GREY;
+    std::string method = "[" + request.getMethod() + "]";
+    std::cout << GREY;
     _printTimeStamp();
-    std::cout << "[" << request.getMethod() << "]"
-              << "\t" << request.getResource() << " " << host;
-	std::cout << RESET << std::endl;
+
+    std::cout << _formatField(method) << request.getResource() << " " << host;
+    std::cout << RESET << std::endl;
 }
 
 void Log ::_printTimeStamp(void)
@@ -104,8 +107,15 @@ void Log ::_printTimeStamp(void)
     std::time_t time_sec = std::time(NULL);
     std::tm* time_mark = std::localtime(&time_sec);
     char buffer[20];
-	std::memset(buffer, 0, sizeof(buffer));
+    std::memset(buffer, 0, sizeof(buffer));
 
     std::strftime(buffer, sizeof(buffer), "[%H:%M:%S]", time_mark);
     std::cout << buffer;
+}
+
+std::string Log::_formatField(std::string field)
+{
+    for (int i = field.size(); i < 8; i++)
+        field += " ";
+    return field;
 }

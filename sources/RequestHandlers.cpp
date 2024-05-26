@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 16:11:27 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/26 18:15:32 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,10 @@
 #include <iostream>
 #include <map>
 #include <string>
+
+// =============================================================================
+//                               ABSTRACT HANDLER
+// =============================================================================
 
 ARequestHandler ::ARequestHandler(void) : _next(nullptr) {}
 
@@ -40,17 +44,14 @@ void ARequestHandler::setNextHandler(ARequestHandler* next) { _next = next; }
 
 void ARequestHandler::createOkResponse(std::string resource, Response& response) const
 {
-    // TODO: either we have all the resources static or we have a html template
-    // we could modify depending on what we want to communicate to the client
 	std::map<std::string, std::string>::iterator it;
 	std::string headers;
 
 	it = Config::getResources().find(resource);
 	response.setBody(it->second);
-    headers = "HTTP/1.1 200 OK\r\n"; // Changed from HTTPS/1.1 to HTTP/1.1
+    headers = "HTTP/1.1 200 OK\r\n";
     headers += "Content-Type: text/html\r\n";
-    headers += "Content-Length: " + std::to_string(response.getBody().length()) + "\r\n";
-    headers += "\r\n"; // Ensure correct separation between headers and body
+    headers += "Content-Length: " + std::to_string(response.getBody().length()) + "\r\n\r\n";
     response.setHeaders(headers);
 
 }
@@ -74,7 +75,10 @@ void ARequestHandler ::createErrorResponse(int error_code,
 }
 
 /* CONCRETE IMPLEMENTATION OF THE HANDLERS */
-/* GET */
+// =============================================================================
+//                               GET
+// =============================================================================
+
 bool GetRequestHandler ::canProcess(const Request& request) const
 {
     return (request.getMethod() == "GET" &&
@@ -189,7 +193,10 @@ void PostRequestHandler::processRequest(const Request& request,
 	createOkResponse("posted", response);
 }
 
-/*DELETE*/
+// =============================================================================
+//                               DELETE
+// =============================================================================
+
 bool DeleteRequestHandler ::canProcess(const Request& request) const
 {
     return (request.getMethod() == "DELETE");
@@ -203,7 +210,10 @@ void DeleteRequestHandler ::processRequest(const Request& request,
     std::cout << "hello world from delete" << std::endl;
 }
 
-/*CGI*/
+// =============================================================================
+//                               CGI
+// =============================================================================
+
 bool CgiRequestHandler ::canProcess(const Request& request) const
 {
     return (request.getResource().find(".cgi") != std::string::npos);
