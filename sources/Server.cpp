@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/27 07:12:37 by axel             ###   ########.fr       */
+/*   Updated: 2024/05/27 09:08:08 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,20 +16,19 @@
 #include "../includes/Request.hpp"
 #include "../includes/Response.hpp"
 #include "../includes/utils.hpp"
+#include <csignal>
 #include <cstddef>
-#include <ctime>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <string>
-#include <csignal>
-#include <csignal>
 
 bool stopFlag(false);
 
 void sigHandler(int signum)
 {
     if (signum == SIGINT)
-		stopFlag = true;
+        stopFlag = true;
 }
 
 Server ::Server(std::string config_file)
@@ -37,16 +36,16 @@ Server ::Server(std::string config_file)
     Config::parseFile(config_file);
     Log::setLoglevel(INFO);
     Log::clearScreen();
-	std::signal(SIGINT, sigHandler);
+    std::signal(SIGINT, sigHandler);
 }
 
 Server ::~Server()
 {
     for (size_t i = 0; i < _fds.size(); i++)
-	{
+    {
         close(_fds[i].fd);
-	}
-	Log::log(INFO, "Server shutting down");
+    }
+    Log::log(INFO, "Server shutting down");
 }
 
 void Server ::init()
@@ -153,34 +152,46 @@ void Server ::_serveClients(void)
         {
             char read_buffer[1024];
             RequestBuffer request_buffer;
-			clock_t	start = clock();
-			
-			//Read from client chunks. set a TIMEOUT for long request.
+            clock_t start = clock();
+
+            // Read from client chunks. set a TIMEOUT for long request.
             while (!request_buffer.isRequestOver())
             {
-				clock_t curr = clock();
-				double elapsed = static_cast<double>(curr - start) / CLOCKS_PER_SEC;
-				if (elapsed > SERVER_TIMEOUT)
-					break ;
+                clock_t curr = clock();
+                double elapsed =
+                    static_cast<double>(curr - start) / CLOCKS_PER_SEC;
+                if (elapsed > SERVER_TIMEOUT)
+                    break;
 
-				std::memset(read_buffer, 0, sizeof(read_buffer));
+                std::memset(read_buffer, 0, sizeof(read_buffer));
                 ssize_t n = _readFd(i, read_buffer, sizeof(read_buffer));
                 if (n < 0)
                     continue;
-				request_buffer.appendBuffer(read_buffer, n);
+                request_buffer.appendBuffer(read_buffer, n);
             }
 
-			Request request(request_buffer.getBuffer());
-			Log::logRequest(request);
-			Log::log(DEBUG, request_buffer.getBuffer());
-			Response response(request);
+            // Mozilla uses autocompletion and prefetching. sometimes it will
+            // send an empty request before the user even pressed enter to send
+            // the request
+            if (request_buffer.getBuffer().empty())
+            {
+                close(_fds[i].fd);
+                _fds.erase(_fds.begin() + i);
+                continue;
+            }
 
-			send(_fds[i].fd, response.getHeaders().c_str(),
-					response.getHeaders().size(), 0);
-			send(_fds[i].fd, response.getBody().c_str(),
-					response.getBody().size(), 0);
-			close(_fds[i].fd);
-			_fds.erase(_fds.begin() + i);
+			//TODO: Try catch here?
+            Request request(request_buffer.getBuffer());
+            Log::logRequest(request);
+            Log::log(DEBUG, request_buffer.getBuffer());
+            Response response(request);
+
+            send(_fds[i].fd, response.getHeaders().c_str(),
+                 response.getHeaders().size(), 0);
+            send(_fds[i].fd, response.getBody().c_str(),
+                 response.getBody().size(), 0);
+            close(_fds[i].fd);
+            _fds.erase(_fds.begin() + i);
         }
     }
 }

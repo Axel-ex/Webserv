@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:11:30 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 18:28:36 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/27 09:18:42 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,7 +89,10 @@ void Log::_logDebug(const std::string& msg) const
 
 void Log ::logRequest(const Request& request)
 {
-    size_t host_pos = request.getHeaders().find("Host: ") + 6;
+    size_t host_pos = request.getHeaders().find("Host: ");
+	if (host_pos == std::string::npos)
+		return Log::log(WARNING, "bad request format, couldn't find the host");
+	host_pos += 6; //move past the "Host: "
     size_t return_pos = request.getHeaders().find('\r', host_pos);
     std::string host =
         request.getHeaders().substr(host_pos, return_pos - host_pos);
@@ -115,7 +118,7 @@ void Log ::_printTimeStamp(void)
 
 std::string Log::_formatField(std::string field)
 {
-    for (int i = field.size(); i < 10; i++)
+    for (int i = field.size(); i < OUTPUT_OFFSET; i++)
         field += " ";
     return field;
 }

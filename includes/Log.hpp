@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:08:45 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 18:08:13 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/27 08:54:49 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,8 @@
 #define GREY "\033[90m"
 #define RESET "\033[0m"
 #define CLEAR "\033[2J\033[H"
+
+#define OUTPUT_OFFSET 12
 
 typedef enum s_log_level
 {

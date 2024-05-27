@@ -1,5 +1,78 @@
-## Usefull info 
-I applied a chain of responsability pattern for the handling of the request. when we build a Response from a Request, we set a chain of handlers by connceting them together and we pass the request to the first one:
+## Usefull info
+
+
+#### log
+In our logging system, we establish an internal state at the initiation of the program within the Server constructor. This internal state governs the verbosity of our logging output by allowing us to define a log level. The log levels are organized in a hierarchical structure, wherein setting a specific log level not only enables logging at that level but also includes all levels beneath it in the hierarchy.
+
+```cpp
+typedef enum s_log_level
+{
+    ERROR,
+    WARNING,
+    INFO,
+    DEBUG,
+} e_log_level;
+
+Server ::Server(std::string config_file)
+{
+    Config::parseFile(config_file);
+    Log::setLoglevel(INFO);
+    Log::clearScreen();
+    std::signal(SIGINT, sigHandler);
+}
+
+```
+For instance, if we set our log level to 'INFO', all logging operations with a severity level of 'INFO' or higher will be executed, including 'ERROR' and 'WARNING'. Conversely, if we set our log level to 'DEBUG', all logging operations, regardless of severity, will be executed. ERROR = only error message will be printed.
+
+The log also contains static operations to log specific object (logRequest) or to print and format our output in specific way for the display of infos to be esthetic
+
+#### RequestBuffer
+Since a request can be heavy and we are using a fixed sized buffer to receive it, the are chances the request will not be complete in a single read call. I added a RequestBuffer class (in Request.hpp) which keeps track of what it has receive so far by calculating the length of the request body and comparing it with how many byte it received so far. If the two values match it will set it's internal flag "_request_over" to true.
+
+```cpp
+class RequestBuffer
+{
+    public:
+        RequestBuffer(void);
+        ~RequestBuffer(void);
+
+		bool isRequestOver(void) const;
+		void appendBuffer(const std::string &buffer, size_t size);
+		std::string &getBuffer(void);
+
+		size_t getContentLength(void) const;
+		size_t getCurrentLength(void) const;
+
+    private:
+        std::string _buffer;
+        size_t _content_length;
+        size_t _current_length;
+		bool _request_over;
+
+		void _getContentLength(void);
+};
+```
+in the server loop to serve client, we will loop on the request until we receive it entirely. We also set a TIMEOUT not to stay eternally in this loop if anything wrong happens:
+
+```cpp
+// Read from client chunks. set a TIMEOUT for long request.
+while (!request_buffer.isRequestOver())
+{
+	clock_t curr = clock();
+	double elapsed =
+		static_cast<double>(curr - start) / CLOCKS_PER_SEC;
+	if (elapsed > SERVER_TIMEOUT)
+		break;
+
+	std::memset(read_buffer, 0, sizeof(read_buffer));
+	ssize_t n = _readFd(i, read_buffer, sizeof(read_buffer));
+	if (n < 0)
+		continue;
+	request_buffer.appendBuffer(read_buffer, n);
+}
+```
+#### Request handlers
+I applied a chain of responsability pattern for the handling of the request. when we build a Response from a Request, we set a chain of handlers by connecting them together and we pass the request and the reponse to the first one:
 
 ```cpp
 Response ::Response(const Request& request)
@@ -22,7 +95,7 @@ Response ::Response(const Request& request)
 }
 
 ```
-the handlers are linked together and if there are not able to process the request, they will pass it on to the next handler. If none of the handlers was able to handle the request, a BAD_REQUEST response is send:
+the handlers are linked together and are responseible for building the response. If the handler receving the request is not able to process the request, it will pass it on to the next handler. If none of the handlers was able to handle the request, a BAD_REQUEST response is send:
 
 ```cpp
 void ARequestHandler ::handleRequest(const Request& request, Response& response)
@@ -37,7 +110,17 @@ void ARequestHandler ::handleRequest(const Request& request, Response& response)
     else
         createErrorResponse(BAD_REQUEST, response);
 }
+
 ```
+We now if needed can add handlers easily without having to modify the code and our code adhers to the single responsability principle.
+## TODO
+- parsing config file into the config
+- handling cgi
+- handling DELETE request
+- Check if we need to handle POST when its not send as multipart/form-data
+- think about how we could have some JS in our html templates to navigate through hyperlinks / delete file through a GUI.
+- maybe there's a smart way to create OK/Error response using only one html template that we could modify to insert error code, reason and personalised msg
+
 
 ## Compilation
 

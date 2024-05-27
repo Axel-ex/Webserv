@@ -16,7 +16,7 @@
 #include <cstdlib>
 
 RequestBuffer ::RequestBuffer(void)
-    : _content_length(0), _current_length(0), _connection_over(false){};
+    : _content_length(0), _current_length(0), _request_over(false){};
 
 RequestBuffer ::~RequestBuffer(void) {}
 
@@ -26,7 +26,7 @@ size_t RequestBuffer::getContentLength(void) const { return (_content_length); }
 
 size_t RequestBuffer::getCurrentLength(void) const { return (_current_length); }
 
-bool RequestBuffer ::isRequestOver(void) const { return (_connection_over); }
+bool RequestBuffer ::isRequestOver(void) const { return (_request_over); }
 
 void RequestBuffer ::appendBuffer(const std::string& buffer, size_t size)
 {
@@ -42,7 +42,7 @@ void RequestBuffer::_getContentLength(void)
     {
         size_t found = _buffer.find(to_find);
         if (found == std::string::npos)
-            _connection_over = true;
+            _request_over = true;
         else
         {
             std::string::iterator it =
@@ -58,7 +58,7 @@ void RequestBuffer::_getContentLength(void)
     }
 
     // return if no body
-    if (_connection_over)
+    if (_request_over)
         return;
     // current size
     size_t found = _buffer.find("\r\n\r\n");
@@ -68,5 +68,5 @@ void RequestBuffer::_getContentLength(void)
 	_current_length = std::distance(it, _buffer.end());
 
     if (_content_length == _current_length)
-        _connection_over = true;
+        _request_over = true;
 }

@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/27 07:19:13 by axel             ###   ########.fr       */
+/*   Updated: 2024/05/27 09:18:26 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,6 @@
 // =============================================================================
 //                               ABSTRACT HANDLER
 // =============================================================================
-
 ARequestHandler ::ARequestHandler(void) : _next(NULL) {}
 
 ARequestHandler ::~ARequestHandler(void) {}
@@ -82,7 +81,6 @@ void ARequestHandler ::createErrorResponse(int error_code,
 // =============================================================================
 //                               GET
 // =============================================================================
-
 bool GetRequestHandler ::_canProcess(const Request& request) const
 {
     return (request.getMethod() == "GET" &&
@@ -108,7 +106,9 @@ void GetRequestHandler ::processRequest(const Request& request,
     response.setHeaders(headers);
 }
 
-/* POST*/
+// =============================================================================
+//                               POST
+// =============================================================================
 bool PostRequestHandler ::_canProcess(const Request& request) const
 {
     return (request.getMethod() == "POST" &&
@@ -181,10 +181,6 @@ void PostRequestHandler ::_createDir(std::string dir_name) const
 void PostRequestHandler::processRequest(const Request& request,
                                         Response& response) const
 {
-    std::string body = request.getBody();
-
-    (void)response;
-
     std::string boundary = _getBoundary(request.getHeaders());
     if (boundary.empty())
     {
@@ -214,7 +210,6 @@ void PostRequestHandler::processRequest(const Request& request,
 // =============================================================================
 //                               DELETE
 // =============================================================================
-
 bool DeleteRequestHandler ::_canProcess(const Request& request) const
 {
     return (request.getMethod() == "DELETE");
@@ -231,7 +226,6 @@ void DeleteRequestHandler ::processRequest(const Request& request,
 // =============================================================================
 //                               CGI
 // =============================================================================
-
 bool CgiRequestHandler ::_canProcess(const Request& request) const
 {
     return (request.getResource().find(".cgi") != std::string::npos);

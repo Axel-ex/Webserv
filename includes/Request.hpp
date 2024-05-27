@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 14:28:23 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 14:28:03 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/27 09:44:50 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,7 +52,7 @@ class RequestBuffer
         std::string _buffer;
         size_t _content_length;
         size_t _current_length;
-		bool _connection_over;
+		bool _request_over;
 
 		void _getContentLength(void);
 };
