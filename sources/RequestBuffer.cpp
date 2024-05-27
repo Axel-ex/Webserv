@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/24 10:31:17 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 14:28:20 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/27 06:32:45 by axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,7 +53,7 @@ void RequestBuffer::_getContentLength(void)
                 length += *it;
                 it++;
             }
-            _content_length = std::stoi(length);
+            _content_length = std::atoi(length.c_str());
         }
     }
 

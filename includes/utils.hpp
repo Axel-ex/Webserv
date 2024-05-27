@@ -6,14 +6,13 @@
 /*   By: achabrer <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/05/26 10:15:59 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/27 06:28:32 by axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef UTILS_HPP_
 #define UTILS_HPP_
 
-#include <atomic>
 #include <string>
 #include <sstream>
 
@@ -25,7 +24,7 @@ std::string toString(T val)
     return stream.str();
 }
 
-extern std::atomic<bool> stopFlag;
+extern bool stopFlag;
 void sigHandler(int signum);
 
 #endif  // UTILS_HPP_

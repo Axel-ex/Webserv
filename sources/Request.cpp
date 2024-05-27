@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/14 09:28:18 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 14:40:50 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/27 06:37:28 by axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,16 +26,15 @@ Request::Request(std::string buffer)
 
     // Parse the headers
     while (std::getline(stream, line) && line != "\r") {
-        if (!line.empty() && line.back() == '\r') {
-            line.pop_back();
+        if (!line.empty() && line[line.size() - 1] == '\r') { // Check and remove trailing '\r'
+            line.erase(line.size() - 1);
         }
         _headers += line + "\r\n";
     }
 
-    // Remove the extra "\r\n" added at the end
+    // Remove the extra "\r\n" added at the end of headers
     if (!_headers.empty() && _headers.size() >= 2) {
-        _headers.pop_back();
-        _headers.pop_back();
+        _headers.erase(_headers.size() - 2);
     }
 
     // Parse the body

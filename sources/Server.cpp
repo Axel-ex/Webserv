@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 18:26:33 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/27 06:28:02 by axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,10 +22,9 @@
 #include <cstdlib>
 #include <string>
 #include <csignal>
-#include <atomic>
 #include <csignal>
 
-std::atomic<bool> stopFlag(false);
+bool stopFlag(false);
 
 void sigHandler(int signum)
 {
@@ -44,7 +43,9 @@ Server ::Server(std::string config_file)
 Server ::~Server()
 {
     for (size_t i = 0; i < _fds.size(); i++)
+	{
         close(_fds[i].fd);
+	}
 	Log::log(INFO, "Server shutting down");
 }
 

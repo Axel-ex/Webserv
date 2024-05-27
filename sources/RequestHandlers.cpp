@@ -6,13 +6,14 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 18:36:57 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/27 06:47:19 by axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/RequestHandlers.hpp"
 #include "../includes/Config.hpp"
 #include "../includes/Log.hpp"
+#include "../includes/utils.hpp"
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -24,7 +25,7 @@
 //                               ABSTRACT HANDLER
 // =============================================================================
 
-ARequestHandler ::ARequestHandler(void) : _next(nullptr) {}
+ARequestHandler ::ARequestHandler(void) : _next(NULL) {}
 
 ARequestHandler ::~ARequestHandler(void) {}
 
@@ -54,7 +55,7 @@ void ARequestHandler::createOkResponse(std::string resource,
     headers = "HTTP/1.1 200 OK\r\n";
     headers += "Content-Type: text/html\r\n";
     headers +=
-        "Content-Length: " + std::to_string(response.getBody().length()) +
+        "Content-Length: " + toString(response.getBody().length()) +
         "\r\n\r\n";
     response.setHeaders(headers);
 }
@@ -69,10 +70,10 @@ void ARequestHandler ::createErrorResponse(int error_code,
     it = Config::getErrors().find(error_code);
 
     response.setBody(it->second.body);
-    headers = "HTTP/1.1 " + std::to_string(error_code) + " " +
+    headers = "HTTP/1.1 " + toString(error_code) + " " +
               it->second.reason + "\r\n";
     headers += "Content-Type: text/html\r\n";
-    headers += "Content-Length: " + std::to_string(it->second.body.length()) +
+    headers += "Content-Length: " + toString(it->second.body.length()) +
                "\r\n\r\n";
     response.setHeaders(headers);
 }
@@ -102,7 +103,7 @@ void GetRequestHandler ::processRequest(const Request& request,
     headers = "HTTP/1.1 200 OK\r\n";
     headers += "Content-Type: text/html\r\n";
     headers +=
-        "Content-Length: " + std::to_string(response.getBody().length()) +
+        "Content-Length: " + toString(response.getBody().length()) +
         "\r\n\r\n";
     response.setHeaders(headers);
 }
@@ -201,7 +202,8 @@ void PostRequestHandler::processRequest(const Request& request,
 
     // Write the file content to the file
     _createDir("uploads");
-    std::ofstream ofs("uploads/" + file_name,
+	file_name = file_name + "uploads/";
+    std::ofstream ofs(file_name.c_str(),
                       std::ios_base::out | std::ios_base::trunc);
     if (!ofs)
         return (Log::log(WARNING, "Couldn't write to file"));
