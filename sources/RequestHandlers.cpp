@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/27 06:47:19 by axel             ###   ########.fr       */
+/*   Updated: 2024/05/27 07:19:13 by axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -202,7 +202,7 @@ void PostRequestHandler::processRequest(const Request& request,
 
     // Write the file content to the file
     _createDir("uploads");
-	file_name = file_name + "uploads/";
+	file_name = "uploads/" + file_name;
     std::ofstream ofs(file_name.c_str(),
                       std::ios_base::out | std::ios_base::trunc);
     if (!ofs)
