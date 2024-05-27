@@ -113,6 +113,11 @@ void ARequestHandler ::handleRequest(const Request& request, Response& response)
 
 ```
 We now if needed can add handlers easily without having to modify the code and our code adhers to the single responsability principle.
+
+## AND SO?
+Now we can navigate to localhost:port_nb/form2 and choose a file to upload. it works well except when file don't have extension / compressed files. a file can be posted with different type of format, i am handeling the case of multipart/form-data so it fails handeling anything else. for instance "/form" will send POST request encoded in an other format so the server will respond to you that it failed pasring the request.
+so we can basically request 3 resources so far ("/", "/form", "form2") and post through /form2 anyfile with valid extensions.
+
 ## TODO
 - parsing config file into the config
 - handling cgi
