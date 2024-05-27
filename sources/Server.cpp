@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/27 06:28:02 by axel             ###   ########.fr       */
+/*   Updated: 2024/05/27 07:12:37 by axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,7 +100,7 @@ void Server ::start(void)
     while (!stopFlag)
     {
         /* Check for any change in our file descriptors */
-        int activity = poll(_fds.data(), MAX_CLIENT, 1000);
+        int activity = poll(_fds.data(), _fds.size(), 1000);
         if (activity < 0 && !stopFlag)
             throw ServerError("Error in poll");
 
