@@ -2,7 +2,7 @@
 
 
 #### log
-In our logging system, we establish an internal state at the initiation of the program within the Server constructor. This internal state governs the verbosity of our logging output by allowing us to define a log level. The log levels are organized in a hierarchical structure, wherein setting a specific log level not only enables logging at that level but also includes all levels beneath it in the hierarchy.
+In our logging system, we establish an internal state at the start of the program within the Server constructor. This internal state governs the verbosity of our logging output by allowing us to define a log level. The log levels are organized in a hierarchical structure, where setting a specific log level enables logging at that level and also includes all levels beneath it in the hierarchy.
 
 ```cpp
 typedef enum s_log_level
