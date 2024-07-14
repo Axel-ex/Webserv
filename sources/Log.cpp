@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:11:30 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/27 09:18:42 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/14 08:57:46 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ Log& Log::getInstance()
     return (instance);
 }
 
-void Log::setLoglevel(s_log_level level) { getInstance()._log_level = level; }
+void Log::setLogLevel(s_log_level level) { getInstance()._log_level = level; }
 
 void Log::clearScreen(void) { std::cout << CLEAR; }
 

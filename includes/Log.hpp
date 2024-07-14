@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:08:45 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/27 08:54:49 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/14 08:57:22 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ class Log
         static Log& getInstance(void);
         ~Log(void);
 
-        static void setLoglevel(e_log_level level);
+        static void setLogLevel(e_log_level level);
         static void log(e_log_level level, const std::string& msg);
 
 		static void logRequest(const Request &request);

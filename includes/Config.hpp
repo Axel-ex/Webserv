@@ -6,12 +6,12 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:13:18 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/17 11:31:55 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/14 09:13:54 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef INCLUDE_INCLUDES_CONFIG_HPP_
-#define INCLUDE_INCLUDES_CONFIG_HPP_
+#ifndef CONFIG_HPP_
+#define CONFIG_HPP_
 
 #include <map>
 #include <string>
@@ -43,4 +43,4 @@ class Config
         std::map<int, t_error> _errors;
 };
 
-#endif // INCLUDE_INCLUDES_CONFIG_HPP_
+#endif

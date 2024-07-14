@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 14:28:23 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/27 09:44:50 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/14 10:56:05 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,9 @@ class RequestBuffer
         size_t _current_length;
 		bool _request_over;
 
-		void _getContentLength(void);
+		void _findContentLength(void);
+		void _setContentLength(void);
+		void _setRequestOver(void);
 };
 
 #endif // INCLUDE_INCLUDES_REQUEST_HPP_
