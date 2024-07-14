@@ -14,14 +14,16 @@ set(inc_dir includes/)
 
 set(srcs 
 	${src_dir}Server.cpp
-	${src_dir}Config.cpp
 	${src_dir}Log.cpp
+	${src_dir}Config.cpp
+	${src_dir}RequestBuffer.cpp
 	${src_dir}Request.cpp
 	${src_dir}RequestHandlers.cpp
 	${src_dir}Response.cpp
 	${src_dir}main.cpp)
 
 set(headers
+	${inc_dir}utils.hpp
 	${inc_dir}Server.hpp
 	${inc_dir}Log.hpp
 	${inc_dir}Config.hpp

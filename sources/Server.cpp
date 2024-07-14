@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/18 14:06:42 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/14 11:12:11 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,20 +15,37 @@
 #include "../includes/Log.hpp"
 #include "../includes/Request.hpp"
 #include "../includes/Response.hpp"
+#include "../includes/utils.hpp"
+#include <csignal>
 #include <cstddef>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <string>
+
+bool stopFlag(false);
+
+void sigHandler(int signum)
+{
+    if (signum == SIGINT)
+        stopFlag = true;
+}
 
 Server ::Server(std::string config_file)
 {
     Config::parseFile(config_file);
-    Log::setLoglevel(DEBUG);
+    Log::setLogLevel(DEBUG);
     Log::clearScreen();
+    std::signal(SIGINT, sigHandler);
 }
 
 Server ::~Server()
 {
     for (size_t i = 0; i < _fds.size(); i++)
+    {
         close(_fds[i].fd);
+    }
+    Log::log(INFO, "Server shutting down");
 }
 
 void Server ::init()
@@ -73,17 +90,17 @@ void Server ::init()
 
     std::string port_info = "server listening on ports:";
     for (size_t i = 0; i < Config::getPorts().size(); i++)
-        port_info += " " + std::to_string(Config::getPorts()[i]);
+        port_info += " " + toString(Config::getPorts()[i]);
     Log::log(INFO, port_info);
 }
 
 void Server ::start(void)
 {
-    while (true)
+    while (!stopFlag)
     {
         /* Check for any change in our file descriptors */
-        int activity = poll(_fds.data(), MAX_CLIENT, -1);
-        if (activity < 0)
+        int activity = poll(_fds.data(), _fds.size(), 1000);
+        if (activity < 0 && !stopFlag)
             throw ServerError("Error in poll");
 
         _acceptIncomingConnections();
@@ -101,7 +118,7 @@ void Server ::_acceptIncomingConnections(void)
         if ((_fds[i].revents & POLLIN))
         {
             int newfd = accept(_fds[i].fd, NULL, NULL);
-            if (newfd < 0)
+            if (newfd < 0 && !stopFlag)
                 throw ServerError("Error accepting connection");
 
             t_pollfd new_pollfd;
@@ -113,30 +130,62 @@ void Server ::_acceptIncomingConnections(void)
     }
 }
 
+ssize_t Server ::_readFd(int fd_index, char* buffer, size_t buffer_size)
+{
+    ssize_t n = recv(_fds[fd_index].fd, buffer, buffer_size, 0);
+    if (n < 0)
+    {
+        close(_fds[fd_index].fd);
+        _fds.erase(_fds.begin() + fd_index);
+        Log::log(ERROR, "reading client request");
+    }
+    return (n);
+}
+
 void Server ::_serveClients(void)
 {
-    /*listen for client events, skip the first fds that are for the server sockets
-     */
+    /*listen for client events, skip the first fds that are for the server
+     * sockets */
     for (size_t i = Config::getPorts().size(); i < _fds.size(); ++i)
     {
         if (_fds[i].revents & POLLIN)
         {
-            char buffer[1024];
+            char read_buffer[1024];
+            RequestBuffer request_buffer;
+            clock_t start = clock();
 
-            std::memset(buffer, 0, sizeof(buffer));
-            ssize_t n = recv(_fds[i].fd, buffer, sizeof(buffer), 0);
-            if (n < 0)
+            // Read from client chunks. set a TIMEOUT for long request.
+            while (!request_buffer.isRequestOver())
+            {
+                clock_t curr = clock();
+                double elapsed =
+                    static_cast<double>(curr - start) / CLOCKS_PER_SEC;
+                if (elapsed > SERVER_TIMEOUT)
+                    break;
+
+                std::memset(read_buffer, 0, sizeof(read_buffer));
+                ssize_t n = _readFd(i, read_buffer, sizeof(read_buffer));
+                if (n < 0)
+                    continue;
+                request_buffer.appendBuffer(read_buffer, n);
+            }
+
+            // Mozilla uses autocompletion and prefetching. sometimes it will
+            // send an empty request before the user even pressed enter to send
+            // the request
+            if (request_buffer.getBuffer().empty())
             {
                 close(_fds[i].fd);
                 _fds.erase(_fds.begin() + i);
-                Log::log(ERROR, "reading client request");
                 continue;
             }
 
-            Request request(buffer);
+			//TODO: Try catch here?
+            Request request(request_buffer.getBuffer());
+            Log::logRequest(request);
+            Log::log(DEBUG, request_buffer.getBuffer());
             Response response(request);
 
-            Log::log(DEBUG, buffer);
             send(_fds[i].fd, response.getHeaders().c_str(),
                  response.getHeaders().size(), 0);
             send(_fds[i].fd, response.getBody().c_str(),

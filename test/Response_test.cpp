@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/17 10:11:03 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/17 11:37:52 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/24 17:48:22 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 #include <sstream>
 #include <string>
 
-TEST(Response, simple_valid)
+TEST(GETResponse, simple_valid)
 {
 	std::string buff("GET / HTTP/1.1\r\nHost: whatever\r\nAccept:whatever\r\ncontent-length: 40");
 	Request request(buff);
@@ -29,7 +29,7 @@ TEST(Response, simple_valid)
 	ASSERT_EQ(status_line, "HTTP/1.1 200 OK\r");
 }
 
-TEST(Response, invalid_resource)
+TEST(GETResponse, invalid_resource)
 {
 	std::string buff("GET /not_exist HTTP/1.1\r\nHost: whatever\r\nAccept:whatever\r\ncontent-length: 40");
 	Request request(buff);
@@ -42,7 +42,7 @@ TEST(Response, invalid_resource)
 	ASSERT_EQ(status_line, "HTTP/1.1 404 Not Found\r");
 }
 
-TEST(Response, invalid_protocol)
+TEST(GETResponse, invalid_protocol)
 {
 	std::string buff("GET / HTTP/2.1\r\nHost: whatever\r\nAccept:whatever\r\ncontent-length: 40");
 	Request request(buff);

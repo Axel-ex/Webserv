@@ -1,2 +1,7 @@
 *.log
 build/
+.DS_Store
+*.csv
+*.txt
+uploads/
+.cache

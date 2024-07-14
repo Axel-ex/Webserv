@@ -6,12 +6,11 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:17:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/18 10:24:16 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/27 08:49:45 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Config.hpp"
-#include "../includes/Log.hpp"
 #include "../includes/Response.hpp"
 #include <fstream>
 #include <iostream>
@@ -30,6 +29,7 @@ Config& Config::getInstance(void)
 
 Config ::~Config(void) {}
 
+
 void Config ::parseFile(std::string file)
 {
     (void)file;
@@ -40,11 +40,11 @@ void Config ::parseFile(std::string file)
 
     /* load errors provided into the conf file*/
     /* if not provided load the rest or the errors supported by our server*/
-    getInstance()._errors[404] =
+    getInstance()._errors[NOT_FOUND] =
         (t_error){"Not Found", "<h1>404 Not Found</h1>"};
     getInstance()._errors[500] = (t_error){
         "Internal Server Error", "<h1>500 Internal Server Error</h1>"};
-    getInstance()._errors[400] =
+    getInstance()._errors[BAD_REQUEST] =
         (t_error){"Bad Request",
                   "<h1>400 Bad Request</h1><p>The server could not understand "
                   "the request due to invalid syntax.</p>"};
@@ -58,6 +58,26 @@ void Config ::parseFile(std::string file)
     std::stringstream buff;
     buff << ifs.rdbuf();
     getInstance()._resources.insert(std::make_pair("/form", buff.str()));
+	
+	ifs.close();
+	ifs.clear();
+	ifs.open("resources/form2.html");
+	if (!ifs)
+		throw std::runtime_error("Couldn't open the file");
+	buff.clear();
+	buff.str("");
+	buff << ifs.rdbuf();
+	getInstance()._resources.insert(std::make_pair("/form2", buff.str()));
+
+	ifs.close();
+	ifs.clear();
+	ifs.open("resources/okresponse.html");
+	if (!ifs)
+		throw std::runtime_error("Couldn't open the file");
+	buff.clear();
+	buff.str("");
+	buff << ifs.rdbuf();
+	getInstance()._resources.insert(std::make_pair("posted", buff.str()));
 }
 
 std::vector<int>& Config::getPorts(void) { return (getInstance()._ports); }

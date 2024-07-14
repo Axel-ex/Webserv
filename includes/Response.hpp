@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 14:43:01 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/20 10:49:08 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/24 20:54:54 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,8 @@
 #define DUMMY_RESPONSE                                                         \
     "<!DOCTYPE html><html><head><title>Test "                                  \
     "Page</title></head><body><h1>Hello, World!</h1></body></html>"
+#define BAD_REQUEST 400
+#define NOT_FOUND 404
 
 class Response
 {

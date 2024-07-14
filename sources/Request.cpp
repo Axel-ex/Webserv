@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/14 09:28:18 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/14 11:58:27 by Axel             ###   ########.fr       */
+/*   Updated: 2024/05/27 06:37:28 by axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,21 +14,33 @@
 #include <sstream>
 #include <string>
 
-Request :: Request(std::string buffer)
+Request::Request(std::string buffer)
 {
-	std::stringstream stream(buffer);
-	std::string line;
+    std::stringstream stream(buffer);
+    std::string line;
 
-	stream >> _method >> _resource >> _protocol;
+    // Parse the request line
+    std::getline(stream, line);
+    std::istringstream request_line(line);
+    request_line >> _method >> _resource >> _protocol;
 
-	while (std::getline(stream, line) && !line.empty())
-		_headers += line + "\n";
-	if (!_headers.empty() && _headers.back() == '\n')
-		_headers.pop_back();
-	
-	std::stringstream body_stream;
-	body_stream << stream.rdbuf();
-	_body = body_stream.str();
+    // Parse the headers
+    while (std::getline(stream, line) && line != "\r") {
+        if (!line.empty() && line[line.size() - 1] == '\r') { // Check and remove trailing '\r'
+            line.erase(line.size() - 1);
+        }
+        _headers += line + "\r\n";
+    }
+
+    // Remove the extra "\r\n" added at the end of headers
+    if (!_headers.empty() && _headers.size() >= 2) {
+        _headers.erase(_headers.size() - 2);
+    }
+
+    // Parse the body
+    std::stringstream body_stream;
+    body_stream << stream.rdbuf();
+    _body = body_stream.str();
 }
 
 Request :: ~Request(void){}
