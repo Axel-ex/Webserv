@@ -6,16 +6,18 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 20:08:09 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 11:20:06 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/16 14:32:46 by achabrer         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Log.hpp"
 #include "../includes/Server.hpp"
+#include "../includes/utils.hpp"
 #include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <iostream>
+#include <csignal>
 
 /*TODO: The program should be able to run without argument on a default config
  * file*/
@@ -28,6 +30,8 @@ void printUsage(void)
 
 int main(int argc, char** argv)
 {
+	std::signal(SIGPIPE, SIG_IGN);
+    std::signal(SIGINT, sigHandler);
 
     if (argc < 2)
         printUsage();

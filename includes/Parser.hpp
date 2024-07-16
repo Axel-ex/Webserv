@@ -1,31 +1,38 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   utils.hpp                                          :+:      :+:    :+:   */
+/*   Parser.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: achabrer <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/07/16 14:16:40 by achabrer         ###   ########.fr       */
+/*   Created: 2024/07/16 10:11:15 by achabrer          #+#    #+#             */
+/*   Updated: 2024/07/16 12:47:02 by achabrer         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef UTILS_HPP_
-#define UTILS_HPP_
-
+#include <iostream>
+#include <list>
 #include <string>
-#include <sstream>
 
-template <typename T>
-std::string toString(T val)
+enum token_type
 {
-    std::stringstream stream;
-    stream << val;
-    return stream.str();
-}
+    SEMICOLON,
+    CURLY_BRACKET,
+    DIRECTIVE,
+};
 
-extern bool stopFlag;
-void sigHandler(int signum);
-void sigHandler2(int signum);
+struct token
+{
+        token_type type;
+        std::string content;
+};
 
-#endif  // UTILS_HPP_
+class Parser
+{
+    public:
+        Parser(const std::string& config_file);
+        ~Parser();
+
+    private:
+        std::list<token> token_list;
+};

@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/14 11:12:11 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/16 14:19:39 by achabrer         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ Server ::Server(std::string config_file)
     Log::setLogLevel(DEBUG);
     Log::clearScreen();
     std::signal(SIGINT, sigHandler);
+	std::signal(SIGPIPE, SIG_IGN);
 }
 
 Server ::~Server()
@@ -195,3 +196,4 @@ void Server ::_serveClients(void)
         }
     }
 }
+
