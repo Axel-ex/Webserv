@@ -6,13 +6,14 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 20:08:09 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/16 14:32:46 by achabrer         ###   ########.fr       */
+/*   Updated: 2024/07/18 11:09:30 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Log.hpp"
 #include "../includes/Server.hpp"
 #include "../includes/utils.hpp"
+#include "../includes/Parser.hpp"
 #include <cstdlib>
 #include <cstring>
 #include <exception>
@@ -37,8 +38,10 @@ int main(int argc, char** argv)
         printUsage();
     try
     {
+		Parser parser;
         Server server(argv[1]);
-
+		
+		parser.parse(argv[1]);
         server.init();
         server.start();
     }

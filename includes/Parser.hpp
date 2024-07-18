@@ -6,40 +6,52 @@
 /*   By: achabrer <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/16 10:11:15 by achabrer          #+#    #+#             */
-/*   Updated: 2024/07/18 09:06:48 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/18 11:14:41 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <fstream>
+#ifndef PARSER_HPP_
+#define PARSER_HPP_
+
+
+
 #include <list>
+#include <map>
 #include <sstream>
 #include <string>
-#include <strstream>
 
-enum token_type
+enum TokenType
 {
-    CURLY_BRACKET,
+    OPEN_BRACKET,
+    CLOSE_BRACKET,
+	SEMICOLON,
     SERVER,
     LOCATION,
     DIRECTIVE,
     ARGUMENT,
 };
 
-struct token
+struct Token
 {
-        token_type type;
+        TokenType type;
         std::string content;
 };
 
 class Parser
 {
     public:
-        Parser(const std::string& config_file);
+        Parser();
         ~Parser();
 
+        void parse(const std::string& config_file);
+
     private:
-        std::list<token> token_list;
+        std::map<std::string, TokenType> _token_definition;
+        std::list<Token> _token_list;
 
         std::stringstream _readFile(const std::string& config_file);
-        void _tokenize(std::stringstream& ifs);
+        void _tokenize(std::stringstream& file_content);
 };
+
+
+#endif  // PARSER_HPP_
