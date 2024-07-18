@@ -6,19 +6,23 @@
 /*   By: achabrer <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/16 10:11:15 by achabrer          #+#    #+#             */
-/*   Updated: 2024/07/16 12:47:02 by achabrer         ###   ########.fr       */
+/*   Updated: 2024/07/18 09:06:48 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <iostream>
+#include <fstream>
 #include <list>
+#include <sstream>
 #include <string>
+#include <strstream>
 
 enum token_type
 {
-    SEMICOLON,
     CURLY_BRACKET,
+    SERVER,
+    LOCATION,
     DIRECTIVE,
+    ARGUMENT,
 };
 
 struct token
@@ -35,4 +39,7 @@ class Parser
 
     private:
         std::list<token> token_list;
+
+        std::stringstream _readFile(const std::string& config_file);
+        void _tokenize(std::stringstream& ifs);
 };
