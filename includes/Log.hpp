@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:08:45 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/18 11:14:00 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/18 11:55:01 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,7 @@
 #define LOG_HPP_
 
 #include <string>
-#include <list>
 #include "../includes/Request.hpp"
-#include "../includes/Parser.hpp"
 
 #define RED "\033[31m"
 #define YELLOW "\033[33m"
@@ -46,7 +44,6 @@ class Log
 
 		static void logRequest(const Request &request);
 		static void clearScreen(void);
-		static void debugTokenList(const std::list<Token> &token_list);
 
 
     private:
@@ -60,7 +57,6 @@ class Log
 
 		static void _printTimeStamp(void);
 		static std::string _formatField(std::string field);
-		static std::string _tokenTypeToString(TokenType type);
 };
 
 #endif // LOG_HPP_

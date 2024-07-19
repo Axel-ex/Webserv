@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:11:30 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/18 11:13:49 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/18 11:54:47 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -122,39 +122,4 @@ std::string Log::_formatField(std::string field)
     for (int i = field.size(); i < OUTPUT_OFFSET; i++)
         field += " ";
     return field;
-}
-
-void Log ::debugTokenList(const std::list<Token>& token_list)
-{
-    std::list<Token>::const_iterator it;
-
-    for (it = token_list.begin(); it != token_list.end(); it++)
-    {
-        std::cout << "content: " << it->content << std::endl;
-        std::cout << "type: " << _tokenTypeToString(it->type) << std::endl;
-        std::cout << std::endl;
-    }
-}
-
-std::string Log::_tokenTypeToString(TokenType type)
-{
-    switch (type)
-    {
-    case OPEN_BRACKET:
-        return "OPEN_BRACKET";
-    case CLOSE_BRACKET:
-        return "CLOSE_BRACKET";
-    case SERVER:
-        return "SERVER";
-    case LOCATION:
-        return "LOCATION";
-    case DIRECTIVE:
-        return "DIRECTIVE";
-    case ARGUMENT:
-        return "ARGUMENT";
-    case SEMICOLON:
-        return "SEMICOLON";
-    default:
-        return "UNKNOWN";
-    }
 }
