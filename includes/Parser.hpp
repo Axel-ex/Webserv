@@ -6,7 +6,7 @@
 /*   By: achabrer <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/16 10:11:15 by achabrer          #+#    #+#             */
-/*   Updated: 2024/07/20 15:36:13 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/20 16:13:56 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,13 +14,11 @@
 #define PARSER_HPP_
 
 #include <exception>
-#include <iostream>
 #include <list>
 #include <map>
 #include <sstream>
 #include <string>
 #include <vector>
-#include "../includes/Request.hpp"
 
 enum TokenType
 {
@@ -56,30 +54,15 @@ class Parser
     public:
         Parser();
         ~Parser();
-
         void parse(const std::string& config_file);
 
         class SynthaxException : public std::exception
         {
 
             public:
-                SynthaxException(const Token& token, const std::string& reason)
-                    : _token(token), _reason(reason)
-                {
-                }
+                SynthaxException(const Token& token, const std::string& reason);
                 virtual ~SynthaxException() throw(){};
-
-                virtual const char* what() const throw()
-                {
-                    std::stringstream msg;
-                    msg << _reason << " line " << _token.line_nb << ": ";
-                    msg << "content: " << _token.content
-                        << ", type: " << _tokenTypeToString(_token.type)
-                        << std::endl;
-
-                    _msg = msg.str();
-                    return (_msg.c_str());
-                }
+                virtual const char* what() const throw();
 
             private:
                 Token _token;
@@ -99,6 +82,8 @@ class Parser
 		void _checkInvalidDirective(void) const;
 		void _parseServerDirective(std::list<Token>::iterator &it) const;
 		void _parseLocationDirective(std::list<Token>::iterator &it) const;
+
+		//Helper
 		bool _isHttpMethod(const std::string &method) const;
 		bool _isValidPort(int port, const std::vector<int> &ports) const;
 

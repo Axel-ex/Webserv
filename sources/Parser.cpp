@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/20 15:59:20 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/20 16:17:47 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,8 +142,7 @@ void Parser ::_parseTokenList(void)
         if (it->type == SERVER)
             _parseServerDirective(it);
         else
-            throw SynthaxException((Token){it->type, it->content, it->line_nb},
-                                   "Out of context directive");
+            throw SynthaxException(*it, "Out of context directive");
     }
 }
 
@@ -158,12 +157,11 @@ void Parser ::_matchBrackets(void) const
     for (it = _token_list.begin(); it != _token_list.end(); it++)
     {
         if (it->type == OPEN_BRACKET)
-            brackets.push((Token){OPEN_BRACKET, "{", it->line_nb});
+            brackets.push(*it);
         if (it->type == CLOSE_BRACKET)
         {
             if (brackets.empty())
-                throw SynthaxException((Token){CLOSE_BRACKET, "}", it->line_nb},
-                                       "Unmatched bracket");
+                throw SynthaxException(*it, "Unmatched bracket");
             brackets.pop();
         }
     }
@@ -188,8 +186,7 @@ void Parser ::_checkInvalidDirective(void) const
             break;
         if ((it->type == DIRECTIVE && next_it->type != ARGUMENT) ||
             (it->type == LOCATION && next_it->type != ARGUMENT))
-            throw SynthaxException((Token){it->type, it->content, it->line_nb},
-                                   "Directive with no arguments");
+            throw SynthaxException(*it, "Directive with no arguments");
     }
 }
 
@@ -218,9 +215,7 @@ void Parser ::_parseServerDirective(std::list<Token>::iterator& it) const
             {
                 int port_nb = std::atoi((it)->content.c_str());
                 if (!_isValidPort(port_nb, Config::getPorts()))
-                    throw SynthaxException(
-                        (Token){it->type, it->content, it->line_nb},
-                        "Invalid port number");
+                    throw SynthaxException(*it, "Invalid port number");
                 Config::setPort(port_nb);
             }
         }
@@ -231,8 +226,7 @@ void Parser ::_parseServerDirective(std::list<Token>::iterator& it) const
             Config::setMaxBodySize(body_size);
         }
         else
-            throw SynthaxException((Token){it->type, it->content, it->line_nb},
-                                   "Unrecognised directive");
+            throw SynthaxException(*it, "Unrecognised directive");
     }
 }
 
@@ -263,15 +257,12 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it) const
             while ((++it)->type == ARGUMENT)
             {
                 if (!_isHttpMethod(it->content))
-                    throw SynthaxException(
-                        (Token){it->type, it->content, it->line_nb},
-                        "Unrecognised method");
+                    throw SynthaxException(*it, "Unrecognised method");
                 route.methods.push_back(it->content);
             }
         }
         else
-            throw SynthaxException((Token){it->type, it->content, it->line_nb},
-                                   "Unrecognised directive");
+            throw SynthaxException(*it, "Unrecognised directive");
     }
     Config::setRoutes(route);
 }
@@ -335,4 +326,22 @@ std::string Parser ::_tokenTypeToString(TokenType type)
     default:
         return "UNKNOWN";
     }
+}
+
+// _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/ EXCEPTION \_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
+Parser ::SynthaxException::SynthaxException(const Token& token,
+                                            const std::string& reason)
+    : _token(token), _reason(reason)
+{
+}
+
+const char* Parser::SynthaxException::what() const throw()
+{
+    std::stringstream msg;
+    msg << _reason << " line " << _token.line_nb << ": ";
+    msg << "content: " << _token.content
+        << ", type: " << _tokenTypeToString(_token.type) << std::endl;
+
+    _msg = msg.str();
+    return (_msg.c_str());
 }
