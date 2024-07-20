@@ -6,12 +6,13 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/19 16:21:56 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/20 15:59:20 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Parser.hpp"
 #include "../includes/Config.hpp"
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -91,20 +92,7 @@ void Parser ::_tokenize(std::stringstream& file_content)
 
             new_token.content = word;
             new_token.line_nb = line_nb;
-            // look if word can be find in token _token_definition
-            std::map<std::string, TokenType>::iterator it =
-                _token_definition.find(word);
-            if (it != _token_definition.end())
-                new_token.type = it->second;
-            else
-            {
-                if (_token_list.back().type == SEMICOLON ||
-                    _token_list.back().type == OPEN_BRACKET ||
-                    _token_list.back().type == CLOSE_BRACKET)
-                    new_token.type = DIRECTIVE;
-                else
-                    new_token.type = ARGUMENT;
-            }
+            _setTokenType(new_token);
             _token_list.push_back(new_token);
 
             // If semicolon is found at the end of the token we just inserted,
@@ -115,6 +103,30 @@ void Parser ::_tokenize(std::stringstream& file_content)
                 _token_list.push_back((Token){SEMICOLON, ";", line_nb});
             }
         }
+    }
+}
+
+/**
+ * @brief Check if the token content matches any of the known content from
+ * _token_defintion. If not it is either a directive or an argument. a directive
+ * always follows a semicolon or a bracket.
+ *
+ * @param token
+ */
+void Parser ::_setTokenType(Token& token)
+{
+    std::map<std::string, TokenType>::iterator it =
+        _token_definition.find(token.content);
+    if (it != _token_definition.end())
+        token.type = it->second;
+    else
+    {
+        if (_token_list.back().type == SEMICOLON ||
+            _token_list.back().type == OPEN_BRACKET ||
+            _token_list.back().type == CLOSE_BRACKET)
+            token.type = DIRECTIVE;
+        else
+            token.type = ARGUMENT;
     }
 }
 
@@ -129,8 +141,6 @@ void Parser ::_parseTokenList(void)
     {
         if (it->type == SERVER)
             _parseServerDirective(it);
-        if (it->type == CLOSE_BRACKET)
-            continue;
         else
             throw SynthaxException((Token){it->type, it->content, it->line_nb},
                                    "Out of context directive");
@@ -190,8 +200,8 @@ void Parser ::_checkInvalidDirective(void) const
  */
 void Parser ::_parseServerDirective(std::list<Token>::iterator& it) const
 {
-    // While we dont reach the end of the block we parse the tokens. We ignore
-    // any token that are not directives or location.
+    // While we dont reach the end of the block we parse the tokens. We
+    // ignore any token that are not directives or location.
     for (; it->type != CLOSE_BRACKET; it++)
     {
         if (it->type != DIRECTIVE && it->type != LOCATION)
@@ -207,6 +217,10 @@ void Parser ::_parseServerDirective(std::list<Token>::iterator& it) const
             while ((++it)->type != SEMICOLON)
             {
                 int port_nb = std::atoi((it)->content.c_str());
+                if (!_isValidPort(port_nb, Config::getPorts()))
+                    throw SynthaxException(
+                        (Token){it->type, it->content, it->line_nb},
+                        "Invalid port number");
                 Config::setPort(port_nb);
             }
         }
@@ -247,13 +261,35 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it) const
         else if (it->content == "methods")
         {
             while ((++it)->type == ARGUMENT)
+            {
+                if (!_isHttpMethod(it->content))
+                    throw SynthaxException(
+                        (Token){it->type, it->content, it->line_nb},
+                        "Unrecognised method");
                 route.methods.push_back(it->content);
+            }
         }
         else
             throw SynthaxException((Token){it->type, it->content, it->line_nb},
                                    "Unrecognised directive");
     }
     Config::setRoutes(route);
+}
+
+bool Parser::_isHttpMethod(const std::string& method) const
+{
+    return (method == "GET" || method == "POST" || method == "DELETE");
+}
+
+bool Parser::_isValidPort(int port_nb, const std::vector<int>& ports) const
+{
+
+    if (port_nb < 0 || port_nb > 65535)
+        return (false);
+    for (size_t i = 0; i < ports.size(); i++)
+        if (port_nb == ports[i])
+            return (false);
+    return true;
 }
 
 // DEBUG PURPOSE
@@ -266,10 +302,10 @@ void Parser ::_debugTokenList(void) const
 
     for (it = _token_list.begin(); it != _token_list.end(); it++)
     {
-        std::cout << "content: " << it->content << std::endl;
-        std::cout << "type: " << _tokenTypeToString(it->type) << std::endl;
-        std::cout << std::endl;
+        std::cout << _tokenTypeToString(it->type);
+        std::cout << " | " << it->content << std::endl;
     }
+    std::cout << std::endl;
 }
 
 /**

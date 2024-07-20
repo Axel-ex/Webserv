@@ -6,7 +6,7 @@
 /*   By: achabrer <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/16 10:11:15 by achabrer          #+#    #+#             */
-/*   Updated: 2024/07/19 15:09:48 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/20 15:36:13 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,8 +72,7 @@ class Parser
                 virtual const char* what() const throw()
                 {
                     std::stringstream msg;
-                    msg << _reason << " line " << _token.line_nb << ": "
-                        << std::endl;
+                    msg << _reason << " line " << _token.line_nb << ": ";
                     msg << "content: " << _token.content
                         << ", type: " << _tokenTypeToString(_token.type)
                         << std::endl;
@@ -94,11 +93,14 @@ class Parser
 
         std::stringstream _readFile(const std::string& config_file);
         void _tokenize(std::stringstream& file_content);
+		void _setTokenType(Token &token);
         void _parseTokenList(void);
 		void _matchBrackets(void) const;
 		void _checkInvalidDirective(void) const;
 		void _parseServerDirective(std::list<Token>::iterator &it) const;
 		void _parseLocationDirective(std::list<Token>::iterator &it) const;
+		bool _isHttpMethod(const std::string &method) const;
+		bool _isValidPort(int port, const std::vector<int> &ports) const;
 
         // DEBUG
         void _debugTokenList(void) const;
