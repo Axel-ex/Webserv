@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/20 16:17:47 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/23 09:25:53 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ Parser ::~Parser() {}
 
 void Parser ::parse(const std::string& config_file)
 {
-    std::stringstream file_content;
+    std::string file_content;
 
     file_content = _readFile(config_file);
     _tokenize(file_content);
@@ -46,7 +46,7 @@ void Parser ::parse(const std::string& config_file)
     _parseTokenList();
 }
 
-std::stringstream Parser ::_readFile(const std::string& config_file)
+std::string Parser ::_readFile(const std::string& config_file)
 {
     std::ifstream ifs;
     std::string line;
@@ -62,7 +62,7 @@ std::stringstream Parser ::_readFile(const std::string& config_file)
         file_content << line << '\n';
     }
     ifs.close();
-    return (std::move(file_content));
+    return (file_content.str());
 }
 
 /**
@@ -74,12 +74,13 @@ std::stringstream Parser ::_readFile(const std::string& config_file)
  *
  * @param file_content
  */
-void Parser ::_tokenize(std::stringstream& file_content)
+void Parser ::_tokenize(std::string& file_content)
 {
     std::string line;
+	std::stringstream file_stream(file_content);
     int line_nb = 0;
 
-    while (std::getline(file_content, line))
+    while (std::getline(file_stream, line))
     {
         std::stringstream line_stream(line);
         std::string word;

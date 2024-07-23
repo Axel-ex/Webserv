@@ -6,7 +6,7 @@
 /*   By: achabrer <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/16 10:11:15 by achabrer          #+#    #+#             */
-/*   Updated: 2024/07/20 16:13:56 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/23 09:25:01 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,8 +74,8 @@ class Parser
         std::map<std::string, TokenType> _token_definition;
         std::list<Token> _token_list;
 
-        std::stringstream _readFile(const std::string& config_file);
-        void _tokenize(std::stringstream& file_content);
+        std::string _readFile(const std::string& config_file);
+        void _tokenize(std::string& file_content);
 		void _setTokenType(Token &token);
         void _parseTokenList(void);
 		void _matchBrackets(void) const;
