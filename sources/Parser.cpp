@@ -23,6 +23,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cstdlib>
 
 Parser ::Parser()
 {
@@ -51,7 +52,7 @@ std::stringstream Parser ::_readFile(const std::string& config_file)
     std::string line;
     std::stringstream file_content;
 
-    ifs.open(config_file);
+    ifs.open(config_file.c_str());
     if (!ifs.is_open())
         throw std::runtime_error(
             "Couldn't open the config file: file doesn't exist");
@@ -61,7 +62,7 @@ std::stringstream Parser ::_readFile(const std::string& config_file)
         file_content << line << '\n';
     }
     ifs.close();
-    return (file_content);
+    return (std::move(file_content));
 }
 
 /**
