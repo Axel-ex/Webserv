@@ -6,7 +6,7 @@
 /*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/23 23:23:02 by tmoutinh         ###   ########.fr       */
+/*   Updated: 2024/07/24 00:01:58 by tmoutinh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -297,7 +297,6 @@ std::string DeleteRequestHandler ::_getPath(const std::string& resource) const
 void DeleteRequestHandler ::processRequest(const Request& request,
                                            Response& response) const
 {
-    (void)response;
     std::string path = _getPath(request.getResource());
     struct stat info;
 
@@ -335,7 +334,6 @@ void DeleteRequestHandler ::processRequest(const Request& request,
         else
             createErrorResponse(BAD_REQUEST, response);
     }
-    std::cout << "path.c_str" << path.c_str() << std::endl;
     createOkResponse("deleted", response);
 }
 
