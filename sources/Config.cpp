@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
+/*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:17:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/27 08:49:45 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/22 22:33:40 by tmoutinh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,6 +78,15 @@ void Config ::parseFile(std::string file)
 	buff.str("");
 	buff << ifs.rdbuf();
 	getInstance()._resources.insert(std::make_pair("posted", buff.str()));
+    ifs.close();
+	ifs.clear();
+	ifs.open("resources/deleteresponse.html");
+	if (!ifs)
+		throw std::runtime_error("Couldn't open the file");
+    buff.clear();
+	buff.str("");
+	buff << ifs.rdbuf();
+    getInstance()._resources.insert(std::make_pair("deleted", buff.str()));
 }
 
 std::vector<int>& Config::getPorts(void) { return (getInstance()._ports); }

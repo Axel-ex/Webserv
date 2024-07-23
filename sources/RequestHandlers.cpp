@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   RequestHandlers.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
+/*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/27 09:18:26 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/23 23:23:02 by tmoutinh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 #include <map>
 #include <string>
 #include <sys/stat.h>
+#include <cstdlib>
 
 // =============================================================================
 //                               ABSTRACT HANDLER
@@ -128,8 +129,24 @@ std::string PostRequestHandler ::_getBoundary(const std::string& headers) const
     return (boundary);
 }
 
-std::string
-PostRequestHandler ::_getFileContent(const std::string& body,
+std::string PostRequestHandler ::_getContentType(const std::string& headers) const
+{
+    std::string content_type_key = "Content-Type: ";
+    size_t content_type_pos = headers.find(content_type_key);
+    if (content_type_pos == std::string::npos)
+        return ("");
+    content_type_pos += content_type_key.size();
+    size_t content_type_end_pos;
+    if (headers.find("\r\n", content_type_pos) < headers.find(";", content_type_pos))
+        content_type_end_pos = headers.find("\r\n", content_type_pos);
+    else 
+        content_type_end_pos = headers.find(";", content_type_pos);
+    std::string content_type =
+        headers.substr(content_type_pos, content_type_end_pos - content_type_pos);
+    return (content_type);
+}
+
+std::string PostRequestHandler ::_getFileContent(const std::string& body,
                                      const std::string& boundary) const
 {
     size_t start = body.find(boundary);
@@ -178,33 +195,87 @@ void PostRequestHandler ::_createDir(std::string dir_name) const
     }
 }
 
+void PostRequestHandler::createResponse(std::string resource,
+                                       Response& response) const
+{
+    std::string headers;
+    std::string page;
+    std::string decoded;
+    std::string content;
+    
+    for (size_t i = 0; i < resource.length(); ++i) 
+    {
+        if (resource[i] == '+')
+            decoded += ' ';
+        else if (resource[i] == '%' && i + 2 < resource.length()) 
+        {
+            std::string hexValue = resource.substr(i + 1, 2);
+            char decodedChar = static_cast<char>(std::strtol(hexValue.c_str(), NULL, 16));
+            decoded += decodedChar;
+            i += 2; // Skip the next two characters
+        }
+        else
+            decoded += resource[i];
+    }
+    while (decoded.find("=") != std::string::npos)
+    {
+        decoded = decoded.substr(decoded.find("=") + 1);
+        content += "<p>" + decoded.substr(0, decoded.find("& ")) + "</p>";
+        decoded = decoded.substr(decoded.find("& ") + 2);
+    }
+    page = "<!DOCTYPE html><html><head><title>Passed: \
+            </title></head><body><h1>"+content+"</h1>";
+    response.setBody(page);
+    headers = "HTTP/1.1 200 OK\r\n";
+    headers += "Content-Type: text/html\r\n";
+    headers +=
+        "Content-Length: " + toString(response.getBody().length()) +
+        "\r\n\r\n";
+    response.setHeaders(headers);
+}
+
 void PostRequestHandler::processRequest(const Request& request,
                                         Response& response) const
 {
+    std::string content_type = _getContentType(request.getHeaders());
+    if (content_type.empty())
+    {
+        createErrorResponse(BAD_REQUEST, response);
+        return (Log::log(WARNING, "couldn't get content type"));
+    }
     std::string boundary = _getBoundary(request.getHeaders());
-    if (boundary.empty())
+    if (boundary.empty() && content_type == "multipart/form-data")
     {
         createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "couldn't get content boundaries"));
     }
-
-    std::string file_content = _getFileContent(request.getBody(), boundary);
+    
+    std::string file_content;
+    if (content_type == "multipart/form-data")
+        file_content = _getFileContent(request.getBody(), boundary);
+    else if (content_type == "application/x-www-form-urlencoded")
+        file_content = request.getBody();
     std::string file_name = _getFileName(request.getBody());
-    if (file_content.empty() || file_name.empty())
+    if (file_content.empty() || (file_name.empty() && content_type == "multipart/form-data"))
     {
         createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "couldn't process the file"));
     }
 
-    // Write the file content to the file
-    _createDir("uploads");
-	file_name = "uploads/" + file_name;
-    std::ofstream ofs(file_name.c_str(),
-                      std::ios_base::out | std::ios_base::trunc);
-    if (!ofs)
-        return (Log::log(WARNING, "Couldn't write to file"));
-    ofs << file_content;
-    createOkResponse("posted", response);
+    if (content_type == "multipart/form-data")
+    {
+        // Write the file content to the file
+        _createDir("uploads");
+        file_name = "uploads/" + file_name;
+        std::ofstream ofs(file_name.c_str(),
+                        std::ios_base::out | std::ios_base::trunc);
+        if (!ofs)
+            return (Log::log(WARNING, "Couldn't write to file"));
+        ofs << file_content;
+        createOkResponse("posted", response);
+    }
+    else
+        createResponse(file_content, response);
 }
 
 // =============================================================================
@@ -215,12 +286,57 @@ bool DeleteRequestHandler ::_canProcess(const Request& request) const
     return (request.getMethod() == "DELETE");
 }
 
+std::string DeleteRequestHandler ::_getPath(const std::string& resource) const
+{
+    std::string path = /*Append the root from the config file*/ /*+*/"/home/tmoutinh/WorkStation/Webserv" + resource;
+    if (path[path.size() - 1] == '/')
+        path = path.substr(0, path.size() - 1);
+    return (path);
+}
+
 void DeleteRequestHandler ::processRequest(const Request& request,
                                            Response& response) const
 {
-    (void)request;
     (void)response;
-    std::cout << "hello world from delete" << std::endl;
+    std::string path = _getPath(request.getResource());
+    struct stat info;
+
+    if (path == "" || path == "root from config file")
+    {
+        createErrorResponse(BAD_REQUEST, response);
+        return (Log::log(WARNING, "couldn't get the path"));
+    }
+    if (stat(path.c_str(), &info) != 0)
+    {
+        std::cout << "inside!!" << std::endl;
+        createErrorResponse(BAD_REQUEST, response);
+        return (Log::log(WARNING, "problem with path"));
+    }
+    else 
+    {
+        if (S_ISREG(info.st_mode))
+        {
+            if (remove(path.c_str()) != 0)
+            {
+                // Error handling if the file could not be deleted
+                createErrorResponse(BAD_REQUEST, response);
+                return (Log::log(WARNING, "Failed to delete file"));
+            }
+        }   
+        else if (S_ISDIR(info.st_mode))
+        {
+            if (remove(path.c_str()) != 0)
+            {
+                // Error handling if the directory could not be deleted
+                createErrorResponse(BAD_REQUEST, response);
+                return (Log::log(WARNING, "Failed to delete file"));
+            }
+        }
+        else
+            createErrorResponse(BAD_REQUEST, response);
+    }
+    std::cout << "path.c_str" << path.c_str() << std::endl;
+    createOkResponse("deleted", response);
 }
 
 // =============================================================================

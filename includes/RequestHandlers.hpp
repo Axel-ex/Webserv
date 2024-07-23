@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   RequestHandlers.hpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
+/*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:41:40 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 18:34:04 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/21 22:12:38 by tmoutinh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,10 +53,12 @@ class PostRequestHandler : public ARequestHandler
     private:
         bool _canProcess(const Request& request) const;
 
+        std::string _getContentType(const std::string& headers) const;
         std::string _getBoundary(const std::string& headers) const;
         std::string _getFileContent(const std::string& body,
                                     const std::string& boundary) const;
         std::string _getFileName(const std::string& body) const;
+        void createResponse(std::string resource, Response& response) const;
         void _createDir(std::string dir_name) const;
 };
 
@@ -64,7 +66,7 @@ class DeleteRequestHandler : public ARequestHandler
 {
     public:
         void processRequest(const Request& request, Response& response) const;
-
+        std::string _getPath(const std::string& resource) const;
     private:
         bool _canProcess(const Request& request) const;
 };
