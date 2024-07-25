@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 14:28:23 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/14 10:56:05 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/19 14:40:02 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,12 @@
 #define REQUEST_HPP_
 
 #include <string>
+
+enum RequestMethod{
+	GET,
+	POST,
+	DELETE,
+};
 
 class Request
 {

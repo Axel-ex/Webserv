@@ -6,7 +6,7 @@
 /*   By: achabrer <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/05/27 06:28:32 by axel             ###   ########.fr       */
+/*   Updated: 2024/07/16 14:16:40 by achabrer         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,5 +26,6 @@ std::string toString(T val)
 
 extern bool stopFlag;
 void sigHandler(int signum);
+void sigHandler2(int signum);
 
 #endif  // UTILS_HPP_
