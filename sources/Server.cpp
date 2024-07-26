@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/14 11:12:11 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/19 15:35:45 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,10 +33,12 @@ void sigHandler(int signum)
 
 Server ::Server(std::string config_file)
 {
-    Config::parseFile(config_file);
+	Parser parser;
+
+	parser.parse(config_file);
+	(void)config_file;
     Log::setLogLevel(DEBUG);
-    Log::clearScreen();
-    std::signal(SIGINT, sigHandler);
+    // Log::clearScreen();
 }
 
 Server ::~Server()
@@ -195,3 +197,4 @@ void Server ::_serveClients(void)
         }
     }
 }
+

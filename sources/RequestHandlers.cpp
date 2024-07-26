@@ -6,7 +6,7 @@
 /*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/24 00:01:58 by tmoutinh         ###   ########.fr       */
+/*   Updated: 2024/07/26 23:47:34 by tmoutinh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -286,9 +286,25 @@ bool DeleteRequestHandler ::_canProcess(const Request& request) const
     return (request.getMethod() == "DELETE");
 }
 
-std::string DeleteRequestHandler ::_getPath(const std::string& resource) const
+std::string DeleteRequestHandler ::_getPath(const Request& request,
+                                           Response& response) const
 {
-    std::string path = /*Append the root from the config file*/ /*+*/"/home/tmoutinh/WorkStation/Webserv" + resource;
+    Config& config = Config::getInstance();
+    const std::vector<Route>& routes = config.getRoutes();
+    std::string del_path;
+
+    del_path = request.getResource().substr(0, request.getResource().find("/"));
+    if (routes.empty())
+    {
+        createErrorResponse(BAD_REQUEST, response);
+        return ("");
+    }
+    if (del_path.empty())
+    {
+        createErrorResponse(BAD_REQUEST, response);
+        return ("");
+    }
+    std::string path = routes.begin()->upload_store + "/" + del_path;
     if (path[path.size() - 1] == '/')
         path = path.substr(0, path.size() - 1);
     return (path);
@@ -297,19 +313,18 @@ std::string DeleteRequestHandler ::_getPath(const std::string& resource) const
 void DeleteRequestHandler ::processRequest(const Request& request,
                                            Response& response) const
 {
-    std::string path = _getPath(request.getResource());
+    std::string path = _getPath(request, response);
     struct stat info;
 
-    if (path == "" || path == "root from config file")
+    if (path == "")
     {
         createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "couldn't get the path"));
     }
     if (stat(path.c_str(), &info) != 0)
     {
-        std::cout << "inside!!" << std::endl;
         createErrorResponse(BAD_REQUEST, response);
-        return (Log::log(WARNING, "problem with path"));
+        return (Log::log(WARNING, "No such path"));
     }
     else 
     {

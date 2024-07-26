@@ -6,7 +6,7 @@
 /*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:41:40 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/21 22:12:38 by tmoutinh         ###   ########.fr       */
+/*   Updated: 2024/07/25 22:53:10 by tmoutinh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,8 @@ class DeleteRequestHandler : public ARequestHandler
 {
     public:
         void processRequest(const Request& request, Response& response) const;
-        std::string _getPath(const std::string& resource) const;
+        std::string _getPath(const Request& request,
+                                           Response& response) const;
     private:
         bool _canProcess(const Request& request) const;
 };

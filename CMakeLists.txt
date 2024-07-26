@@ -14,6 +14,7 @@ set(inc_dir includes/)
 
 set(srcs 
 	${src_dir}Server.cpp
+	${src_dir}Parser.cpp
 	${src_dir}Log.cpp
 	${src_dir}Config.cpp
 	${src_dir}RequestBuffer.cpp
@@ -24,6 +25,7 @@ set(srcs
 
 set(headers
 	${inc_dir}utils.hpp
+	${inc_dir}Parser.hpp
 	${inc_dir}Server.hpp
 	${inc_dir}Log.hpp
 	${inc_dir}Config.hpp

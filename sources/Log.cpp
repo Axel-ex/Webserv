@@ -6,11 +6,12 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:11:30 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/14 08:57:46 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/18 11:54:47 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Log.hpp"
+#include <cstddef>
 #include <cstring>
 #include <ctime>
 #include <iostream>
@@ -90,9 +91,9 @@ void Log::_logDebug(const std::string& msg) const
 void Log ::logRequest(const Request& request)
 {
     size_t host_pos = request.getHeaders().find("Host: ");
-	if (host_pos == std::string::npos)
-		return Log::log(WARNING, "bad request format, couldn't find the host");
-	host_pos += 6; //move past the "Host: "
+    if (host_pos == std::string::npos)
+        return Log::log(WARNING, "bad request format, couldn't find the host");
+    host_pos += 6; // move past the "Host: "
     size_t return_pos = request.getHeaders().find('\r', host_pos);
     std::string host =
         request.getHeaders().substr(host_pos, return_pos - host_pos);
