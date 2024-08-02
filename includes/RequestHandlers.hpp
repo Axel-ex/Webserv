@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:41:40 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/26 18:34:04 by Axel             ###   ########.fr       */
+/*   Updated: 2024/08/02 11:37:57 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,8 +26,9 @@ class ARequestHandler
         void setNextHandler(ARequestHandler* next);
 
     protected:
-        void createErrorResponse(int error_code, Response& response) const;
-        void createOkResponse(std::string resource, Response& response) const;
+        void _createErrorResponse(int error_code, Response& response) const;
+        void _createOkResponse(std::string resource, Response& response) const;
+        std::string _getErrorReason(int error_code) const;
         virtual bool _canProcess(const Request& request) const = 0;
         virtual void processRequest(const Request& request,
                                     Response& response) const = 0;

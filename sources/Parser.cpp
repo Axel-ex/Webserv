@@ -6,13 +6,14 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/23 09:25:53 by Axel             ###   ########.fr       */
+/*   Updated: 2024/08/02 11:21:46 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Parser.hpp"
 #include "../includes/Config.hpp"
 #include <cstddef>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -23,7 +24,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <cstdlib>
 
 Parser ::Parser()
 {
@@ -44,6 +44,7 @@ void Parser ::parse(const std::string& config_file)
     _tokenize(file_content);
     // _debugTokenList();
     _parseTokenList();
+    _loadErrors();
 }
 
 std::string Parser ::_readFile(const std::string& config_file)
@@ -77,7 +78,7 @@ std::string Parser ::_readFile(const std::string& config_file)
 void Parser ::_tokenize(std::string& file_content)
 {
     std::string line;
-	std::stringstream file_stream(file_content);
+    std::stringstream file_stream(file_content);
     int line_nb = 0;
 
     while (std::getline(file_stream, line))
@@ -197,7 +198,7 @@ void Parser ::_checkInvalidDirective(void) const
  *
  * @param it token list iterator
  */
-void Parser ::_parseServerDirective(std::list<Token>::iterator& it) const
+void Parser ::_parseServerDirective(std::list<Token>::iterator& it)
 {
     // While we dont reach the end of the block we parse the tokens. We
     // ignore any token that are not directives or location.
@@ -210,7 +211,11 @@ void Parser ::_parseServerDirective(std::list<Token>::iterator& it) const
         else if (it->content == "server_name")
             Config::setServerName((++it)->content);
         else if (it->content == "error_page")
-            ;
+        {
+            int error_code = std::atoi((it++)->content.c_str());
+            std::string path_to_html = (it++)->content;
+            _error_path.insert(std::make_pair(error_code, path_to_html));
+        }
         else if (it->content == "listen")
         {
             while ((++it)->type != SEMICOLON)
@@ -269,11 +274,21 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it) const
     Config::setRoutes(route);
 }
 
+// =============================================================================
+//                               Helper
+// =============================================================================
 bool Parser::_isHttpMethod(const std::string& method) const
 {
     return (method == "GET" || method == "POST" || method == "DELETE");
 }
 
+/**
+ * @brief check if port is a valid port or if it is not already in the list
+ *
+ * @param port_nb
+ * @param ports
+ * @return
+ */
 bool Parser::_isValidPort(int port_nb, const std::vector<int>& ports) const
 {
 
@@ -285,7 +300,14 @@ bool Parser::_isValidPort(int port_nb, const std::vector<int>& ports) const
     return true;
 }
 
-// DEBUG PURPOSE
+/**
+ * @brief load error pages into the config.
+ */
+void Parser::_loadErrors(void) const {}
+
+// =============================================================================
+//                               Debug
+// =============================================================================
 /**
  * @brief Print the token list on stdout
  */

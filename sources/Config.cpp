@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:17:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/19 16:33:01 by Axel             ###   ########.fr       */
+/*   Updated: 2024/08/02 11:54:29 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,14 +34,14 @@ void Config ::parseFile(std::string file)
     (void)file;
     /* load errors provided into the conf file*/
     /* if not provided load the rest or the errors supported by our server*/
-    getInstance()._errors[NOT_FOUND] =
-        (t_error){"Not Found", "<h1>404 Not Found</h1>"};
-    getInstance()._errors[500] = (t_error){
-        "Internal Server Error", "<h1>500 Internal Server Error</h1>"};
-    getInstance()._errors[BAD_REQUEST] =
-        (t_error){"Bad Request",
-                  "<h1>400 Bad Request</h1><p>The server could not understand "
-                  "the request due to invalid syntax.</p>"};
+
+    getInstance()._errors.insert(
+        std::make_pair(NOT_FOUND, "<h1>404 Not Found</h1>"));
+    getInstance()._errors.insert(std::make_pair(
+        BAD_REQUEST, "<h1>400 Bad Request</h1><p>The server could not "
+                     "understand the request due to invalid syntax.</p>"));
+    getInstance()._errors.insert(
+        std::make_pair(INTERNAL_ERROR, "<h1>500 Internal Server Error</h1>"));
 
     getInstance()._resources.insert(std::make_pair("/", DUMMY_RESPONSE));
 
@@ -76,14 +76,14 @@ void Config ::parseFile(std::string file)
 
 void Config ::clear(void)
 {
-    Config &instance = getInstance();
+    Config& instance = getInstance();
 
     instance._ports.clear();
     instance._server_name.clear();
     instance._resources.clear();
     instance._errors.clear();
-	instance._routes.clear();
-	instance._max_body_size = 100;
+    instance._routes.clear();
+    instance._max_body_size = 100;
 }
 
 // _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/ GETTERS \_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
@@ -96,7 +96,7 @@ std::map<std::string, std::string>& Config::getResources(void)
     return (getInstance()._resources);
 }
 
-std::map<int, t_error>& Config::getErrors(void)
+std::map<int, std::string>& Config::getErrors(void)
 {
     return (getInstance()._errors);
 }
@@ -104,7 +104,6 @@ std::map<int, t_error>& Config::getErrors(void)
 std::vector<Route> Config::getRoutes(void) { return (getInstance()._routes); }
 
 int Config ::getMaxBodySize(void) { return (getInstance()._max_body_size); }
-
 
 // _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/ SETTERS \_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
 void Config::setServerName(const std::string& server_name)

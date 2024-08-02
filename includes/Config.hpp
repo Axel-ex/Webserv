@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:13:18 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/19 16:01:17 by Axel             ###   ########.fr       */
+/*   Updated: 2024/08/02 11:55:12 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,13 +18,6 @@
 #include <vector>
 #include "../includes/Parser.hpp"
 
-typedef struct s_error
-{
-	std::string reason;
-	std::string body;
-
-} t_error;
-
 class Config
 {
     public:
@@ -35,7 +28,7 @@ class Config
 
         static std::vector<int> &getPorts(void);
         static std::map<std::string, std::string> &getResources(void);
-        static std::map<int, t_error> &getErrors(void);
+        static std::map<int, std::string> &getErrors(void);
 		static std::string getServerName(void);
 		static std::vector<Route> getRoutes(void);
 		static int getMaxBodySize(void);
@@ -54,7 +47,7 @@ class Config
 		std::vector<Route> _routes;
 
         std::map<std::string, std::string> _resources;
-        std::map<int, t_error> _errors;
+        std::map<int, std::string> _errors;
 };
 
 #endif

@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/27 09:18:26 by Axel             ###   ########.fr       */
+/*   Updated: 2024/08/02 12:00:55 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,20 +31,19 @@ ARequestHandler ::~ARequestHandler(void) {}
 void ARequestHandler ::handleRequest(const Request& request, Response& response)
 {
     if (request.getProtocol() != "HTTP/1.1")
-        return createErrorResponse(BAD_REQUEST, response);
-
+        return _createErrorResponse(BAD_REQUEST, response);
     if (_canProcess(request))
         processRequest(request, response);
     else if (_next)
         _next->handleRequest(request, response);
     else
-        createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(BAD_REQUEST, response);
 }
 
 void ARequestHandler::setNextHandler(ARequestHandler* next) { _next = next; }
 
-void ARequestHandler::createOkResponse(std::string resource,
-                                       Response& response) const
+void ARequestHandler::_createOkResponse(std::string resource,
+                                        Response& response) const
 {
     std::map<std::string, std::string>::iterator it;
     std::string headers;
@@ -54,27 +53,40 @@ void ARequestHandler::createOkResponse(std::string resource,
     headers = "HTTP/1.1 200 OK\r\n";
     headers += "Content-Type: text/html\r\n";
     headers +=
-        "Content-Length: " + toString(response.getBody().length()) +
-        "\r\n\r\n";
+        "Content-Length: " + toString(response.getBody().length()) + "\r\n\r\n";
     response.setHeaders(headers);
 }
 
-void ARequestHandler ::createErrorResponse(int error_code,
-                                           Response& response) const
+void ARequestHandler ::_createErrorResponse(int error_code,
+                                            Response& response) const
 {
-    std::map<int, t_error>::iterator it;
+    std::map<int, std::string>::iterator it;
     std::string headers;
 
     // codes we want to handle have to exist
     it = Config::getErrors().find(error_code);
 
-    response.setBody(it->second.body);
-    headers = "HTTP/1.1 " + toString(error_code) + " " +
-              it->second.reason + "\r\n";
+    response.setBody(it->second);
+    headers =
+        "HTTP/1.1 " + toString(error_code) + " " + _getErrorReason(error_code) + "\r\n";
     headers += "Content-Type: text/html\r\n";
-    headers += "Content-Length: " + toString(it->second.body.length()) +
-               "\r\n\r\n";
+    headers +=
+        "Content-Length: " + toString(it->second.length()) + "\r\n\r\n";
     response.setHeaders(headers);
+}
+
+std::string ARequestHandler::_getErrorReason(int error_code) const {
+
+	switch (error_code) {
+		default:
+			return ("Page not found");
+		case NOT_FOUND:
+			return ("Page not found");
+		case BAD_REQUEST:
+			return ("Bad request");
+		case INTERNAL_ERROR:
+			return ("Internal server error");
+	}
 }
 
 /* CONCRETE IMPLEMENTATION OF THE HANDLERS */
@@ -88,21 +100,20 @@ bool GetRequestHandler ::_canProcess(const Request& request) const
 }
 
 void GetRequestHandler ::processRequest(const Request& request,
-                                        Response& response) const
+                                         Response& response) const
 {
     std::map<std::string, std::string>::iterator it;
     std::string headers;
 
     it = Config::getResources().find(request.getResource());
     if (it == Config::getResources().end())
-        return (createErrorResponse(NOT_FOUND, response));
+        return (_createErrorResponse(NOT_FOUND, response));
 
     response.setBody(it->second);
     headers = "HTTP/1.1 200 OK\r\n";
     headers += "Content-Type: text/html\r\n";
     headers +=
-        "Content-Length: " + toString(response.getBody().length()) +
-        "\r\n\r\n";
+        "Content-Length: " + toString(response.getBody().length()) + "\r\n\r\n";
     response.setHeaders(headers);
 }
 
@@ -179,12 +190,12 @@ void PostRequestHandler ::_createDir(std::string dir_name) const
 }
 
 void PostRequestHandler::processRequest(const Request& request,
-                                        Response& response) const
+                                         Response& response) const
 {
     std::string boundary = _getBoundary(request.getHeaders());
     if (boundary.empty())
     {
-        createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "couldn't get content boundaries"));
     }
 
@@ -192,19 +203,19 @@ void PostRequestHandler::processRequest(const Request& request,
     std::string file_name = _getFileName(request.getBody());
     if (file_content.empty() || file_name.empty())
     {
-        createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "couldn't process the file"));
     }
 
     // Write the file content to the file
     _createDir("uploads");
-	file_name = "uploads/" + file_name;
+    file_name = "uploads/" + file_name;
     std::ofstream ofs(file_name.c_str(),
                       std::ios_base::out | std::ios_base::trunc);
     if (!ofs)
         return (Log::log(WARNING, "Couldn't write to file"));
     ofs << file_content;
-    createOkResponse("posted", response);
+    _createOkResponse("posted", response);
 }
 
 // =============================================================================
@@ -216,7 +227,7 @@ bool DeleteRequestHandler ::_canProcess(const Request& request) const
 }
 
 void DeleteRequestHandler ::processRequest(const Request& request,
-                                           Response& response) const
+                                            Response& response) const
 {
     (void)request;
     (void)response;
@@ -232,7 +243,7 @@ bool CgiRequestHandler ::_canProcess(const Request& request) const
 }
 
 void CgiRequestHandler ::processRequest(const Request& request,
-                                        Response& response) const
+                                         Response& response) const
 {
     (void)request;
     (void)response;
