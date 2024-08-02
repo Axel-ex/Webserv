@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/02 12:00:55 by Axel             ###   ########.fr       */
+/*   Updated: 2024/08/02 12:22:27 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,7 @@ void ARequestHandler ::_createErrorResponse(int error_code,
     std::string headers;
 
     // codes we want to handle have to exist
-    it = Config::getErrors().find(error_code);
+    it = Config::getDefaultErrors().find(error_code);
 
     response.setBody(it->second);
     headers =

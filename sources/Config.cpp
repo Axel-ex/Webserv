@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:17:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/02 11:54:29 by Axel             ###   ########.fr       */
+/*   Updated: 2024/08/02 13:25:25 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,15 +34,15 @@ void Config ::parseFile(std::string file)
     (void)file;
     /* load errors provided into the conf file*/
     /* if not provided load the rest or the errors supported by our server*/
-
-    getInstance()._errors.insert(
-        std::make_pair(NOT_FOUND, "<h1>404 Not Found</h1>"));
-    getInstance()._errors.insert(std::make_pair(
-        BAD_REQUEST, "<h1>400 Bad Request</h1><p>The server could not "
-                     "understand the request due to invalid syntax.</p>"));
-    getInstance()._errors.insert(
-        std::make_pair(INTERNAL_ERROR, "<h1>500 Internal Server Error</h1>"));
-
+    //
+    // getInstance()._default_errors.insert(
+    //     std::make_pair(NOT_FOUND, "<h1>404 Not Found</h1>"));
+    // getInstance()._default_errors.insert(std::make_pair(
+    //     BAD_REQUEST, "<h1>400 Bad Request</h1><p>The server could not "
+    //                  "understand the request due to invalid syntax.</p>"));
+    // getInstance()._default_errors.insert(
+    //     std::make_pair(INTERNAL_ERROR, "<h1>500 Internal Server Error</h1>"));
+    //
     getInstance()._resources.insert(std::make_pair("/", DUMMY_RESPONSE));
 
     /* We basically need to do the following with all our resources*/
@@ -81,7 +81,7 @@ void Config ::clear(void)
     instance._ports.clear();
     instance._server_name.clear();
     instance._resources.clear();
-    instance._errors.clear();
+    instance._default_errors.clear();
     instance._routes.clear();
     instance._max_body_size = 100;
 }
@@ -96,9 +96,14 @@ std::map<std::string, std::string>& Config::getResources(void)
     return (getInstance()._resources);
 }
 
-std::map<int, std::string>& Config::getErrors(void)
+std::map<int, std::string>& Config::getDefaultErrors(void)
 {
-    return (getInstance()._errors);
+    return (getInstance()._default_errors);
+}
+
+std::map<int, std::string>& Config::getErrorPath(void)
+{
+    return (getInstance()._error_path);
 }
 
 std::vector<Route> Config::getRoutes(void) { return (getInstance()._routes); }
@@ -121,4 +126,14 @@ void Config ::setMaxBodySize(int max_body_size)
 void Config ::setRoutes(const Route& route)
 {
     getInstance()._routes.push_back(route);
+}
+
+void Config::setDefaultErrors(int error_code, const std::string& content)
+{
+    getInstance()._default_errors.insert(std::make_pair(error_code, content));
+}
+
+void Config::setErrorPath(int error_code, const std::string& path)
+{
+    getInstance()._error_path.insert(std::make_pair(error_code, path));
 }

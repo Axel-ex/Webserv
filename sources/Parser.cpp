@@ -6,12 +6,13 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/02 11:21:46 by Axel             ###   ########.fr       */
+/*   Updated: 2024/08/02 13:33:26 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Parser.hpp"
 #include "../includes/Config.hpp"
+#include "../includes/utils.hpp"
 #include <cstddef>
 #include <cstdlib>
 #include <fstream>
@@ -47,16 +48,16 @@ void Parser ::parse(const std::string& config_file)
     _loadErrors();
 }
 
-std::string Parser ::_readFile(const std::string& config_file)
+std::string Parser ::_readFile(const std::string& path)
 {
     std::ifstream ifs;
     std::string line;
     std::stringstream file_content;
 
-    ifs.open(config_file.c_str());
+    ifs.open(path.c_str());
     if (!ifs.is_open())
-        throw std::runtime_error(
-            "Couldn't open the config file: file doesn't exist");
+        throw std::runtime_error("Couldn't open the file " + path +
+                                 ": file doesn't exist");
     while (ifs.good())
     {
         std::getline(ifs, line);
@@ -214,7 +215,7 @@ void Parser ::_parseServerDirective(std::list<Token>::iterator& it)
         {
             int error_code = std::atoi((it++)->content.c_str());
             std::string path_to_html = (it++)->content;
-            _error_path.insert(std::make_pair(error_code, path_to_html));
+            Config::setErrorPath(error_code, path_to_html);
         }
         else if (it->content == "listen")
         {
@@ -301,9 +302,21 @@ bool Parser::_isValidPort(int port_nb, const std::vector<int>& ports) const
 }
 
 /**
- * @brief load error pages into the config.
+ * @brief load default error pages into the config.
  */
-void Parser::_loadErrors(void) const {}
+void Parser::_loadErrors(void) const
+{
+    int tmp[] = {400, 404, 500};
+    std::vector<int> error_codes(tmp, tmp + sizeof(tmp) / sizeof(int));
+
+    for (size_t i = 0; i < error_codes.size(); i++)
+    {
+        std::string path =
+            "./resources/errors/" + toString(error_codes[i]) + ".html";
+        std::string content = _readFile(path);
+		 Config::setDefaultErrors(error_codes[i], content);
+    }
+}
 
 // =============================================================================
 //                               Debug
@@ -352,7 +365,9 @@ std::string Parser ::_tokenTypeToString(TokenType type)
     }
 }
 
-// _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/ EXCEPTION \_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
+// =============================================================================
+//                               Exception
+// =============================================================================
 Parser ::SynthaxException::SynthaxException(const Token& token,
                                             const std::string& reason)
     : _token(token), _reason(reason)
