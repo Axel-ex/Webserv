@@ -6,12 +6,11 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:17:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/02 13:25:25 by Axel             ###   ########.fr       */
+/*   Updated: 2024/08/02 14:29:42 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Config.hpp"
-#include "../includes/Response.hpp"
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -29,29 +28,27 @@ Config& Config::getInstance(void)
 
 Config ::~Config(void) {}
 
+//Dummy implementation, should be removed as soon as possible
 void Config ::parseFile(std::string file)
 {
     (void)file;
-    /* load errors provided into the conf file*/
-    /* if not provided load the rest or the errors supported by our server*/
-    //
-    // getInstance()._default_errors.insert(
-    //     std::make_pair(NOT_FOUND, "<h1>404 Not Found</h1>"));
-    // getInstance()._default_errors.insert(std::make_pair(
-    //     BAD_REQUEST, "<h1>400 Bad Request</h1><p>The server could not "
-    //                  "understand the request due to invalid syntax.</p>"));
-    // getInstance()._default_errors.insert(
-    //     std::make_pair(INTERNAL_ERROR, "<h1>500 Internal Server Error</h1>"));
-    //
-    getInstance()._resources.insert(std::make_pair("/", DUMMY_RESPONSE));
 
-    /* We basically need to do the following with all our resources*/
     std::ifstream ifs("resources/form.html");
     if (!ifs)
         throw std::runtime_error("Couldn't open the file");
     std::stringstream buff;
     buff << ifs.rdbuf();
     getInstance()._resources.insert(std::make_pair("/form", buff.str()));
+
+    ifs.close();
+    ifs.clear();
+    ifs.open("resources/index.html");
+    if (!ifs)
+        throw std::runtime_error("Couldn't open the file");
+    buff.clear();
+    buff.str("");
+    buff << ifs.rdbuf();
+    getInstance()._resources.insert(std::make_pair("/", buff.str()));
 
     ifs.close();
     ifs.clear();
