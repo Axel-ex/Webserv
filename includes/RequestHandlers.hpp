@@ -6,7 +6,7 @@
 /*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:41:40 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/25 22:53:10 by tmoutinh         ###   ########.fr       */
+/*   Updated: 2024/08/04 17:19:42 by tmoutinh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 
 #include "../includes/Request.hpp"
 #include "../includes/Response.hpp"
+#include <map>
 
 class ARequestHandler
 {
@@ -24,8 +25,10 @@ class ARequestHandler
 
         void handleRequest(const Request& request, Response& response);
         void setNextHandler(ARequestHandler* next);
+        void initializeMimeTypes();
 
     protected:
+        std::map<std::string, std::string> mimeTypes;
         void createErrorResponse(int error_code, Response& response) const;
         void createOkResponse(std::string resource, Response& response) const;
         virtual bool _canProcess(const Request& request) const = 0;
@@ -40,7 +43,7 @@ class GetRequestHandler : public ARequestHandler
 {
     public:
         void processRequest(const Request& request, Response& response) const;
-
+        std::string _get_file_content(std::string path, Response& response) const;
     private:
         bool _canProcess(const Request& request) const;
 };
