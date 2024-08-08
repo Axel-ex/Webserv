@@ -6,7 +6,7 @@
 /*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/04 22:52:17 by tmoutinh         ###   ########.fr       */
+/*   Updated: 2024/08/08 14:11:30 by achabrer         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -162,7 +162,7 @@ void GetRequestHandler ::processRequest(const Request& request,
     if (request.getResource().empty() || request.getResource() == "/")
     {
         if (routes.begin()->index.empty())
-            createErrorResponse(BAD_REQUEST, response);
+            _createErrorResponse(BAD_REQUEST, response);
         else
             req_path = "/" + routes.begin()->index;
     }
@@ -170,7 +170,7 @@ void GetRequestHandler ::processRequest(const Request& request,
         req_path = request.getResource();
     if (stat((routes.begin()->root + req_path).c_str(), &info) != 0)
     {
-        createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "No such path"));
     }
     if (S_ISREG(info.st_mode))
@@ -178,7 +178,7 @@ void GetRequestHandler ::processRequest(const Request& request,
         cont_type = GetRequestHandler::_get_file_content(routes.begin()->root + req_path, response);
         if (cont_type.empty())
         {
-            createErrorResponse(BAD_REQUEST, response);
+            _createErrorResponse(BAD_REQUEST, response);
             return (Log::log(WARNING, "couldn't get path"));
         }
         //response.setBody(it->second);
@@ -191,7 +191,7 @@ void GetRequestHandler ::processRequest(const Request& request,
     }
     else
     {
-        createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "Not a file"));
     }
 }
@@ -329,7 +329,7 @@ void PostRequestHandler::processRequest(const Request& request,
     std::string content_type = _getContentType(request.getHeaders());
     if (content_type.empty())
     {
-        createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "couldn't get content type"));
     }
     std::string boundary = _getBoundary(request.getHeaders());
@@ -361,7 +361,7 @@ void PostRequestHandler::processRequest(const Request& request,
         if (!ofs)
             return (Log::log(WARNING, "Couldn't write to file"));
         ofs << file_content;
-        createOkResponse("posted", response);
+        _createOkResponse("posted", response);
     }
     else
         createResponse(file_content, response);
@@ -398,12 +398,12 @@ std::string DeleteRequestHandler ::_getPath(const Request& request,
     del_path = request.getResource();//.substr(0, request.getResource().find("/"));
     if (routes.empty())
     {
-        createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(BAD_REQUEST, response);
         return ("");
     }
     if (del_path.empty())
     {
-        createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(BAD_REQUEST, response);
         return ("");
     }
     std::string path = routes.begin()->upload_store + "/" + del_path;
@@ -423,18 +423,18 @@ void DeleteRequestHandler ::processRequest(const Request& request,
     if (user_agent != "Chrome" && user_agent != "Firefox" && user_agent != "Safari"
         && user_agent != "Edge" && user_agent != "Opera")
     {
-        createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "Invalid delete request"));
     }
     path = _getPath(request, response);
     if (path == "")
     {
-        createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "couldn't get the path"));
     }
     if (stat(path.c_str(), &info) != 0)
     {
-        createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "No such path"));
     }
     else 
@@ -444,7 +444,7 @@ void DeleteRequestHandler ::processRequest(const Request& request,
             if (remove(path.c_str()) != 0)
             {
                 // Error handling if the file could not be deleted
-                createErrorResponse(BAD_REQUEST, response);
+                _createErrorResponse(BAD_REQUEST, response);
                 return (Log::log(WARNING, "Failed to delete file"));
             }
         }   
@@ -453,14 +453,14 @@ void DeleteRequestHandler ::processRequest(const Request& request,
             if (remove(path.c_str()) != 0)
             {
                 // Error handling if the directory could not be deleted
-                createErrorResponse(BAD_REQUEST, response);
+                _createErrorResponse(BAD_REQUEST, response);
                 return (Log::log(WARNING, "Failed to delete file"));
             }
         }
         else
-            createErrorResponse(BAD_REQUEST, response);
+            _createErrorResponse(BAD_REQUEST, response);
     }
-    createOkResponse("deleted", response);
+    _createOkResponse("deleted", response);
 }
 
 // =============================================================================

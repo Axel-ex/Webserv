@@ -6,7 +6,7 @@
 /*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:41:40 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/04 17:19:42 by tmoutinh         ###   ########.fr       */
+/*   Updated: 2024/08/08 14:13:37 by achabrer         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,11 +29,12 @@ class ARequestHandler
 
     protected:
         std::map<std::string, std::string> mimeTypes;
-        void createErrorResponse(int error_code, Response& response) const;
-        void createOkResponse(std::string resource, Response& response) const;
+        void _createErrorResponse(int error_code, Response& response) const;
+        void _createOkResponse(std::string resource, Response& response) const;
         virtual bool _canProcess(const Request& request) const = 0;
         virtual void processRequest(const Request& request,
                                     Response& response) const = 0;
+        std::string _getErrorReason(int error_code) const;
 
     private:
         ARequestHandler* _next;
@@ -43,7 +44,9 @@ class GetRequestHandler : public ARequestHandler
 {
     public:
         void processRequest(const Request& request, Response& response) const;
-        std::string _get_file_content(std::string path, Response& response) const;
+        std::string _get_file_content(std::string path,
+                                      Response& response) const;
+
     private:
         bool _canProcess(const Request& request) const;
 };
@@ -69,8 +72,8 @@ class DeleteRequestHandler : public ARequestHandler
 {
     public:
         void processRequest(const Request& request, Response& response) const;
-        std::string _getPath(const Request& request,
-                                           Response& response) const;
+        std::string _getPath(const Request& request, Response& response) const;
+
     private:
         bool _canProcess(const Request& request) const;
 };
