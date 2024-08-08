@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.8)
 set(This webserv_test)
 
 set(Sources
-	# request_test.cpp
-	# Response_test.cpp
+	request_test.cpp
+	Response_test.cpp
 	Parser_test.cpp
     test.cpp)
 

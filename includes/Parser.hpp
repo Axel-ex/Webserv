@@ -6,7 +6,7 @@
 /*   By: achabrer <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/16 10:11:15 by achabrer          #+#    #+#             */
-/*   Updated: 2024/07/23 09:25:01 by Axel             ###   ########.fr       */
+/*   Updated: 2024/08/02 13:18:06 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,20 +74,19 @@ class Parser
         std::map<std::string, TokenType> _token_definition;
         std::list<Token> _token_list;
 
-        std::string _readFile(const std::string& config_file);
+        static std::string _readFile(const std::string& path);
         void _tokenize(std::string& file_content);
 		void _setTokenType(Token &token);
         void _parseTokenList(void);
 		void _matchBrackets(void) const;
 		void _checkInvalidDirective(void) const;
-		void _parseServerDirective(std::list<Token>::iterator &it) const;
+		void _parseServerDirective(std::list<Token>::iterator &it);
 		void _parseLocationDirective(std::list<Token>::iterator &it) const;
-
-		//Helper
+		void _loadErrors(void) const;
+		// Helper
 		bool _isHttpMethod(const std::string &method) const;
 		bool _isValidPort(int port, const std::vector<int> &ports) const;
-
-        // DEBUG
+        // Debug
         void _debugTokenList(void) const;
         static std::string _tokenTypeToString(TokenType type);
 };

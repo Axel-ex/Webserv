@@ -36,6 +36,7 @@ Server ::Server(std::string config_file)
 	Parser parser;
 
 	parser.parse(config_file);
+	Config::parseFile(config_file);
 	(void)config_file;
     Log::setLogLevel(DEBUG);
     Log::clearScreen();

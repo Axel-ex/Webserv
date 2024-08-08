@@ -49,20 +49,19 @@ ARequestHandler ::~ARequestHandler(void) {}
 void ARequestHandler ::handleRequest(const Request& request, Response& response)
 {
     if (request.getProtocol() != "HTTP/1.1")
-        return createErrorResponse(BAD_REQUEST, response);
-
+        return _createErrorResponse(BAD_REQUEST, response);
     if (_canProcess(request))
         processRequest(request, response);
     else if (_next)
         _next->handleRequest(request, response);
     else
-        createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(BAD_REQUEST, response);
 }
 
 void ARequestHandler::setNextHandler(ARequestHandler* next) { _next = next; }
 
-void ARequestHandler::createOkResponse(std::string resource,
-                                       Response& response) const
+void ARequestHandler::_createOkResponse(std::string resource,
+                                        Response& response) const
 {
     std::map<std::string, std::string>::iterator it;
     std::string headers;
@@ -72,27 +71,40 @@ void ARequestHandler::createOkResponse(std::string resource,
     headers = "HTTP/1.1 200 OK\r\n";
     headers += "Content-Type: text/html\r\n";
     headers +=
-        "Content-Length: " + toString(response.getBody().length()) +
-        "\r\n\r\n";
+        "Content-Length: " + toString(response.getBody().length()) + "\r\n\r\n";
     response.setHeaders(headers);
 }
 
-void ARequestHandler ::createErrorResponse(int error_code,
-                                           Response& response) const
+void ARequestHandler ::_createErrorResponse(int error_code,
+                                            Response& response) const
 {
-    std::map<int, t_error>::iterator it;
+    std::map<int, std::string>::iterator it;
     std::string headers;
 
     // codes we want to handle have to exist
-    it = Config::getErrors().find(error_code);
+    it = Config::getDefaultErrors().find(error_code);
 
-    response.setBody(it->second.body);
-    headers = "HTTP/1.1 " + toString(error_code) + " " +
-              it->second.reason + "\r\n";
+    response.setBody(it->second);
+    headers =
+        "HTTP/1.1 " + toString(error_code) + " " + _getErrorReason(error_code) + "\r\n";
     headers += "Content-Type: text/html\r\n";
-    headers += "Content-Length: " + toString(it->second.body.length()) +
-               "\r\n\r\n";
+    headers +=
+        "Content-Length: " + toString(it->second.length()) + "\r\n\r\n";
     response.setHeaders(headers);
+}
+
+std::string ARequestHandler::_getErrorReason(int error_code) const {
+
+	switch (error_code) {
+		default:
+			return ("Page not found");
+		case NOT_FOUND:
+			return ("Page not found");
+		case BAD_REQUEST:
+			return ("Bad request");
+		case INTERNAL_ERROR:
+			return ("Internal server error");
+	}
 }
 
 /* CONCRETE IMPLEMENTATION OF THE HANDLERS */
@@ -133,7 +145,7 @@ std::string    GetRequestHandler ::_get_file_content(std::string path, Response&
 }
 
 void GetRequestHandler ::processRequest(const Request& request,
-                                        Response& response) const
+                                         Response& response) const
 {
     // std::map<std::string, std::string>::iterator it;
     std::string headers;
@@ -312,7 +324,7 @@ void PostRequestHandler::createResponse(std::string resource,
 }
 
 void PostRequestHandler::processRequest(const Request& request,
-                                        Response& response) const
+                                         Response& response) const
 {
     std::string content_type = _getContentType(request.getHeaders());
     if (content_type.empty())
@@ -323,7 +335,7 @@ void PostRequestHandler::processRequest(const Request& request,
     std::string boundary = _getBoundary(request.getHeaders());
     if (boundary.empty() && content_type == "multipart/form-data")
     {
-        createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "couldn't get content boundaries"));
     }
     
@@ -335,7 +347,7 @@ void PostRequestHandler::processRequest(const Request& request,
     std::string file_name = _getFileName(request.getBody());
     if (file_content.empty() || (file_name.empty() && content_type == "multipart/form-data"))
     {
-        createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "couldn't process the file"));
     }
 
@@ -401,7 +413,7 @@ std::string DeleteRequestHandler ::_getPath(const Request& request,
 }
 
 void DeleteRequestHandler ::processRequest(const Request& request,
-                                           Response& response) const
+                                            Response& response) const
 {
     struct stat info;
     std::string path;
@@ -460,7 +472,7 @@ bool CgiRequestHandler ::_canProcess(const Request& request) const
 }
 
 void CgiRequestHandler ::processRequest(const Request& request,
-                                        Response& response) const
+                                         Response& response) const
 {
     (void)request;
     (void)response;
