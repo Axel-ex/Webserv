@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
+/*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:17:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/02 14:29:42 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/25 20:35:32 by tmoutinh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,35 +40,24 @@ void Config ::parseFile(std::string file)
     buff << ifs.rdbuf();
     getInstance()._resources.insert(std::make_pair("/form", buff.str()));
 
+	ifs.close();
+	ifs.clear();
+	ifs.open("resources/okresponse.html");
+	if (!ifs)
+		throw std::runtime_error("Couldn't open the file");
+	buff.clear();
+	buff.str("");
+	buff << ifs.rdbuf();
+	getInstance()._resources.insert(std::make_pair("posted", buff.str()));
     ifs.close();
-    ifs.clear();
-    ifs.open("resources/index.html");
-    if (!ifs)
-        throw std::runtime_error("Couldn't open the file");
+	ifs.clear();
+	ifs.open("resources/deleteresponse.html");
+	if (!ifs)
+		throw std::runtime_error("Couldn't open the file");
     buff.clear();
-    buff.str("");
-    buff << ifs.rdbuf();
-    getInstance()._resources.insert(std::make_pair("/", buff.str()));
-
-    ifs.close();
-    ifs.clear();
-    ifs.open("resources/form2.html");
-    if (!ifs)
-        throw std::runtime_error("Couldn't open the file");
-    buff.clear();
-    buff.str("");
-    buff << ifs.rdbuf();
-    getInstance()._resources.insert(std::make_pair("/form2", buff.str()));
-
-    ifs.close();
-    ifs.clear();
-    ifs.open("resources/okresponse.html");
-    if (!ifs)
-        throw std::runtime_error("Couldn't open the file");
-    buff.clear();
-    buff.str("");
-    buff << ifs.rdbuf();
-    getInstance()._resources.insert(std::make_pair("posted", buff.str()));
+	buff.str("");
+	buff << ifs.rdbuf();
+    getInstance()._resources.insert(std::make_pair("deleted", buff.str()));
 }
 
 void Config ::clear(void)

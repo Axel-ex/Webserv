@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
+/*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 15:00:56 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/20 10:52:57 by Axel             ###   ########.fr       */
+/*   Updated: 2024/07/21 15:38:50 by tmoutinh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ Response ::Response(const Request& request)
     cgi_handler.setNextHandler(&get_handler);
     get_handler.setNextHandler(&post_handler);
     post_handler.setNextHandler(&delete_handler);
+    delete_handler.setNextHandler(NULL);
 
     /* Pass the request to the handler of the chain */
     cgi_handler.handleRequest(request, *this);

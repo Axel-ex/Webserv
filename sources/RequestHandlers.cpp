@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   RequestHandlers.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
+/*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/02 12:22:27 by Axel             ###   ########.fr       */
+/*   Updated: 2024/08/08 14:11:30 by achabrer         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,11 +20,29 @@
 #include <map>
 #include <string>
 #include <sys/stat.h>
+#include <cstdlib>
 
 // =============================================================================
 //                               ABSTRACT HANDLER
 // =============================================================================
-ARequestHandler ::ARequestHandler(void) : _next(NULL) {}
+void ARequestHandler::initializeMimeTypes() {
+    mimeTypes[".html"] = "text/html";
+    mimeTypes[".htm"] = "text/html";
+    mimeTypes[".css"] = "text/css";
+    mimeTypes[".js"] = "application/javascript";
+    mimeTypes[".json"] = "application/json";
+    mimeTypes[".png"] = "image/png";
+    mimeTypes[".jpg"] = "image/jpeg";
+    mimeTypes[".jpeg"] = "image/jpeg";
+    mimeTypes[".gif"] = "image/gif";
+    mimeTypes[".svg"] = "image/svg+xml";
+    mimeTypes[".txt"] = "text/plain";
+    // Add more MIME types as needed
+}
+
+ARequestHandler ::ARequestHandler(void) : _next(NULL) {
+    initializeMimeTypes();
+}
 
 ARequestHandler ::~ARequestHandler(void) {}
 
@@ -99,22 +117,83 @@ bool GetRequestHandler ::_canProcess(const Request& request) const
             request.getMethod().find(".cgi") == std::string::npos);
 }
 
+std::string    GetRequestHandler ::_get_file_content(std::string path, Response& response) const
+{
+    std::stringstream buffer;
+    std::ifstream file(path.c_str());
+    std::string cont_type;
+
+    if (!file.is_open()) 
+        return ("");
+    buffer << file.rdbuf();
+    response.setBody(buffer.str());
+    file.close();
+    
+    std::string::size_type idx = path.rfind('.');
+    if (idx != std::string::npos) 
+    {
+        std::string extension = path.substr(idx);
+        if (mimeTypes.find(extension) != mimeTypes.end())
+        {
+            return (mimeTypes.find(extension)->second);
+        }
+        else
+            return ("");
+    }
+    else
+        return ("");
+}
+
 void GetRequestHandler ::processRequest(const Request& request,
                                          Response& response) const
 {
-    std::map<std::string, std::string>::iterator it;
+    // std::map<std::string, std::string>::iterator it;
     std::string headers;
 
-    it = Config::getResources().find(request.getResource());
-    if (it == Config::getResources().end())
-        return (_createErrorResponse(NOT_FOUND, response));
+    // it = Config::getResources().find(request.getResource());
+    // if (it == Config::getResources().end())
+    //     return (createErrorResponse(NOT_FOUND, response));
+    Config& config = Config::getInstance();
+    const std::vector<Route>& routes = config.getRoutes();
+    std::string req_path;
+    std::string cont_type;
+    struct stat info;
 
-    response.setBody(it->second);
-    headers = "HTTP/1.1 200 OK\r\n";
-    headers += "Content-Type: text/html\r\n";
-    headers +=
-        "Content-Length: " + toString(response.getBody().length()) + "\r\n\r\n";
-    response.setHeaders(headers);
+    if (request.getResource().empty() || request.getResource() == "/")
+    {
+        if (routes.begin()->index.empty())
+            _createErrorResponse(BAD_REQUEST, response);
+        else
+            req_path = "/" + routes.begin()->index;
+    }
+    else
+        req_path = request.getResource();
+    if (stat((routes.begin()->root + req_path).c_str(), &info) != 0)
+    {
+        _createErrorResponse(BAD_REQUEST, response);
+        return (Log::log(WARNING, "No such path"));
+    }
+    if (S_ISREG(info.st_mode))
+    {
+        cont_type = GetRequestHandler::_get_file_content(routes.begin()->root + req_path, response);
+        if (cont_type.empty())
+        {
+            _createErrorResponse(BAD_REQUEST, response);
+            return (Log::log(WARNING, "couldn't get path"));
+        }
+        //response.setBody(it->second);
+        headers = "HTTP/1.1 200 OK\r\n";
+        headers += "Content-Type: " + cont_type +"\r\n";
+        headers +=
+            "Content-Length: " + toString(response.getBody().length()) +
+            "\r\n\r\n";
+        response.setHeaders(headers);
+    }
+    else
+    {
+        _createErrorResponse(BAD_REQUEST, response);
+        return (Log::log(WARNING, "Not a file"));
+    }
 }
 
 // =============================================================================
@@ -139,8 +218,24 @@ std::string PostRequestHandler ::_getBoundary(const std::string& headers) const
     return (boundary);
 }
 
-std::string
-PostRequestHandler ::_getFileContent(const std::string& body,
+std::string PostRequestHandler ::_getContentType(const std::string& headers) const
+{
+    std::string content_type_key = "Content-Type: ";
+    size_t content_type_pos = headers.find(content_type_key);
+    if (content_type_pos == std::string::npos)
+        return ("");
+    content_type_pos += content_type_key.size();
+    size_t content_type_end_pos;
+    if (headers.find("\r\n", content_type_pos) < headers.find(";", content_type_pos))
+        content_type_end_pos = headers.find("\r\n", content_type_pos);
+    else 
+        content_type_end_pos = headers.find(";", content_type_pos);
+    std::string content_type =
+        headers.substr(content_type_pos, content_type_end_pos - content_type_pos);
+    return (content_type);
+}
+
+std::string PostRequestHandler ::_getFileContent(const std::string& body,
                                      const std::string& boundary) const
 {
     size_t start = body.find(boundary);
@@ -189,33 +284,87 @@ void PostRequestHandler ::_createDir(std::string dir_name) const
     }
 }
 
+void PostRequestHandler::createResponse(std::string resource,
+                                       Response& response) const
+{
+    std::string headers;
+    std::string page;
+    std::string decoded;
+    std::string content;
+    
+    for (size_t i = 0; i < resource.length(); ++i) 
+    {
+        if (resource[i] == '+')
+            decoded += ' ';
+        else if (resource[i] == '%' && i + 2 < resource.length()) 
+        {
+            std::string hexValue = resource.substr(i + 1, 2);
+            char decodedChar = static_cast<char>(std::strtol(hexValue.c_str(), NULL, 16));
+            decoded += decodedChar;
+            i += 2; // Skip the next two characters
+        }
+        else
+            decoded += resource[i];
+    }
+    while (decoded.find("=") != std::string::npos)
+    {
+        decoded = decoded.substr(decoded.find("=") + 1);
+        content += "<p>" + decoded.substr(0, decoded.find("& ")) + "</p>";
+        decoded = decoded.substr(decoded.find("& ") + 2);
+    }
+    page = "<!DOCTYPE html><html><head><title>Passed: \
+            </title></head><body><h1>"+content+"</h1>";
+    response.setBody(page);
+    headers = "HTTP/1.1 200 OK\r\n";
+    headers += "Content-Type: text/html\r\n";
+    headers +=
+        "Content-Length: " + toString(response.getBody().length()) +
+        "\r\n\r\n";
+    response.setHeaders(headers);
+}
+
 void PostRequestHandler::processRequest(const Request& request,
                                          Response& response) const
 {
+    std::string content_type = _getContentType(request.getHeaders());
+    if (content_type.empty())
+    {
+        _createErrorResponse(BAD_REQUEST, response);
+        return (Log::log(WARNING, "couldn't get content type"));
+    }
     std::string boundary = _getBoundary(request.getHeaders());
-    if (boundary.empty())
+    if (boundary.empty() && content_type == "multipart/form-data")
     {
         _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "couldn't get content boundaries"));
     }
-
-    std::string file_content = _getFileContent(request.getBody(), boundary);
+    
+    std::string file_content;
+    if (content_type == "multipart/form-data")
+        file_content = _getFileContent(request.getBody(), boundary);
+    else if (content_type == "application/x-www-form-urlencoded")
+        file_content = request.getBody();
     std::string file_name = _getFileName(request.getBody());
-    if (file_content.empty() || file_name.empty())
+    if (file_content.empty() || (file_name.empty() && content_type == "multipart/form-data"))
     {
         _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "couldn't process the file"));
     }
 
-    // Write the file content to the file
-    _createDir("uploads");
-    file_name = "uploads/" + file_name;
-    std::ofstream ofs(file_name.c_str(),
-                      std::ios_base::out | std::ios_base::trunc);
-    if (!ofs)
-        return (Log::log(WARNING, "Couldn't write to file"));
-    ofs << file_content;
-    _createOkResponse("posted", response);
+    if (content_type == "multipart/form-data")
+    {
+        // Write the file content to the file
+        _createDir("uploads");
+        file_name = "uploads/" + file_name;
+        std::ofstream ofs(file_name.c_str(),
+                        std::ios_base::out | std::ios_base::trunc);
+        if (!ofs)
+            return (Log::log(WARNING, "Couldn't write to file"));
+        ofs << file_content;
+        _createOkResponse("posted", response);
+    }
+    else
+        createResponse(file_content, response);
 }
 
 // =============================================================================
@@ -226,12 +375,92 @@ bool DeleteRequestHandler ::_canProcess(const Request& request) const
     return (request.getMethod() == "DELETE");
 }
 
+std::string _GetUserAgent(std::string userAgent)
+{
+    size_t pos = userAgent.find("User-Agent:");
+    std::string agent;
+    
+    if (pos != std::string::npos) 
+    {
+        agent = userAgent.substr(pos + 12, userAgent.find("/", pos) - pos - 12);
+        return (agent);
+    }
+    return ("");
+}
+
+std::string DeleteRequestHandler ::_getPath(const Request& request,
+                                           Response& response) const
+{
+    Config& config = Config::getInstance();
+    const std::vector<Route>& routes = config.getRoutes();
+    std::string del_path;
+
+    del_path = request.getResource();//.substr(0, request.getResource().find("/"));
+    if (routes.empty())
+    {
+        _createErrorResponse(BAD_REQUEST, response);
+        return ("");
+    }
+    if (del_path.empty())
+    {
+        _createErrorResponse(BAD_REQUEST, response);
+        return ("");
+    }
+    std::string path = routes.begin()->upload_store + "/" + del_path;
+    if (path[path.size() - 1] == '/')
+        path = path.substr(0, path.size() - 1);
+    return (path);
+}
+
 void DeleteRequestHandler ::processRequest(const Request& request,
                                             Response& response) const
 {
-    (void)request;
-    (void)response;
-    std::cout << "hello world from delete" << std::endl;
+    struct stat info;
+    std::string path;
+    std::string user_agent;
+
+    user_agent = _GetUserAgent(request.getHeaders());
+    if (user_agent != "Chrome" && user_agent != "Firefox" && user_agent != "Safari"
+        && user_agent != "Edge" && user_agent != "Opera")
+    {
+        _createErrorResponse(BAD_REQUEST, response);
+        return (Log::log(WARNING, "Invalid delete request"));
+    }
+    path = _getPath(request, response);
+    if (path == "")
+    {
+        _createErrorResponse(BAD_REQUEST, response);
+        return (Log::log(WARNING, "couldn't get the path"));
+    }
+    if (stat(path.c_str(), &info) != 0)
+    {
+        _createErrorResponse(BAD_REQUEST, response);
+        return (Log::log(WARNING, "No such path"));
+    }
+    else 
+    {
+        if (S_ISREG(info.st_mode))
+        {
+            if (remove(path.c_str()) != 0)
+            {
+                // Error handling if the file could not be deleted
+                _createErrorResponse(BAD_REQUEST, response);
+                return (Log::log(WARNING, "Failed to delete file"));
+            }
+        }   
+        else if (S_ISDIR(info.st_mode))
+        {
+            if (remove(path.c_str()) != 0)
+            {
+                // Error handling if the directory could not be deleted
+                _createErrorResponse(BAD_REQUEST, response);
+                return (Log::log(WARNING, "Failed to delete file"));
+            }
+        }
+        else
+            _createErrorResponse(BAD_REQUEST, response);
+    }
+    _createOkResponse("deleted", response);
 }
 
 // =============================================================================
