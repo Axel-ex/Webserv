@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   RequestHandlers.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/08 14:11:30 by achabrer         ###   ########.fr       */
+/*   Updated: 2024/08/09 15:36:52 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -461,20 +461,4 @@ void DeleteRequestHandler ::processRequest(const Request& request,
             _createErrorResponse(BAD_REQUEST, response);
     }
     _createOkResponse("deleted", response);
-}
-
-// =============================================================================
-//                               CGI
-// =============================================================================
-bool CgiRequestHandler ::_canProcess(const Request& request) const
-{
-    return (request.getResource().find(".cgi") != std::string::npos);
-}
-
-void CgiRequestHandler ::processRequest(const Request& request,
-                                         Response& response) const
-{
-    (void)request;
-    (void)response;
-    std::cout << "hello world from cgi" << std::endl;
 }

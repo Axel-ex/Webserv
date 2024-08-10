@@ -20,6 +20,7 @@ set(srcs
 	${src_dir}RequestBuffer.cpp
 	${src_dir}Request.cpp
 	${src_dir}RequestHandlers.cpp
+	${src_dir}CgiRequestHandler.cpp
 	${src_dir}Response.cpp
 	${src_dir}main.cpp)
 
@@ -31,6 +32,7 @@ set(headers
 	${inc_dir}Config.hpp
 	${inc_dir}Request.hpp
 	${inc_dir}RequestHandlers.hpp
+	${inc_dir}CgiRequestHandler.hpp
 	${inc_dir}Response.hpp)
 
 #we will perform some testing

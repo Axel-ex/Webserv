@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   RequestHandlers.hpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:41:40 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/08 14:13:37 by achabrer         ###   ########.fr       */
+/*   Updated: 2024/08/09 15:34:42 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,13 +78,6 @@ class DeleteRequestHandler : public ARequestHandler
         bool _canProcess(const Request& request) const;
 };
 
-class CgiRequestHandler : public ARequestHandler
-{
-    public:
-        void processRequest(const Request& request, Response& response) const;
 
-    private:
-        bool _canProcess(const Request& request) const;
-};
 
 #endif // REQUESTHANDLERS_HPP_
