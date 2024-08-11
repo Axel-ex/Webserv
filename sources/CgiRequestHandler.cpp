@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/10 18:23:10 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/11 14:29:47 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,10 +60,24 @@ void CgiRequestHandler::init_ch_env(void)
 	
 }
 
-void CgiRequestHandler::init_cgi_env(void)
+void CgiRequestHandler::init_cgi_env(const Request &request)
 {
 	std::string wd = get_working_path();
 	
+	// IT WILL BE NEEDED TO ADD THE CGI PATH CONFIGURATION
+
+	this->_env["GATEWAY_INTERFACE"] = std::string("CGI/1.1");
+	this->_env["SCRIPT_NAME"] = cgi_exec;//
+    this->_env["SCRIPT_FILENAME"] = this->_cgi_path;
+    this->_env["PATH_INFO"] = this->_cgi_path;//
+    this->_env["PATH_TRANSLATED"] = this->_cgi_path;//
+    this->_env["REQUEST_URI"] = this->_cgi_path;//
+    this->_env["SERVER_NAME"] = req.getHeader("host");
+    this->_env["SERVER_PORT"] ="8002";
+    this->_env["REQUEST_METHOD"] = req.getMethodStr();
+    this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
+    this->_env["REDIRECT_STATUS"] = "200";
+	this->_env["SERVER_SOFTWARE"] = "AMANIX";
 	
 }
 

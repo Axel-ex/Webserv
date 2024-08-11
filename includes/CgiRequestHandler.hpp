@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:34:18 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/10 18:21:53 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/11 14:29:09 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@
 
 #define MAXPATHLEN 4096
 
+using std::map, std::string;
 class CgiRequestHandler
 {
 	public:
@@ -44,14 +45,17 @@ class CgiRequestHandler
 		void init_ch_env(void);
 
 	private:
-		std::map<std::string, std::string> _env;
-		std::string _method;
-		std::string _resource;
-		std::string _protocol;
-		std::string _headers;
-		std::string _body;
-		int _poll_fd;
-		char **_ch_env;
+		map<string, string>	_env;
+		string				_method;
+		string				_resource;
+		string				_protocol;
+		string				_headers;
+		string				_body;
+		Route				_location;
+		int					_in_pipe[2];
+		int					_out_pipe[2];
+		int					_poll_fd;
+		char				**_ch_env;
 };
 
 #endif // CGIREQUESTHANDLER_HPP
