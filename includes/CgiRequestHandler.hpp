@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:34:18 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/11 14:29:09 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/15 14:37:29 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,8 +41,8 @@ class CgiRequestHandler
 
 		static bool _canProcess(const Request &request);
 		void processRequest(const Request &request);
-		void init_cgi_env(void);
-		void init_ch_env(void);
+		void init_cgi_env(const Request &request);
+		void init_ch_env(const Request &request);
 
 	private:
 		map<string, string>	_env;
@@ -54,7 +54,7 @@ class CgiRequestHandler
 		Route				_location;
 		int					_in_pipe[2];
 		int					_out_pipe[2];
-		int					_poll_fd;
+		int					_client_fd;
 		char				**_ch_env;
 };
 

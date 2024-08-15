@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/10 13:25:30 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/15 15:25:21 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -203,7 +203,7 @@ void Server ::_serveClients(void)
 			// 		create an cgihandler obj with given request and poll _fds[i].fd;
 			// 		try:
 			// 		 ----> process the request;
-			// 		cath: ->> ERRORS;
+			// 		catch: ->> ERRORS;
 			// }
 			
 			Response response(request);
