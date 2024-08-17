@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/15 15:25:21 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/17 15:15:34 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ Server ::Server(std::string config_file)
 	Config::parseFile(config_file);
 	(void)config_file;
 	Log::setLogLevel(DEBUG);
-	Log::clearScreen();
+	// Log::clearScreen();
 }
 
 Server ::~Server()
@@ -198,21 +198,22 @@ void Server ::_serveClients(void)
 			 * 
 			 */
 			
-			// if (CgiRequestHandler::_canProcess(request))
-			// {
-			// 		create an cgihandler obj with given request and poll _fds[i].fd;
-			// 		try:
-			// 		 ----> process the request;
-			// 		catch: ->> ERRORS;
-			// }
-			
-			Response response(request);
-			send(_fds[i].fd, response.getHeaders().c_str(),
-				response.getHeaders().size(), 0);
-			send(_fds[i].fd, response.getBody().c_str(),
-				response.getBody().size(), 0);
+			if (CgiRequestHandler::_canProcess(request))
+			{
+					CgiRequestHandler cgi_obj(request, _fds[i].fd);
+					cgi_obj.processRequest();
+			}
+			else
+			{
+				Response response(request);
+				send(_fds[i].fd, response.getHeaders().c_str(),
+					response.getHeaders().size(), 0);
+				send(_fds[i].fd, response.getBody().c_str(),
+					response.getBody().size(), 0);
+			}
 			close(_fds[i].fd);
 			_fds.erase(_fds.begin() + i);
+			
 		}
 	}
 }

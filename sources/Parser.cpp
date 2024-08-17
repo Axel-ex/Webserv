@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/09 15:58:12 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/16 17:24:15 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -247,7 +247,12 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it) const
 {
     // Init the Route struct with empty values.
     std::vector<std::string> methods;
-    Route route = (Route){it->content, "", methods, "", "", ""};
+    std::vector<std::string> cgi_path;
+    std::vector<std::string> cgi_extension;
+
+    std::cout << it->content << std::endl;
+    
+    Route route = (Route){it->content, "", methods, "", "", cgi_path, cgi_extension};
     for (; it->type != CLOSE_BRACKET; it++)
     {
         if (it->type != DIRECTIVE)
@@ -258,8 +263,24 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it) const
             route.index = (++it)->content;
         else if (it->content == "upload_store")
             route.upload_store = (++it)->content;
+        else if (it->content == "cgi_path")
+        {
+            while ((++it)->type == ARGUMENT)
+            {
+                if (!_isCgiPath(it->content))
+                    throw SynthaxException(*it, "Unrecognised CGI path");
+                route.cgi_path.push_back(it->content);
+            }
+        }
         else if (it->content == "cgi_extension")
-            route.cgi_extension = (++it)->content;
+        {
+            while ((++it)->type == ARGUMENT)
+            {
+                if (!_isCgiExtension(it->content))
+                    throw SynthaxException(*it, "Syntax error on CGI extension");
+                route.cgi_extension.push_back(it->content);
+            }
+        }
         else if (it->content == "methods")
         {
             while ((++it)->type == ARGUMENT)
@@ -281,6 +302,28 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it) const
 bool Parser::_isHttpMethod(const std::string& method) const
 {
     return (method == "GET" || method == "POST" || method == "DELETE");
+}
+
+bool Parser::_isCgiPath(const std::string& path) const
+{
+    std::string command = "which " + path + " > /dev/null 2>&1";
+    int result = system(command.c_str());
+    return (result == 0);
+}
+
+bool Parser::_isCgiExtension(const std::string& extension) const
+{
+    if (extension.empty() || extension[0] != '.')
+        return false;
+    for (size_t i = 0; i < extension.size(); i++)
+    {
+        int dot = 0;
+        if (extension[i] == '.')
+            dot++;
+        if (dot > 1)
+            return (false);
+    }
+    return true;
 }
 
 /**
