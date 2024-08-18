@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/17 15:15:34 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/18 13:39:20 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,6 +148,13 @@ ssize_t Server ::_readFd(int fd_index, char* buffer, size_t buffer_size)
 
 void Server ::_serveClients(void)
 {
+
+	// =======================================================================
+	//	Maybe add here a function to check open process by CGI that should be 
+	//  timed out???
+	//  Also add the handle function for the SIGCHILD signal o.o
+	// =======================================================================
+	
 	/*listen for client events, skip the first fds that are for the server
 	 * sockets */
 	for (size_t i = Config::getPorts().size(); i < _fds.size(); ++i)

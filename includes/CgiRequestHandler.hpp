@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:34:18 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/17 17:21:58 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/18 13:30:13 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,14 +35,12 @@
 
 #define MAXPATHLEN 4096
 
-using std::map;
-using std::string;
-
 typedef struct _s_client_process
 {
-	pid_t	pid;
-	int		client_fd;
-	clock_t	start_time;
+	std::string	method;
+	pid_t		pid;
+	int			client_fd;
+	clock_t		start_time;
 }				t_client_process;
 
 class CgiRequestHandler
@@ -54,25 +52,25 @@ class CgiRequestHandler
 		~CgiRequestHandler();
 
 		static bool _canProcess(const Request &request);
-		static map<pid_t, t_client_process> _open_processes;
+		static std::map<pid_t, t_client_process> _open_processes;
 
 		void processRequest();
 		void init_cgi_env(const Request &request);
 		void init_ch_env();
 
 	private:
-		map<string, string>	_env;
-		string				_method;
-		string				_resource;
-		string				_protocol;
-		string				_headers;
-		string				_body;
-		Route				_location;
-/* 		int					_in_pipe[2];
-		int					_out_pipe[2]; */
-		int					_client_fd;
-		char				**_ch_env;
-		char				*_argv[3];
+		std::map<std::string, std::string>	_env;
+		std::string							_method;
+		std::string							_resource;
+		std::string							_protocol;
+		std::string							_headers;
+		std::string							_body;
+		Route								_location;
+/* 		int									_in_pipe[2];
+		int									_out_pipe[2]; */
+		int									_client_fd;
+		char								**_ch_env;
+		char								*_argv[3];
 };
 
 #endif // CGIREQUESTHANDLER_HPP

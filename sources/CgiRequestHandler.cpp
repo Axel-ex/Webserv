@@ -6,13 +6,13 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/17 17:22:52 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/18 14:49:22 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/CgiRequestHandler.hpp"
 
-map<pid_t, t_client_process> CgiRequestHandler::_open_processes;
+std::map<pid_t, t_client_process> CgiRequestHandler::_open_processes;
 
 CgiRequestHandler::CgiRequestHandler(const CgiRequestHandler &other)
 {
@@ -50,16 +50,16 @@ CgiRequestHandler::~CgiRequestHandler()
 //                                    CGI HANDLER
 // =============================================================================
 
-string get_working_path()
+std::string get_working_path()
 {
 	char temp[MAXPATHLEN];
-	return (getcwd(temp, sizeof(temp)) ? string(temp) : string(""));
+	return (getcwd(temp, sizeof(temp)) ? std::string(temp) : std::string(""));
 }
 
-string get_script(const Request &request)
+std::string get_script(const Request &request)
 {
-	string script = "/resources" + request.getResource();
-	string wd = get_working_path();
+	std::string script = "/resources" + request.getResource();
+	std::string wd = get_working_path();
 
 	script = script.substr(0, script.find('?'));
 	// if (script[0] != '/')
@@ -67,11 +67,11 @@ string get_script(const Request &request)
 	// return (script);
 }
 
-string getContentType(const string &headers)
+std::string getContentType(const std::string &headers)
 {
-	string content_type_key = "Content-Type: ";
+	std::string content_type_key = "Content-Type: ";
 	size_t content_type_pos = headers.find(content_type_key);
-	if (content_type_pos == string::npos)
+	if (content_type_pos == std::string::npos)
 		return ("");
 	content_type_pos += content_type_key.size();
 	size_t content_type_end_pos;
@@ -79,16 +79,16 @@ string getContentType(const string &headers)
 		content_type_end_pos = headers.find("\r\n", content_type_pos);
 	else
 		content_type_end_pos = headers.find(";", content_type_pos);
-	string content_type =
+	std::string content_type =
 		headers.substr(content_type_pos, content_type_end_pos - content_type_pos);
 	return (content_type);
 }
 
-map<string, string> parseHttpHeader(const string &header)
+std::map<std::string, std::string> parseHttpHeader(const std::string &header)
 {
-	map<string, string> headers;
+	std::map<std::string, std::string> headers;
 	std::istringstream stream(header);
-	string line;
+	std::string line;
 
 	while (std::getline(stream, line))
 	{
@@ -96,10 +96,10 @@ map<string, string> parseHttpHeader(const string &header)
 			continue;
 
 		size_t colonPos = line.find(':');
-		if (colonPos != string::npos)
+		if (colonPos != std::string::npos)
 		{
-			string key = line.substr(0, colonPos);
-			string value = line.substr(colonPos + 1);
+			std::string key = line.substr(0, colonPos);
+			std::string value = line.substr(colonPos + 1);
 
 			key.erase(key.find_last_not_of(" \t\r\n") + 1);
 			value.erase(0, value.find_first_not_of(" \t\r\n"));
@@ -111,15 +111,15 @@ map<string, string> parseHttpHeader(const string &header)
 	return (headers);
 }
 
-string getScriptName(const string &url)
+std::string getScriptName(const std::string &url)
 {
-	string script = url.substr(0, url.find('?'));
-	if (script.find_last_of('/') != string::npos)
+	std::string script = url.substr(0, url.find('?'));
+	if (script.find_last_of('/') != std::string::npos)
 		script = script.substr(script.find_last_of('/') + 1);
 	return (script);
 }
 
-string intToString(int value)
+std::string intToString(int value)
 {
 	std::stringstream ss;
 	ss << value;
@@ -128,9 +128,9 @@ string intToString(int value)
 
 void CgiRequestHandler::init_cgi_env(const Request &request)
 {
-	string script_name = getScriptName(_resource);
-	string script_path = get_script(request);
-	map<string, string> request_headers = parseHttpHeader(_headers);
+	std::string script_name = getScriptName(_resource);
+	std::string script_path = get_script(request);
+	std::map<std::string, std::string> request_headers = parseHttpHeader(_headers);
 
 	// IT WILL BE NEEDED TO ADD THE CGI PATH CONFIGURATION
 	if (request.getMethod() == "POST")
@@ -141,10 +141,15 @@ void CgiRequestHandler::init_cgi_env(const Request &request)
 		_env["CONTENT_TYPE"] = getContentType(_headers);
 	}
 	_env["GATEWAY_INTERFACE"] = "CGI/1.1";
+	
+	// ===================================================================
+	// 							FIX THIS DATA
 	_env["SCRIPT_NAME"] = script_name;
 	_env["SCRIPT_FILENAME"] = script_path;
 	_env["PATH_INFO"] = script_path;
 	_env["PATH_TRANSLATED"] = script_path;
+	// ===================================================================
+	
 	_env["REQUEST_URI"] = _resource;
 	_env["SERVER_NAME"] = Config::getServerName();
 	_env["SERVER_PORT"] = intToString(Config::getPorts()[0]);
@@ -153,15 +158,16 @@ void CgiRequestHandler::init_cgi_env(const Request &request)
 	_env["REDIRECT_STATUS"] = "200";
 	_env["SERVER_SOFTWARE"] = "Aether_42";
 	_env["DOCUMENT_ROOT"] = _location.url;
+	
 	if (request_headers.find("cookie") != request_headers.end())
 		_env["HTTP_COOKIE"] = request_headers["cookie"];
 
-	for (map<string, string>::iterator it = request_headers.begin();
+	for (std::map<std::string, std::string>::iterator it = request_headers.begin();
 		 it != request_headers.end(); ++it)
 	{
-		string name = it->first;
+		std::string name = it->first;
 		std::transform(name.begin(), name.end(), name.begin(), ::toupper);
-		string key = "HTTP_" + name;
+		std::string key = "HTTP_" + name;
 		_env[key] = it->second;
 	}
 	_argv[0] = strdup(_env["SCRIPT_FILENAME"].c_str());
@@ -172,7 +178,7 @@ void CgiRequestHandler::init_cgi_env(const Request &request)
 void CgiRequestHandler::init_ch_env(void)
 {
 	int i = 0;
-	map<string, string>::iterator it = _env.begin();
+	std::map<std::string, std::string>::iterator it = _env.begin();
 
 	_ch_env = new char *[_env.size() + 1];
 	if (!_ch_env)
@@ -183,7 +189,7 @@ void CgiRequestHandler::init_ch_env(void)
 
 	for (; it != _env.end(); it++, i++)
 	{
-		string variable = it->first + "=" + it->second;
+		std::string variable = it->first + "=" + it->second;
 		_ch_env[i] = strdup(variable.c_str());
 	}
 	_ch_env[i] = NULL;
@@ -201,7 +207,7 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd)
 	init_ch_env();
 }
 
-bool startsWith(const string &str, const string &prefix)
+bool startsWith(const std::string &str, const std::string &prefix)
 {
 	if (prefix.size() > str.size())
 		return (false);
@@ -213,14 +219,14 @@ bool startsWith(const string &str, const string &prefix)
 	return (true);
 }
 
-string getFileExtension(const string &url)
+std::string getFileExtension(const std::string &url)
 {
 	size_t queryPos = url.find('?');
 
-	string path = (queryPos != string::npos) ? url.substr(0, queryPos) : url;
+	std::string path = (queryPos != std::string::npos) ? url.substr(0, queryPos) : url;
 
 	size_t dotPos = path.find_last_of('.');
-	if (dotPos == string::npos)
+	if (dotPos == std::string::npos)
 		return ("");
 
 	if (dotPos == path.size() - 1)
@@ -229,9 +235,9 @@ string getFileExtension(const string &url)
 	return path.substr(dotPos + 1);
 }
 
-bool isExtensionAllowed(const string &url, const std::vector<string> &cgi_extensions)
+bool isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions)
 {
-	string extension = getFileExtension(url);
+	std::string extension = getFileExtension(url);
 
 	for (size_t i = 0; i < cgi_extensions.size(); ++i)
 	{
@@ -245,7 +251,7 @@ bool isExtensionAllowed(const string &url, const std::vector<string> &cgi_extens
 bool CgiRequestHandler::_canProcess(const Request &request)
 {
 	std::vector<Route> routes = Config::getRoutes();
-	string resource = request.getResource();
+	std::string resource = request.getResource();
 	// ===============================================================================
 
 	// THE PARSING OF THE LOCATION IS FAILLING TO SAVE THE URL OF THE LOCATION
@@ -282,7 +288,7 @@ void CgiRequestHandler::processRequest()
 			// 						  TO IMPLEMENT ERROR PAGE LOGIC
 			// ============================================================================
 			// perror("Could not execve the file!");
-			// string failureResponse = "HTTP/1.1 500 Internal Server Error\r\n"
+			// std::string failureResponse = "HTTP/1.1 500 Internal Server Error\r\n"
 			// 							  "Content-Type: text/plain\r\n\r\n"
 			// 							  "Content-Length: 21\r\n\r\n"
 			// 							  "Internal Server Error";
@@ -293,7 +299,14 @@ void CgiRequestHandler::processRequest()
 	}
 	else
 	{
-		t_client_process c_process = {pid, _client_fd, clock()};
-		_o
+		t_client_process c_process = {_method, pid, _client_fd, clock()};
+		CgiRequestHandler::_open_processes[pid] = c_process;
+		
+		Log::log(DEBUG, "Added c_process to _open_processes map");
+		Log::log(DEBUG, "PID: " + std::to_string(pid) \
+								+ ", Client FD: " \
+								+ std::to_string(_client_fd) \
+								+ ", Starting Time: " \
+								+ std::to_string(c_process.start_time));
 	}
 }
