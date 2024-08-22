@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:34:18 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/18 13:30:13 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/22 21:30:35 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,45 +32,69 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <ctime>
+#include <fcntl.h>
+#include <cstdio>
 
 #define MAXPATHLEN 4096
+#define CGI_TIMEOUT 5
 
 typedef struct _s_client_process
 {
 	std::string	method;
 	pid_t		pid;
-	int			client_fd;
 	clock_t		start_time;
+	int			client_fd;
+	int			cgi_fd;
 }				t_client_process;
 
 class CgiRequestHandler
 {
 	public:
 		CgiRequestHandler(const Request &request, int fd);
-		CgiRequestHandler(const CgiRequestHandler &other);
-		CgiRequestHandler &operator=(const CgiRequestHandler &other);
 		~CgiRequestHandler();
 
+		static void _checkTimeouts();
 		static bool _canProcess(const Request &request);
+		static void	_sigchldHandler(int signum);
+		
 		static std::map<pid_t, t_client_process> _open_processes;
 
 		void processRequest();
-		void init_cgi_env(const Request &request);
-		void init_ch_env();
 
 	private:
-		std::map<std::string, std::string>	_env;
+	
+		// ============================ REQUEST INFORMATION ===========================
+		
 		std::string							_method;
 		std::string							_resource;
 		std::string							_protocol;
 		std::string							_headers;
 		std::string							_body;
+		// ============================================================================
+		
+		std::map<std::string, std::string>	_env;
+		std::map<std::string, std::string>	_request_headers;		
+		std::string							_scriptName;
+		std::string							_scriptPath;
+		std::string							_extension;
 		Route								_location;
-/* 		int									_in_pipe[2];
-		int									_out_pipe[2]; */
 		int									_client_fd;
 		char								**_ch_env;
 		char								*_argv[3];
+
+
+		void 								initCgiEnv(void);
+		void 								initChEnv(void);
+		std::string							getContentType(const std::string &headers);
+		std::string							getScriptPath(void) const;
+		std::string							getScriptName(void) const;
+		std::string 						getWorkingPath(void) const;
+		std::map<std::string, std::string>	parseHttpHeader(void) const;
 };
+
+std::string getFileExtension(const std::string &url);
+std::string intToString(int value);
+bool		startsWith(const std::string &str, const std::string &prefix);
+bool 		isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions);
 
 #endif // CGIREQUESTHANDLER_HPP

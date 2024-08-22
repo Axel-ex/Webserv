@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/18 13:39:20 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/22 21:27:49 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,7 +106,8 @@ void Server ::start(void)
 		int activity = poll(_fds.data(), _fds.size(), 1000);
 		if (activity < 0 && !stopFlag)
 			throw ServerError("Error in poll");
-
+			
+		CgiRequestHandler::_checkTimeouts();
 		_acceptIncomingConnections();
 		_serveClients();
 	}
@@ -217,9 +218,9 @@ void Server ::_serveClients(void)
 					response.getHeaders().size(), 0);
 				send(_fds[i].fd, response.getBody().c_str(),
 					response.getBody().size(), 0);
+				close(_fds[i].fd);
+				_fds.erase(_fds.begin() + i);
 			}
-			close(_fds[i].fd);
-			_fds.erase(_fds.begin() + i);
 			
 		}
 	}
