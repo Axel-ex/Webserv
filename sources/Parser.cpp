@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/16 17:24:15 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/24 13:31:48 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -208,7 +208,7 @@ void Parser ::_parseServerDirective(std::list<Token>::iterator& it)
         if (it->type != DIRECTIVE && it->type != LOCATION)
             continue;
         else if (it->type == LOCATION)
-            _parseLocationDirective(it);
+            _parseLocationDirective(++it);
         else if (it->content == "server_name")
             Config::setServerName((++it)->content);
         else if (it->content == "error_page")
@@ -249,8 +249,6 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it) const
     std::vector<std::string> methods;
     std::vector<std::string> cgi_path;
     std::vector<std::string> cgi_extension;
-
-    std::cout << it->content << std::endl;
     
     Route route = (Route){it->content, "", methods, "", "", cgi_path, cgi_extension};
     for (; it->type != CLOSE_BRACKET; it++)

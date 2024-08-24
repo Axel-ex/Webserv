@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/22 21:40:11 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/24 16:44:49 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,12 @@
 // STRUCTURE TO BE USED FOR VERIFYING TIMED-OUT PROCESSES
 std::map<pid_t, t_client_process> CgiRequestHandler::_open_processes;
 
+void CgiRequestHandler::setPollFds(std::vector<t_pollfd> *fds)
+{
+	_poll_fds = fds;
+}
 
-
-
-CgiRequestHandler::CgiRequestHandler(const Request &request, int fd)
+CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &location, int index)
 {
 	// ============ REQUEST INFORMATION ==============
 
@@ -29,14 +31,24 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd)
 	_body = request.getBody();
 	// ===============================================
 
+	decode(); // --> decode hexadecimal values in the requested URI
+	_location = location;
+	
+	_poll_fds = NULL;
+	_fd_index = index;
+	
+	_document_root = _location.root.substr(0, _location.root.find(_location.url));
+	if (_document_root[0] == '.')
+		_document_root.erase(0, 1);
+		
 	_client_fd = fd;
 	_scriptName = getScriptName();
 	_scriptPath = getScriptPath();
 	_request_headers = parseHttpHeader();
 	_extension = getFileExtension(_resource);
+	_query_str = getQueryString();
 
 	// ============ ENVIRONMENT INITIALIZATION ==============
-
 	initCgiEnv();
 	initChEnv();
 	// ======================================================
@@ -48,34 +60,22 @@ CgiRequestHandler::~CgiRequestHandler()
 }
 
 
-/**
- * Determines whether the given request can be processed by the CGI request handler.
- *
- * @param request The request to be processed.
- * @return True if the request can be processed, false otherwise.
- */
+
 bool CgiRequestHandler::_canProcess(const Request &request)
 {
 	std::vector<Route> routes = Config::getRoutes();
 	std::string resource = request.getResource();
-	// ===============================================================================
-
-	// THE PARSING OF THE LOCATION IS FAILLING TO SAVE THE URL OF THE LOCATION
-	// THE LOCATION URL IS NEEDED TO VERIFY IF THERE ARE ANY CGI DIRECTORIES DEFINED
-
-	// ===============================================================================
+	std::string method = request.getMethod();
 
 	for (size_t i = 0; i < routes.size(); i++)
 	{
-		// NOT SURE IF WE WILL NEED TO HAVE THE CGI_PATH AS A REQUIREMENT !!!
-		if (std::find(routes[i].methods.begin(), routes[i].methods.end(),
-					  request.getMethod()) == routes[i].methods.end() ||
-			routes[i].cgi_extension.empty() || routes[i].cgi_path.empty())
-			continue;
-		if (startsWith(resource, routes[i].url) && isExtensionAllowed(resource, routes[i].cgi_extension))
-			return (true);
+		if(std::find(routes[i].methods.begin(), routes[i].methods.end(), method) != routes[i].methods.end())
+		{
+			if (startsWith(resource, routes[i].url) && isExtensionAllowed(resource, routes[i].cgi_extension))
+				return (true);
+		}
 	}
-	return (true);
+	return (false);
 }
 
 void CgiRequestHandler::initCgiEnv()
@@ -104,7 +104,8 @@ void CgiRequestHandler::initCgiEnv()
 	_env["SERVER_PROTOCOL"] = _protocol;
 	_env["REDIRECT_STATUS"] = "200";
 	_env["SERVER_SOFTWARE"] = "Aether_42";
-	_env["DOCUMENT_ROOT"] = _location.url;
+	_env["DOCUMENT_ROOT"] = _document_root;
+	_env["QUERY_STRING"] = _query_str;
 
 	if (_request_headers.find("cookie") != _request_headers.end())
 		_env["HTTP_COOKIE"] = _request_headers["cookie"];
@@ -142,6 +143,21 @@ void CgiRequestHandler::initChEnv(void)
 	_ch_env[i] = NULL;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+// ==========================================================================================
+// 									PROCESSING REQUESTED SCRIPT
+// ==========================================================================================
 void CgiRequestHandler::processRequest()
 {
 	pid_t pid;
@@ -167,11 +183,10 @@ void CgiRequestHandler::processRequest()
 		{
 			std::string failureResponse = "HTTP/1.1 500 Internal Server Error\r\n"
 										  "Content-Type: text/plain\r\n\r\n"
-										  "Content-Length: 21\r\n\r\n"
 										  "Internal Server Error";
 			send(_client_fd, failureResponse.c_str(), failureResponse.length(), 0);
 
-			// exit(EXIT_FAILURE); SHOULD IT BE A SHUTDOWN POINT ???
+			exit(EXIT_FAILURE);
 		}
 	}
 	else
@@ -179,10 +194,21 @@ void CgiRequestHandler::processRequest()
 		close(cgi_pipe[1]);
 		fcntl(cgi_pipe[0], F_SETFL, O_NONBLOCK);
 
-		t_client_process c_process = {_method, pid, clock(), _client_fd, cgi_pipe[0]};
+		t_client_process c_process = {_poll_fds, _method, pid, clock(), _client_fd, cgi_pipe[0], _fd_index};
 		CgiRequestHandler::_open_processes[pid] = c_process;
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
 
 // ==========================================================================================
 // 									LOOK FOR TIMED-OUT PROCESSES
@@ -195,20 +221,32 @@ void CgiRequestHandler::_checkTimeouts()
 	{
 		now = clock();
 		elapsed = static_cast<double>(now - it->second.start_time) / CLOCKS_PER_SEC * 1e4;
+		std::cout << "Porcess [" << it->first << "]" << "running for: " << elapsed << " seconds." << std::endl;
 		if (elapsed > CGI_TIMEOUT)
 		{
+			std::string failureResponse = "HTTP/1.1 408 Internal Server Error\r\n"
+										  "Content-Type: text/plain\r\n\r\n"
+										  "Internal Server Error: Request time out.";
+			send(it->second.client_fd, failureResponse.c_str(), failureResponse.length(), 0);
+			std::cout << "\n\n\n\t\t\trequest timed-out\n\n\n";
 			kill(it->first, SIGKILL);
 			close(it->second.cgi_fd);
-			std::string failureResponse = "HTTP/1.1 500 Internal Server Error\r\n"
-										  "Content-Type: text/plain\r\n\r\n"
-										  "Content-Length: 21\r\n\r\n"
-										  "Internal Server Error: Request timed-out.";
-			send(it->second.client_fd, failureResponse.c_str(), failureResponse.length(), 0);
 			close(it->second.client_fd);
-			_open_processes.erase(it);
+			it->second.poll_fds->erase(it->second.poll_fds->begin() + it->second._fd_index);
+			// _open_processes.erase(it);
 		}
 	}
 }
+
+
+
+
+
+
+
+
+
+
 
 
 // ==========================================================================================
@@ -237,19 +275,40 @@ void CgiRequestHandler::_sigchldHandler(int signum)
 				send(it->second.client_fd, response.c_str(), response.length(), 0);
 			}
 			close(client_fd);
+			it->second.poll_fds->erase(it->second.poll_fds->begin() + it->second._fd_index);
 			close(it->second.cgi_fd);
 			_open_processes.erase(it);
-			std::cout << RED << "closed poll fd: " << client_fd << std::endl;
+			std::cout << "CGI PROCESS (" << pid <<  ") HAS FINISHED ITS EXECUTION" << std::endl;
 		}
 		else
-			std::cout << RED << "CGI PROCESS (" << pid <<  ") WAS KILLED" << std::endl;
-		// Log::log(WARNING, "CGI PROCESS KILLED BY TIMEDOUT");
+		{
+			std::cout << RED << "CGI PROCESS (" << pid <<  ") WAS KILLED" << RESET << std::endl;
+			close(it->second.client_fd);
+			close(it->second.cgi_fd);
+			it->second.poll_fds->erase(it->second.poll_fds->begin() + it->second._fd_index);
+			_open_processes.erase(it);
+		}
 	}
 }
 
+
+
+
+
+
+
+
 // =========================================================================================
-//									AUXILIAR FUNCTIONS
+//									AUXILIAR FUNCTIONS AND METHODS
 // =========================================================================================
+
+std::string CgiRequestHandler::getQueryString(void)
+{
+	std::string query("");
+	if (_resource.find("?") != std::string::npos)
+		query = _resource.substr(_resource.find("?") + 1);
+	return (query);
+}
 
 std::string getFileExtension(const std::string &url)
 {
@@ -264,14 +323,16 @@ std::string getFileExtension(const std::string &url)
 	if (dotPos == path.size() - 1)
 		return ("");
 
-	return path.substr(dotPos + 1);
+	return path.substr(dotPos);
 }
 
-bool startsWith(const std::string &str, const std::string &prefix)
+bool startsWith(std::string str, const std::string &prefix)
 {
+	if (prefix[0] != '/' && str[0] == '/')
+		str.erase(0, 1);
 	if (prefix.size() > str.size())
 		return (false);
-	for (size_t i = 0; i < prefix.size(); ++i)
+	for (size_t i = 0; i < prefix.size(); i++)
 	{
 		if (str[i] != prefix[i])
 			return (false);
@@ -282,13 +343,11 @@ bool startsWith(const std::string &str, const std::string &prefix)
 bool isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions)
 {
 	std::string extension = getFileExtension(url);
-
 	for (size_t i = 0; i < cgi_extensions.size(); ++i)
 	{
 		if (extension == cgi_extensions[i])
 			return (true);
 	}
-
 	return (false);
 }
 
@@ -300,14 +359,12 @@ std::string CgiRequestHandler::getWorkingPath(void) const
 
 std::string CgiRequestHandler::getScriptPath(void) const
 {
-	// CORRECT THE RESOURCES LOCAITONS STATICALY NAMED
-	std::string script = "/resources" + _resource;
+	
+	std::string script =  _document_root + _resource;
 	std::string wd = getWorkingPath();
 
 	script = script.substr(0, script.find('?'));
-	// if (script[0] != '/')
 	return (wd + script);
-	// return (script);
 }
 
 std::string CgiRequestHandler::getContentType(const std::string &headers)
@@ -367,4 +424,27 @@ std::string intToString(int value)
 	std::stringstream ss;
 	ss << value;
 	return ss.str();
+}
+
+unsigned int convertHex(const std::string& nb)
+{
+	unsigned int x;
+	std::stringstream ss;
+	ss << nb;
+	ss >> std::hex >> x;
+	return (x);
+}
+
+std::string CgiRequestHandler::decode()
+{
+	size_t token = _resource.find("%");
+	while (token != std::string::npos)
+	{
+		if (_resource.length() < token + 2)
+			break;
+		char decimal = convertHex(_resource.substr(token + 1, 2));
+		_resource.replace(token, 3, toString(decimal));
+		token = _resource.find("%");
+	}
+	return (_resource);
 }

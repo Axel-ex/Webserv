@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:34:18 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/22 21:30:35 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/24 15:58:11 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,8 @@
 #include "Log.hpp"
 #include "RequestHandlers.hpp"
 #include "Response.hpp"
+#include "utils.hpp"
+
 
 #include <string>
 #include <sstream>
@@ -38,19 +40,22 @@
 #define MAXPATHLEN 4096
 #define CGI_TIMEOUT 5
 
+typedef struct pollfd t_pollfd;
 typedef struct _s_client_process
 {
-	std::string	method;
-	pid_t		pid;
-	clock_t		start_time;
-	int			client_fd;
-	int			cgi_fd;
+	std::vector<t_pollfd>	*poll_fds;
+	std::string				method;
+	pid_t					pid;
+	clock_t					start_time;
+	int						client_fd;
+	int						cgi_fd;
+	int						_fd_index;
 }				t_client_process;
 
 class CgiRequestHandler
 {
 	public:
-		CgiRequestHandler(const Request &request, int fd);
+		CgiRequestHandler(const Request &request, int fd, Route &location, int index);
 		~CgiRequestHandler();
 
 		static void _checkTimeouts();
@@ -59,6 +64,7 @@ class CgiRequestHandler
 		
 		static std::map<pid_t, t_client_process> _open_processes;
 
+		void setPollFds(std::vector<t_pollfd> *fds);
 		void processRequest();
 
 	private:
@@ -77,6 +83,12 @@ class CgiRequestHandler
 		std::string							_scriptName;
 		std::string							_scriptPath;
 		std::string							_extension;
+		std::string							_document_root;
+		std::string							_query_str;
+
+		std::vector<t_pollfd>				*_poll_fds;
+		int									_fd_index;
+
 		Route								_location;
 		int									_client_fd;
 		char								**_ch_env;
@@ -85,16 +97,18 @@ class CgiRequestHandler
 
 		void 								initCgiEnv(void);
 		void 								initChEnv(void);
+		std::string							decode();
 		std::string							getContentType(const std::string &headers);
 		std::string							getScriptPath(void) const;
 		std::string							getScriptName(void) const;
 		std::string 						getWorkingPath(void) const;
+		std::string							getQueryString(void);
 		std::map<std::string, std::string>	parseHttpHeader(void) const;
 };
 
+
 std::string getFileExtension(const std::string &url);
 std::string intToString(int value);
-bool		startsWith(const std::string &str, const std::string &prefix);
+bool		startsWith(std::string str, const std::string &prefix);
 bool 		isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions);
-
 #endif // CGIREQUESTHANDLER_HPP

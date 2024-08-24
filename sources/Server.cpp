@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/22 21:27:49 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/24 16:36:14 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ Server ::Server(std::string config_file)
 	Config::parseFile(config_file);
 	(void)config_file;
 	Log::setLogLevel(DEBUG);
-	// Log::clearScreen();
+	Log::clearScreen();
 }
 
 Server ::~Server()
@@ -106,7 +106,6 @@ void Server ::start(void)
 		int activity = poll(_fds.data(), _fds.size(), 1000);
 		if (activity < 0 && !stopFlag)
 			throw ServerError("Error in poll");
-			
 		CgiRequestHandler::_checkTimeouts();
 		_acceptIncomingConnections();
 		_serveClients();
@@ -147,15 +146,25 @@ ssize_t Server ::_readFd(int fd_index, char* buffer, size_t buffer_size)
 	return (n);
 }
 
+Route getCgiRoute(const Request &request)
+{
+	std::vector<Route> routes = Config::getRoutes();
+	std::string resource = request.getResource();
+	std::string method = request.getMethod();
+
+	for (size_t i = 0; i < routes.size(); i++)
+	{
+		if(std::find(routes[i].methods.begin(), routes[i].methods.end(), method) != routes[i].methods.end())
+		{
+			if (startsWith(resource, routes[i].url) && isExtensionAllowed(resource, routes[i].cgi_extension))
+				return (routes[i]);
+		}
+	}
+	return (routes[0]);
+}
+
 void Server ::_serveClients(void)
 {
-
-	// =======================================================================
-	//	Maybe add here a function to check open process by CGI that should be 
-	//  timed out???
-	//  Also add the handle function for the SIGCHILD signal o.o
-	// =======================================================================
-	
 	/*listen for client events, skip the first fds that are for the server
 	 * sockets */
 	for (size_t i = Config::getPorts().size(); i < _fds.size(); ++i)
@@ -182,9 +191,11 @@ void Server ::_serveClients(void)
 				request_buffer.appendBuffer(read_buffer, n);
 			}
 
-			// Mozilla uses autocompletion and prefetching. sometimes it will
-			// send an empty request before the user even pressed enter to send
-			// the request
+			/**
+			 * Mozilla uses autocompletion and prefetching. sometimes it will
+			 * send an empty request before the user even pressed enter to send
+			 * the request
+			 */
 			if (request_buffer.getBuffer().empty())
 			{
 				close(_fds[i].fd);
@@ -196,19 +207,12 @@ void Server ::_serveClients(void)
 			Request request(request_buffer.getBuffer());
 			Log::logRequest(request);
 			Log::log(DEBUG, request_buffer.getBuffer());
-
-			/**
-			 * =======================================================================
-			 * 				VERIFY IF CGIHANDLER CAN PROCESS THE REQUEST 
-			 * =======================================================================
-			 * 
-			 *    ------- will be needed to verify the parsing process again -------
-			 * 
-			 */
 			
 			if (CgiRequestHandler::_canProcess(request))
 			{
-					CgiRequestHandler cgi_obj(request, _fds[i].fd);
+					Route cgi_route = getCgiRoute(request);
+					CgiRequestHandler cgi_obj(request, _fds[i].fd, cgi_route, i);
+					cgi_obj.setPollFds(&_fds);
 					cgi_obj.processRequest();
 			}
 			else
