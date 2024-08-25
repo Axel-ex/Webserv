@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 20:08:09 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/22 20:08:30 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/25 16:57:20 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 {
     std::signal(SIGPIPE, SIG_IGN);
     std::signal(SIGINT, sigHandler);
-    std::signal(SIGCHLD, CgiRequestHandler::_sigchldHandler);
+	std::signal(SIGCHLD, Server::_sigchldHandler);
     
     std::string config_file;
     argc == 2 ? config_file = argv[1]

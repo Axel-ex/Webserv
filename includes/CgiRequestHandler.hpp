@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:34:18 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/24 15:58:11 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/25 15:24:50 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,28 +43,26 @@
 typedef struct pollfd t_pollfd;
 typedef struct _s_client_process
 {
-	std::vector<t_pollfd>	*poll_fds;
 	std::string				method;
 	pid_t					pid;
 	clock_t					start_time;
 	int						client_fd;
 	int						cgi_fd;
-	int						_fd_index;
+	t_pollfd				pollfd;
 }				t_client_process;
 
 class CgiRequestHandler
 {
 	public:
-		CgiRequestHandler(const Request &request, int fd, Route &location, int index);
+		CgiRequestHandler(const Request &request, int fd, Route &location, t_pollfd pollfd);
 		~CgiRequestHandler();
 
-		static void _checkTimeouts();
+		// static void _checkTimeouts();
 		static bool _canProcess(const Request &request);
-		static void	_sigchldHandler(int signum);
+		// static void	_sigchldHandler(int signum);
 		
 		static std::map<pid_t, t_client_process> _open_processes;
 
-		void setPollFds(std::vector<t_pollfd> *fds);
 		void processRequest();
 
 	private:
@@ -86,9 +84,7 @@ class CgiRequestHandler
 		std::string							_document_root;
 		std::string							_query_str;
 
-		std::vector<t_pollfd>				*_poll_fds;
-		int									_fd_index;
-
+		t_pollfd							_pollfd;
 		Route								_location;
 		int									_client_fd;
 		char								**_ch_env;

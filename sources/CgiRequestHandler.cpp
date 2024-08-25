@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/24 16:44:49 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/25 17:07:48 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,12 +15,8 @@
 // STRUCTURE TO BE USED FOR VERIFYING TIMED-OUT PROCESSES
 std::map<pid_t, t_client_process> CgiRequestHandler::_open_processes;
 
-void CgiRequestHandler::setPollFds(std::vector<t_pollfd> *fds)
-{
-	_poll_fds = fds;
-}
 
-CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &location, int index)
+CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &location, t_pollfd pollfd)
 {
 	// ============ REQUEST INFORMATION ==============
 
@@ -34,8 +30,7 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &loca
 	decode(); // --> decode hexadecimal values in the requested URI
 	_location = location;
 	
-	_poll_fds = NULL;
-	_fd_index = index;
+	_pollfd = pollfd;
 	
 	_document_root = _location.root.substr(0, _location.root.find(_location.url));
 	if (_document_root[0] == '.')
@@ -194,7 +189,7 @@ void CgiRequestHandler::processRequest()
 		close(cgi_pipe[1]);
 		fcntl(cgi_pipe[0], F_SETFL, O_NONBLOCK);
 
-		t_client_process c_process = {_poll_fds, _method, pid, clock(), _client_fd, cgi_pipe[0], _fd_index};
+		t_client_process c_process = {_method, pid, clock(), _client_fd, cgi_pipe[0], _pollfd};
 		CgiRequestHandler::_open_processes[pid] = c_process;
 	}
 }
@@ -213,30 +208,30 @@ void CgiRequestHandler::processRequest()
 // ==========================================================================================
 // 									LOOK FOR TIMED-OUT PROCESSES
 // ==========================================================================================
-void CgiRequestHandler::_checkTimeouts()
-{
-	clock_t now;
-	double elapsed;
-	for (std::map<pid_t, t_client_process>::iterator it = _open_processes.begin(); it != _open_processes.end(); it++)
-	{
-		now = clock();
-		elapsed = static_cast<double>(now - it->second.start_time) / CLOCKS_PER_SEC * 1e4;
-		std::cout << "Porcess [" << it->first << "]" << "running for: " << elapsed << " seconds." << std::endl;
-		if (elapsed > CGI_TIMEOUT)
-		{
-			std::string failureResponse = "HTTP/1.1 408 Internal Server Error\r\n"
-										  "Content-Type: text/plain\r\n\r\n"
-										  "Internal Server Error: Request time out.";
-			send(it->second.client_fd, failureResponse.c_str(), failureResponse.length(), 0);
-			std::cout << "\n\n\n\t\t\trequest timed-out\n\n\n";
-			kill(it->first, SIGKILL);
-			close(it->second.cgi_fd);
-			close(it->second.client_fd);
-			it->second.poll_fds->erase(it->second.poll_fds->begin() + it->second._fd_index);
-			// _open_processes.erase(it);
-		}
-	}
-}
+// void CgiRequestHandler::_checkTimeouts()
+// {
+// 	clock_t now;
+// 	double elapsed;
+// 	for (std::map<pid_t, t_client_process>::iterator it = _open_processes.begin(); it != _open_processes.end(); it++)
+// 	{
+// 		now = clock();
+// 		elapsed = static_cast<double>(now - it->second.start_time) / CLOCKS_PER_SEC * 1e4;
+// 		std::cout << "Porcess [" << it->first << "]" << "running for: " << elapsed << " seconds." << std::endl;
+// 		if (elapsed > CGI_TIMEOUT)
+// 		{
+// 			std::string failureResponse = "HTTP/1.1 408 Internal Server Error\r\n"
+// 										  "Content-Type: text/plain\r\n\r\n"
+// 										  "Internal Server Error: Request time out.";
+// 			send(it->second.client_fd, failureResponse.c_str(), failureResponse.length(), 0);
+// 			std::cout << "\n\n\n\t\t\trequest timed-out\n\n\n";
+// 			kill(it->first, SIGKILL);
+// 			close(it->second.cgi_fd);
+// 			close(it->second.client_fd);
+// 			it->second.poll_fds->erase(it->second.poll_fds->begin() + it->second._fd_index);
+// 			// _open_processes.erase(it);
+// 		}
+// 	}
+// }
 
 
 
@@ -249,47 +244,47 @@ void CgiRequestHandler::_checkTimeouts()
 
 
 
-// ==========================================================================================
-// 						SIGNAL HANDLER FOR FINISHED/INTERRUPTED PROCESSES
-// ==========================================================================================
-void CgiRequestHandler::_sigchldHandler(int signum)
-{
-	int status;
-	pid_t pid;
-	(void)signum;
-	while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
-	{
-		std::map<pid_t, t_client_process>::iterator it = _open_processes.find(pid);
-		if (it != _open_processes.end())
-		{
-			int client_fd = it->second.client_fd;
+// // ==========================================================================================
+// // 						SIGNAL HANDLER FOR FINISHED/INTERRUPTED PROCESSES
+// // ==========================================================================================
+// void CgiRequestHandler::_sigchldHandler(int signum)
+// {
+// 	int status;
+// 	pid_t pid;
+// 	(void)signum;
+// 	while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
+// 	{
+// 		std::map<pid_t, t_client_process>::iterator it = _open_processes.find(pid);
+// 		if (it != _open_processes.end())
+// 		{
+// 			int client_fd = it->second.client_fd;
 
-			if (WIFEXITED(status))
-			{
-				char buffer[BUFSIZ];
-				std::string response;
-				ssize_t bytesRead;
-				while ((bytesRead = read(it->second.cgi_fd, buffer, BUFSIZ)) > 0)
-					response += std::string(buffer, bytesRead);
+// 			if (WIFEXITED(status))
+// 			{
+// 				char buffer[BUFSIZ];
+// 				std::string response;
+// 				ssize_t bytesRead;
+// 				while ((bytesRead = read(it->second.cgi_fd, buffer, BUFSIZ)) > 0)
+// 					response += std::string(buffer, bytesRead);
 
-				send(it->second.client_fd, response.c_str(), response.length(), 0);
-			}
-			close(client_fd);
-			it->second.poll_fds->erase(it->second.poll_fds->begin() + it->second._fd_index);
-			close(it->second.cgi_fd);
-			_open_processes.erase(it);
-			std::cout << "CGI PROCESS (" << pid <<  ") HAS FINISHED ITS EXECUTION" << std::endl;
-		}
-		else
-		{
-			std::cout << RED << "CGI PROCESS (" << pid <<  ") WAS KILLED" << RESET << std::endl;
-			close(it->second.client_fd);
-			close(it->second.cgi_fd);
-			it->second.poll_fds->erase(it->second.poll_fds->begin() + it->second._fd_index);
-			_open_processes.erase(it);
-		}
-	}
-}
+// 				send(it->second.client_fd, response.c_str(), response.length(), 0);
+// 			}
+// 			close(client_fd);
+// 			it->second.poll_fds->erase(it->second.poll_fds->begin() + it->second._fd_index);
+// 			close(it->second.cgi_fd);
+// 			_open_processes.erase(it);
+// 			std::cout << "CGI PROCESS (" << pid <<  ") HAS FINISHED ITS EXECUTION" << std::endl;
+// 		}
+// 		else
+// 		{
+// 			std::cout << RED << "CGI PROCESS (" << pid <<  ") WAS KILLED" << RESET << std::endl;
+// 			close(it->second.client_fd);
+// 			close(it->second.cgi_fd);
+// 			it->second.poll_fds->erase(it->second.poll_fds->begin() + it->second._fd_index);
+// 			_open_processes.erase(it);
+// 		}
+// 	}
+// }
 
 
 

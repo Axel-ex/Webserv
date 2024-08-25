@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
+/*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/16 13:07:15 by achabrer         ###   ########.fr       */
+/*   Updated: 2024/08/25 15:18:24 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,10 @@ typedef struct sockaddr t_sockaddr;
 class Server
 {
     public:
+    
+        static void _sigchldHandler(int signum);
+        void _checkTimeouts();
+        // void _handleClient(int client_fd);
         Server(std::string config_file);
         ~Server();
 
@@ -51,7 +55,7 @@ class Server
         };
 
     private:
-        std::vector<t_pollfd> _fds;
+        static std::vector<t_pollfd> _fds;
 	
         void _acceptIncomingConnections(void);
         void _serveClients(void);

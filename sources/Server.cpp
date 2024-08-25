@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/24 16:36:14 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/25 17:15:43 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@
 #include <string>
 
 bool stopFlag(false);
+std::vector<t_pollfd> Server::_fds;
 
 void sigHandler(int signum)
 {
@@ -98,17 +99,20 @@ void Server ::init()
 	Log::log(INFO, port_info);
 }
 
+
 void Server ::start(void)
 {
 	while (!stopFlag)
 	{
+		
 		/* Check for any change in our file descriptors */
-		int activity = poll(_fds.data(), _fds.size(), 1000);
-		if (activity < 0 && !stopFlag)
-			throw ServerError("Error in poll");
-		CgiRequestHandler::_checkTimeouts();
+		// int activity = 
+		poll(_fds.data(), _fds.size(), 1000);
+		// if (activity < 0 && !stopFlag)
+		// 	throw ServerError("Error in poll");
 		_acceptIncomingConnections();
 		_serveClients();
+		_checkTimeouts();
 	}
 }
 
@@ -163,6 +167,92 @@ Route getCgiRoute(const Request &request)
 	return (routes[0]);
 }
 
+
+// ==========================================================================================
+// 									LOOK FOR TIMED-OUT PROCESSES
+// ==========================================================================================
+void Server::_checkTimeouts()
+{
+	clock_t now;
+	double elapsed;
+	for (std::map<pid_t, t_client_process>::iterator it = CgiRequestHandler::_open_processes.begin(); it != CgiRequestHandler::_open_processes.end(); it++)
+	{
+		now = clock();
+		elapsed = static_cast<double>(now - it->second.start_time) / CLOCKS_PER_SEC * 1e4;
+		std::cout << "Porcess [" << it->first << "]" << "running for: " << elapsed << " seconds." << std::endl;
+		if (elapsed > CGI_TIMEOUT)
+		{
+			int fd_position = 0;
+			for (size_t i = 0; i < _fds.size(); i++)
+			{
+				if (_fds[i].fd == it->second.client_fd)
+				{
+					fd_position = i;
+					break ;
+				}
+			}
+			std::string timeoutResponse = "HTTP/1.1 504 Internal Server Error\r\n"
+										  "Content-Type: text/plain\r\n\r\n"
+										  "Internal Server Error: Request time out.";
+			send(it->second.client_fd, timeoutResponse.c_str(), timeoutResponse.length(), 0);
+			close(it->second.client_fd);
+			close(it->second.cgi_fd);
+			_fds.erase(_fds.begin() + fd_position);
+			CgiRequestHandler::_open_processes.erase(it);
+			std::cout << "\n\n\n\t\t\trequest timed-out\n\n\n";
+			kill(it->first, SIGKILL);
+		}
+	}
+}
+
+
+
+// ==========================================================================================
+// 						SIGNAL HANDLER FOR FINISHED/INTERRUPTED PROCESSES
+// ==========================================================================================
+void Server::_sigchldHandler(int signum)
+{
+	int status;
+	pid_t pid;
+	(void)signum;
+	while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
+	{
+		std::map<pid_t, t_client_process>::iterator it = CgiRequestHandler::_open_processes.find(pid);
+		if (it != CgiRequestHandler::_open_processes.end())
+		{
+			int fd_position = 0;
+			for (size_t i = 0; i < _fds.size(); i++)
+			{
+				if (_fds[i].fd == it->second.client_fd)
+				{
+					fd_position = i;
+					break ;
+				}
+			}
+			int client_fd = it->second.client_fd;
+			if (WIFEXITED(status))
+			{
+				char buffer[BUFSIZ];
+				std::string response;
+				ssize_t bytesRead;
+				while ((bytesRead = read(it->second.cgi_fd, buffer, BUFSIZ)) > 0)
+					response += std::string(buffer, bytesRead);
+
+				send(it->second.client_fd, response.c_str(), response.length(), 0);
+			}
+			close(client_fd);
+			close(it->second.cgi_fd);
+			_fds.erase(_fds.begin() + fd_position);
+			CgiRequestHandler::_open_processes.erase(it);
+			std::cout << "CGI PROCESS (" << pid <<  ") HAS FINISHED ITS EXECUTION" << std::endl;
+		}
+		else
+		{
+			std::cout << RED << "CGI PROCESS (" << pid <<  ") WAS KILLED" << RESET << std::endl;
+		}
+	}
+}
+
 void Server ::_serveClients(void)
 {
 	/*listen for client events, skip the first fds that are for the server
@@ -211,8 +301,7 @@ void Server ::_serveClients(void)
 			if (CgiRequestHandler::_canProcess(request))
 			{
 					Route cgi_route = getCgiRoute(request);
-					CgiRequestHandler cgi_obj(request, _fds[i].fd, cgi_route, i);
-					cgi_obj.setPollFds(&_fds);
+					CgiRequestHandler cgi_obj(request, _fds[i].fd, cgi_route, _fds[i]);
 					cgi_obj.processRequest();
 			}
 			else
