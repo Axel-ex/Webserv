@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/25 17:07:48 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/26 17:18:22 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,18 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &loca
 
 CgiRequestHandler::~CgiRequestHandler()
 {
-	// ----> TODO: CODE THE DESTRUCTOR AND DEALOCATE MEMORY <----
+	for (size_t i = 0; _ch_env[i] != NULL; i++)
+	{
+		if (_ch_env[i])
+			free(_ch_env[i]);
+	}
+	delete[] _ch_env;
+	_env.clear();
+	_request_headers.clear();
+	if (_argv[0])
+		free(_argv[0]);
+	if (_argv[1])
+		free(_argv[1]);
 }
 
 
@@ -159,15 +170,9 @@ void CgiRequestHandler::processRequest()
 	int cgi_pipe[2];
 
 	if (pipe(cgi_pipe) < 0)
-	{
-		Log::log(ERROR, "Pipe function error in CGI process atempt.");
-		// exit(EXIT_FAILURE); ---> SERVER SHUTDOWN POINT???
-	}
+		throw CgiError("Error in pipe().");
 	if ((pid = fork()) < 0)
-	{
-		Log::log(ERROR, "Fork function error in CGI process atempt.");
-		// exit(EXIT_FAILURE); ---> SERVER SHUTDOWN POINT???
-	}
+		throw CgiError("Error in fork().");
 	if (pid == 0)
 	{
 		close(cgi_pipe[0]);
@@ -175,14 +180,7 @@ void CgiRequestHandler::processRequest()
 		close(cgi_pipe[1]);
 
 		if (execve(_env["SCRIPT_FILENAME"].c_str(), _argv, _ch_env) < 0)
-		{
-			std::string failureResponse = "HTTP/1.1 500 Internal Server Error\r\n"
-										  "Content-Type: text/plain\r\n\r\n"
-										  "Internal Server Error";
-			send(_client_fd, failureResponse.c_str(), failureResponse.length(), 0);
-
 			exit(EXIT_FAILURE);
-		}
 	}
 	else
 	{
@@ -193,103 +191,6 @@ void CgiRequestHandler::processRequest()
 		CgiRequestHandler::_open_processes[pid] = c_process;
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-// ==========================================================================================
-// 									LOOK FOR TIMED-OUT PROCESSES
-// ==========================================================================================
-// void CgiRequestHandler::_checkTimeouts()
-// {
-// 	clock_t now;
-// 	double elapsed;
-// 	for (std::map<pid_t, t_client_process>::iterator it = _open_processes.begin(); it != _open_processes.end(); it++)
-// 	{
-// 		now = clock();
-// 		elapsed = static_cast<double>(now - it->second.start_time) / CLOCKS_PER_SEC * 1e4;
-// 		std::cout << "Porcess [" << it->first << "]" << "running for: " << elapsed << " seconds." << std::endl;
-// 		if (elapsed > CGI_TIMEOUT)
-// 		{
-// 			std::string failureResponse = "HTTP/1.1 408 Internal Server Error\r\n"
-// 										  "Content-Type: text/plain\r\n\r\n"
-// 										  "Internal Server Error: Request time out.";
-// 			send(it->second.client_fd, failureResponse.c_str(), failureResponse.length(), 0);
-// 			std::cout << "\n\n\n\t\t\trequest timed-out\n\n\n";
-// 			kill(it->first, SIGKILL);
-// 			close(it->second.cgi_fd);
-// 			close(it->second.client_fd);
-// 			it->second.poll_fds->erase(it->second.poll_fds->begin() + it->second._fd_index);
-// 			// _open_processes.erase(it);
-// 		}
-// 	}
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-// // ==========================================================================================
-// // 						SIGNAL HANDLER FOR FINISHED/INTERRUPTED PROCESSES
-// // ==========================================================================================
-// void CgiRequestHandler::_sigchldHandler(int signum)
-// {
-// 	int status;
-// 	pid_t pid;
-// 	(void)signum;
-// 	while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
-// 	{
-// 		std::map<pid_t, t_client_process>::iterator it = _open_processes.find(pid);
-// 		if (it != _open_processes.end())
-// 		{
-// 			int client_fd = it->second.client_fd;
-
-// 			if (WIFEXITED(status))
-// 			{
-// 				char buffer[BUFSIZ];
-// 				std::string response;
-// 				ssize_t bytesRead;
-// 				while ((bytesRead = read(it->second.cgi_fd, buffer, BUFSIZ)) > 0)
-// 					response += std::string(buffer, bytesRead);
-
-// 				send(it->second.client_fd, response.c_str(), response.length(), 0);
-// 			}
-// 			close(client_fd);
-// 			it->second.poll_fds->erase(it->second.poll_fds->begin() + it->second._fd_index);
-// 			close(it->second.cgi_fd);
-// 			_open_processes.erase(it);
-// 			std::cout << "CGI PROCESS (" << pid <<  ") HAS FINISHED ITS EXECUTION" << std::endl;
-// 		}
-// 		else
-// 		{
-// 			std::cout << RED << "CGI PROCESS (" << pid <<  ") WAS KILLED" << RESET << std::endl;
-// 			close(it->second.client_fd);
-// 			close(it->second.cgi_fd);
-// 			it->second.poll_fds->erase(it->second.poll_fds->begin() + it->second._fd_index);
-// 			_open_processes.erase(it);
-// 		}
-// 	}
-// }
-
-
-
-
-
 
 
 

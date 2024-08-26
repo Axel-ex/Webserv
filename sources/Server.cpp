@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/25 17:15:43 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/26 17:37:15 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ void sigHandler(int signum)
 		stopFlag = true;
 }
 
-Server ::Server(std::string config_file)
+Server::Server(std::string config_file)
 {
 	Parser parser;
 
@@ -44,7 +44,7 @@ Server ::Server(std::string config_file)
 	Log::clearScreen();
 }
 
-Server ::~Server()
+Server::~Server()
 {
 	for (size_t i = 0; i < _fds.size(); i++)
 	{
@@ -53,7 +53,7 @@ Server ::~Server()
 	Log::log(INFO, "Server shutting down");
 }
 
-void Server ::init()
+void Server::init()
 {
 	/* Imagine several ports are provided. we need to create several socket fds
 	 * for each port. We will then need to bind() and listen() each of them and
@@ -78,7 +78,7 @@ void Server ::init()
 		address.sin_addr.s_addr = INADDR_ANY;
 		address.sin_port = htons(Config::getPorts()[i]);
 
-		if (bind(sockfd, (t_sockaddr*)&address, sizeof(address)) < 0)
+		if (bind(sockfd, (t_sockaddr *)&address, sizeof(address)) < 0)
 			throw ServerError("Fail binding the socket");
 
 		if (listen(sockfd, MAX_CLIENT) < 0)
@@ -99,24 +99,27 @@ void Server ::init()
 	Log::log(INFO, port_info);
 }
 
-
-void Server ::start(void)
+void Server::start(void)
 {
 	while (!stopFlag)
 	{
-		
+
 		/* Check for any change in our file descriptors */
-		// int activity = 
+		// int activity =
 		poll(_fds.data(), _fds.size(), 1000);
-		// if (activity < 0 && !stopFlag)
+
+		// ==============================================================================================================
+		// if (activity < 0 && !stopFlag)           //  <<------------- VALIDATE WHY THE EXCEPTION WAS THROWN
 		// 	throw ServerError("Error in poll");
+		// ==============================================================================================================
+
 		_acceptIncomingConnections();
 		_serveClients();
 		_checkTimeouts();
 	}
 }
 
-void Server ::_acceptIncomingConnections(void)
+void Server::_acceptIncomingConnections(void)
 {
 	/* listen for event on the server sockets*/
 	for (size_t i = 0; i < Config::getPorts().size(); i++)
@@ -138,7 +141,7 @@ void Server ::_acceptIncomingConnections(void)
 	}
 }
 
-ssize_t Server ::_readFd(int fd_index, char* buffer, size_t buffer_size)
+ssize_t Server::_readFd(int fd_index, char *buffer, size_t buffer_size)
 {
 	ssize_t n = recv(_fds[fd_index].fd, buffer, buffer_size, 0);
 	if (n < 0)
@@ -158,7 +161,7 @@ Route getCgiRoute(const Request &request)
 
 	for (size_t i = 0; i < routes.size(); i++)
 	{
-		if(std::find(routes[i].methods.begin(), routes[i].methods.end(), method) != routes[i].methods.end())
+		if (std::find(routes[i].methods.begin(), routes[i].methods.end(), method) != routes[i].methods.end())
 		{
 			if (startsWith(resource, routes[i].url) && isExtensionAllowed(resource, routes[i].cgi_extension))
 				return (routes[i]);
@@ -167,7 +170,6 @@ Route getCgiRoute(const Request &request)
 	return (routes[0]);
 }
 
-
 // ==========================================================================================
 // 									LOOK FOR TIMED-OUT PROCESSES
 // ==========================================================================================
@@ -175,11 +177,12 @@ void Server::_checkTimeouts()
 {
 	clock_t now;
 	double elapsed;
-	for (std::map<pid_t, t_client_process>::iterator it = CgiRequestHandler::_open_processes.begin(); it != CgiRequestHandler::_open_processes.end(); it++)
+	std::map<pid_t, t_client_process>::iterator it = CgiRequestHandler::_open_processes.begin();
+	for (; it != CgiRequestHandler::_open_processes.end(); it++)
 	{
 		now = clock();
 		elapsed = static_cast<double>(now - it->second.start_time) / CLOCKS_PER_SEC * 1e4;
-		std::cout << "Porcess [" << it->first << "]" << "running for: " << elapsed << " seconds." << std::endl;
+		Log::log(WARNING, ("Process [" + toString(RED) + toString(it->first) + toString(RESET) + "]" + " running for: " + toString(elapsed) + " seconds."));
 		if (elapsed > CGI_TIMEOUT)
 		{
 			int fd_position = 0;
@@ -188,7 +191,7 @@ void Server::_checkTimeouts()
 				if (_fds[i].fd == it->second.client_fd)
 				{
 					fd_position = i;
-					break ;
+					break;
 				}
 			}
 			std::string timeoutResponse = "HTTP/1.1 504 Internal Server Error\r\n"
@@ -199,13 +202,11 @@ void Server::_checkTimeouts()
 			close(it->second.cgi_fd);
 			_fds.erase(_fds.begin() + fd_position);
 			CgiRequestHandler::_open_processes.erase(it);
-			std::cout << "\n\n\n\t\t\trequest timed-out\n\n\n";
 			kill(it->first, SIGKILL);
+			std::cout << "\n\n\n\t\t\trequest timed-out\n\n\n";
 		}
 	}
 }
-
-
 
 // ==========================================================================================
 // 						SIGNAL HANDLER FOR FINISHED/INTERRUPTED PROCESSES
@@ -226,7 +227,7 @@ void Server::_sigchldHandler(int signum)
 				if (_fds[i].fd == it->second.client_fd)
 				{
 					fd_position = i;
-					break ;
+					break;
 				}
 			}
 			int client_fd = it->second.client_fd;
@@ -244,16 +245,14 @@ void Server::_sigchldHandler(int signum)
 			close(it->second.cgi_fd);
 			_fds.erase(_fds.begin() + fd_position);
 			CgiRequestHandler::_open_processes.erase(it);
-			std::cout << "CGI PROCESS (" << pid <<  ") HAS FINISHED ITS EXECUTION" << std::endl;
+			Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS FINISHED ITS EXECUTION."));
 		}
 		else
-		{
-			std::cout << RED << "CGI PROCESS (" << pid <<  ") WAS KILLED" << RESET << std::endl;
-		}
+			Log::log(ERROR, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS BEEN KILLED!!!"));
 	}
 }
 
-void Server ::_serveClients(void)
+void Server::_serveClients(void)
 {
 	/*listen for client events, skip the first fds that are for the server
 	 * sockets */
@@ -293,29 +292,27 @@ void Server ::_serveClients(void)
 				continue;
 			}
 
-			//TODO: Try catch here?
+			// TODO: Try catch here?
 			Request request(request_buffer.getBuffer());
 			Log::logRequest(request);
 			Log::log(DEBUG, request_buffer.getBuffer());
-			
+
 			if (CgiRequestHandler::_canProcess(request))
 			{
-					Route cgi_route = getCgiRoute(request);
-					CgiRequestHandler cgi_obj(request, _fds[i].fd, cgi_route, _fds[i]);
-					cgi_obj.processRequest();
+				Route cgi_route = getCgiRoute(request);
+				CgiRequestHandler cgi_obj(request, _fds[i].fd, cgi_route, _fds[i]);
+				cgi_obj.processRequest();
 			}
 			else
 			{
 				Response response(request);
 				send(_fds[i].fd, response.getHeaders().c_str(),
-					response.getHeaders().size(), 0);
+					 response.getHeaders().size(), 0);
 				send(_fds[i].fd, response.getBody().c_str(),
-					response.getBody().size(), 0);
+					 response.getBody().size(), 0);
 				close(_fds[i].fd);
 				_fds.erase(_fds.begin() + i);
 			}
-			
 		}
 	}
 }
-

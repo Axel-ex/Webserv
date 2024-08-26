@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/08/09 15:36:09 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/26 17:23:05 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,21 @@
 #include <sstream>
 #include <iostream>
 #include <map>
+#include <algorithm>
+#include <vector>
+#include <cstdlib>
+#include <map>
+#include <unistd.h>
+#include <string.h>
+#include <sys/poll.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <ctime>
+#include <fcntl.h>
+#include <cstdio>
 
 template <typename T>
+
 std::string toString(T val)
 {
     std::stringstream stream;

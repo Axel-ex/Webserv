@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/25 15:18:24 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/26 17:04:18 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,6 @@ class Server
     
         static void _sigchldHandler(int signum);
         void _checkTimeouts();
-        // void _handleClient(int client_fd);
         Server(std::string config_file);
         ~Server();
 

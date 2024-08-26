@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:34:18 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/25 15:24:50 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/26 17:22:51 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,23 +19,8 @@
 #include "RequestHandlers.hpp"
 #include "Response.hpp"
 #include "utils.hpp"
+#include "Server.hpp"
 
-
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <algorithm>
-#include <vector>
-#include <cstdlib>
-#include <map>
-#include <unistd.h>
-#include <string.h>
-#include <sys/poll.h>
-#include <sys/socket.h>
-#include <sys/wait.h>
-#include <ctime>
-#include <fcntl.h>
-#include <cstdio>
 
 #define MAXPATHLEN 4096
 #define CGI_TIMEOUT 5
@@ -57,13 +42,22 @@ class CgiRequestHandler
 		CgiRequestHandler(const Request &request, int fd, Route &location, t_pollfd pollfd);
 		~CgiRequestHandler();
 
-		// static void _checkTimeouts();
 		static bool _canProcess(const Request &request);
-		// static void	_sigchldHandler(int signum);
 		
 		static std::map<pid_t, t_client_process> _open_processes;
 
 		void processRequest();
+
+		class CgiError : public std::exception
+        {
+            public:
+                CgiError(const std::string& error) : msg(error) {}
+                ~CgiError() throw() {}
+                const char* what() const throw() { return (msg.c_str()); }
+
+            private:
+                std::string msg;
+        };
 
 	private:
 	
