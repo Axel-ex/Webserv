@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/26 17:18:22 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/27 15:59:25 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 
 // STRUCTURE TO BE USED FOR VERIFYING TIMED-OUT PROCESSES
 std::map<pid_t, t_client_process> CgiRequestHandler::_open_processes;
-
 
 CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &location, t_pollfd pollfd)
 {
@@ -29,13 +28,13 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &loca
 
 	decode(); // --> decode hexadecimal values in the requested URI
 	_location = location;
-	
+
 	_pollfd = pollfd;
-	
+
 	_document_root = _location.root.substr(0, _location.root.find(_location.url));
 	if (_document_root[0] == '.')
 		_document_root.erase(0, 1);
-		
+
 	_client_fd = fd;
 	_scriptName = getScriptName();
 	_scriptPath = getScriptPath();
@@ -65,8 +64,6 @@ CgiRequestHandler::~CgiRequestHandler()
 		free(_argv[1]);
 }
 
-
-
 bool CgiRequestHandler::_canProcess(const Request &request)
 {
 	std::vector<Route> routes = Config::getRoutes();
@@ -75,7 +72,7 @@ bool CgiRequestHandler::_canProcess(const Request &request)
 
 	for (size_t i = 0; i < routes.size(); i++)
 	{
-		if(std::find(routes[i].methods.begin(), routes[i].methods.end(), method) != routes[i].methods.end())
+		if (std::find(routes[i].methods.begin(), routes[i].methods.end(), method) != routes[i].methods.end())
 		{
 			if (startsWith(resource, routes[i].url) && isExtensionAllowed(resource, routes[i].cgi_extension))
 				return (true);
@@ -136,10 +133,7 @@ void CgiRequestHandler::initChEnv(void)
 
 	_ch_env = new char *[_env.size() + 1];
 	if (!_ch_env)
-	{
-		Log::log(ERROR, "Unable to allocate memory for CGI enviroment variables.");
-		// exit(EXIT_FAILURE); look for cleaning function!!!
-	}
+		throw CgiError("Error allocating memory for CGI environment variables.");
 
 	for (; it != _env.end(); it++, i++)
 	{
@@ -148,18 +142,6 @@ void CgiRequestHandler::initChEnv(void)
 	}
 	_ch_env[i] = NULL;
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 // ==========================================================================================
 // 									PROCESSING REQUESTED SCRIPT
@@ -180,19 +162,20 @@ void CgiRequestHandler::processRequest()
 		close(cgi_pipe[1]);
 
 		if (execve(_env["SCRIPT_FILENAME"].c_str(), _argv, _ch_env) < 0)
+		{
+			sendHttpErrorResponse(_client_fd, errno);
 			exit(EXIT_FAILURE);
+		}
 	}
 	else
 	{
 		close(cgi_pipe[1]);
-		fcntl(cgi_pipe[0], F_SETFL, O_NONBLOCK);
+		// fcntl(cgi_pipe[0], F_SETFL, O_NONBLOCK);
 
-		t_client_process c_process = {_method, pid, clock(), _client_fd, cgi_pipe[0], _pollfd};
+		t_client_process c_process = {_method, clock(), _client_fd, cgi_pipe[0], _pollfd};
 		CgiRequestHandler::_open_processes[pid] = c_process;
 	}
 }
-
-
 
 // =========================================================================================
 //									AUXILIAR FUNCTIONS AND METHODS
@@ -255,8 +238,8 @@ std::string CgiRequestHandler::getWorkingPath(void) const
 
 std::string CgiRequestHandler::getScriptPath(void) const
 {
-	
-	std::string script =  _document_root + _resource;
+
+	std::string script = _document_root + _resource;
 	std::string wd = getWorkingPath();
 
 	script = script.substr(0, script.find('?'));
@@ -322,7 +305,7 @@ std::string intToString(int value)
 	return ss.str();
 }
 
-unsigned int convertHex(const std::string& nb)
+unsigned int convertHex(const std::string &nb)
 {
 	unsigned int x;
 	std::stringstream ss;
@@ -343,4 +326,81 @@ std::string CgiRequestHandler::decode()
 		token = _resource.find("%");
 	}
 	return (_resource);
+}
+
+void sendHttpErrorResponse(int client_fd, int error_code)
+{
+	std::string error_message;
+	int status_code = 500;
+	std::string reason_phrase = "Internal Server Error";
+
+	switch (error_code)
+	{
+        case ENOENT:
+            status_code = 404;
+            reason_phrase = "Not Found";
+            error_message = "The requested resource was not found on this server.";
+            break;
+        case EACCES:
+            status_code = 403;
+            reason_phrase = "Forbidden";
+            error_message = "You do not have permission to access the requested resource.";
+            break;
+        case EINVAL:
+            status_code = 400;
+            reason_phrase = "Bad Request";
+            error_message = "The server could not understand the request due to invalid syntax.";
+            break;
+        case EPERM:
+            status_code = 401;
+            reason_phrase = "Unauthorized";
+            error_message = "Authentication is required and has failed or has not yet been provided.";
+            break;
+        case EFAULT:
+            status_code = 500;
+            reason_phrase = "Internal Server Error";
+            error_message = "The server encountered an internal error and was unable to complete your request.";
+            break;
+        case EEXIST:
+            status_code = 409;
+            reason_phrase = "Conflict";
+            error_message = "The request could not be completed due to a conflict with the current state of the resource.";
+            break;
+        case ENOTDIR:
+            status_code = 404;
+            reason_phrase = "Not Found";
+            error_message = "A component of the path is not a directory.";
+            break;
+		case ETIMEDOUT:
+		status_code = 504;
+		reason_phrase = "Gateway Timeout";
+		error_message = "The server, while acting as a gateway or proxy, did not receive a timely response from the upstream server.";
+		break;
+        default:
+            status_code = 500;
+            reason_phrase = "Internal Server Error";
+            error_message = "An internal server error occurred.";
+            break;
+    }
+
+	std::string response_body =
+		"<html>\n"
+		"<head><title>" +
+		toString(status_code) + " " + reason_phrase + "</title></head>\n"
+		"<body>\n"
+		"<h1>" +
+		reason_phrase + "</h1>\n"
+		"<p>" + error_message + "</p>\n"
+		"</body>\n"
+		"</html>\n";
+
+	std::string response_headers =
+		"HTTP/1.1 " + toString(status_code) + " " + reason_phrase + "\r\n"
+		"Content-Type: text/html; charset=UTF-8\r\n"
+		"Content-Length: " +
+		toString(response_body.length()) + "\r\n"
+		"Connection: close\r\n"
+		"\r\n";
+	send(client_fd, response_headers.c_str(), response_headers.length(), 0);
+	send(client_fd, response_body.c_str(), response_body.length(), 0);
 }

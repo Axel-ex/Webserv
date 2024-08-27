@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/26 17:37:15 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/27 16:04:52 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@
 #include <cstring>
 #include <ctime>
 #include <string>
+#include <cerrno>
 
 bool stopFlag(false);
 std::vector<t_pollfd> Server::_fds;
@@ -101,18 +102,35 @@ void Server::init()
 
 void Server::start(void)
 {
+	// while (!stopFlag)
+	// {
+
+	// 	/* Check for any change in our file descriptors */
+	// 	int activity = poll(_fds.data(), _fds.size(), 1000);
+
+	// 	// ==============================================================================================================
+	// 	if (activity < 0 && !stopFlag)           //  <<------------- VALIDATE WHY THE EXCEPTION WAS THROWN
+	// 		throw ServerError("Error in poll");
+	// 	// ==============================================================================================================
+
+	// 	_acceptIncomingConnections();
+	// 	_serveClients();
+	// 	_checkTimeouts();
+	// }
 	while (!stopFlag)
 	{
+		int activity;
 
-		/* Check for any change in our file descriptors */
-		// int activity =
-		poll(_fds.data(), _fds.size(), 1000);
+		// Loop to handle EINTR error
+		do {
+			/* Check for any change in our file descriptors */
+			activity = poll(_fds.data(), _fds.size(), 1000);
+		} while (activity < 0 && errno == EINTR);  //  <<------------- VALIDATE IF ERRNO HERE IS ILEGAL
 
-		// ==============================================================================================================
-		// if (activity < 0 && !stopFlag)           //  <<------------- VALIDATE WHY THE EXCEPTION WAS THROWN
-		// 	throw ServerError("Error in poll");
-		// ==============================================================================================================
-
+		if (activity < 0 && !stopFlag) {          
+			perror("poll");
+			throw ServerError("Error in poll");
+		}
 		_acceptIncomingConnections();
 		_serveClients();
 		_checkTimeouts();
@@ -185,25 +203,9 @@ void Server::_checkTimeouts()
 		Log::log(WARNING, ("Process [" + toString(RED) + toString(it->first) + toString(RESET) + "]" + " running for: " + toString(elapsed) + " seconds."));
 		if (elapsed > CGI_TIMEOUT)
 		{
-			int fd_position = 0;
-			for (size_t i = 0; i < _fds.size(); i++)
-			{
-				if (_fds[i].fd == it->second.client_fd)
-				{
-					fd_position = i;
-					break;
-				}
-			}
-			std::string timeoutResponse = "HTTP/1.1 504 Internal Server Error\r\n"
-										  "Content-Type: text/plain\r\n\r\n"
-										  "Internal Server Error: Request time out.";
-			send(it->second.client_fd, timeoutResponse.c_str(), timeoutResponse.length(), 0);
-			close(it->second.client_fd);
-			close(it->second.cgi_fd);
-			_fds.erase(_fds.begin() + fd_position);
-			CgiRequestHandler::_open_processes.erase(it);
+			Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(it->first) + RESET + "]: Exceeded the time limit."));
+			sendHttpErrorResponse(it->second.client_fd, ETIMEDOUT);
 			kill(it->first, SIGKILL);
-			std::cout << "\n\n\n\t\t\trequest timed-out\n\n\n";
 		}
 	}
 }
@@ -213,42 +215,48 @@ void Server::_checkTimeouts()
 // ==========================================================================================
 void Server::_sigchldHandler(int signum)
 {
+	(void)signum;
 	int status;
 	pid_t pid;
-	(void)signum;
 	while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
 	{
 		std::map<pid_t, t_client_process>::iterator it = CgiRequestHandler::_open_processes.find(pid);
-		if (it != CgiRequestHandler::_open_processes.end())
+		int fd_position = 0;
+		int client_fd = it->second.client_fd;
+		for (size_t i = 0; i < _fds.size(); i++)
 		{
-			int fd_position = 0;
-			for (size_t i = 0; i < _fds.size(); i++)
+			if (_fds[i].fd == it->second.client_fd)
 			{
-				if (_fds[i].fd == it->second.client_fd)
-				{
-					fd_position = i;
-					break;
-				}
+				fd_position = i;
+				break;
 			}
-			int client_fd = it->second.client_fd;
-			if (WIFEXITED(status))
+		}
+		if (WIFEXITED(status))
+		{
+			if (WEXITSTATUS(status) == 0)
 			{
+				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS FINISHED ITS EXECUTION."));
 				char buffer[BUFSIZ];
 				std::string response;
 				ssize_t bytesRead;
 				while ((bytesRead = read(it->second.cgi_fd, buffer, BUFSIZ)) > 0)
 					response += std::string(buffer, bytesRead);
-
 				send(it->second.client_fd, response.c_str(), response.length(), 0);
 			}
-			close(client_fd);
-			close(it->second.cgi_fd);
-			_fds.erase(_fds.begin() + fd_position);
-			CgiRequestHandler::_open_processes.erase(it);
-			Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS FINISHED ITS EXECUTION."));
+
 		}
-		else
-			Log::log(ERROR, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS BEEN KILLED!!!"));
+		else if (WIFSIGNALED(status))
+		{
+			int signal = WTERMSIG(status);
+			if (signal == SIGKILL)
+				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS BEEN KILLED."));
+			else
+				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "RECEIVED THE SIGNAL: " + toString(signal)));
+		}
+		close(client_fd);
+		close(it->second.cgi_fd);
+		_fds.erase(_fds.begin() + fd_position);
+		CgiRequestHandler::_open_processes.erase(it);
 	}
 }
 

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:34:18 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/26 17:22:51 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/27 15:56:45 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,9 @@
 #include "Log.hpp"
 #include "RequestHandlers.hpp"
 #include "Response.hpp"
-#include "utils.hpp"
 #include "Server.hpp"
-
+#include "utils.hpp"
+#include <cerrno>
 
 #define MAXPATHLEN 4096
 #define CGI_TIMEOUT 5
@@ -29,7 +29,6 @@ typedef struct pollfd t_pollfd;
 typedef struct _s_client_process
 {
 	std::string				method;
-	pid_t					pid;
 	clock_t					start_time;
 	int						client_fd;
 	int						cgi_fd;
@@ -101,4 +100,6 @@ std::string getFileExtension(const std::string &url);
 std::string intToString(int value);
 bool		startsWith(std::string str, const std::string &prefix);
 bool 		isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions);
+void 		sendHttpErrorResponse(int client_fd, int error_code);
+
 #endif // CGIREQUESTHANDLER_HPP
