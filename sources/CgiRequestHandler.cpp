@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/27 15:59:25 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/27 16:29:23 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,7 +130,7 @@ void CgiRequestHandler::initChEnv(void)
 {
 	int i = 0;
 	std::map<std::string, std::string>::iterator it = _env.begin();
-
+	
 	_ch_env = new char *[_env.size() + 1];
 	if (!_ch_env)
 		throw CgiError("Error allocating memory for CGI environment variables.");
@@ -170,7 +170,6 @@ void CgiRequestHandler::processRequest()
 	else
 	{
 		close(cgi_pipe[1]);
-		// fcntl(cgi_pipe[0], F_SETFL, O_NONBLOCK);
 
 		t_client_process c_process = {_method, clock(), _client_fd, cgi_pipe[0], _pollfd};
 		CgiRequestHandler::_open_processes[pid] = c_process;

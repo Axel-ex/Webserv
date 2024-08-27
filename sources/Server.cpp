@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/27 16:04:52 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/27 16:43:50 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,21 +102,6 @@ void Server::init()
 
 void Server::start(void)
 {
-	// while (!stopFlag)
-	// {
-
-	// 	/* Check for any change in our file descriptors */
-	// 	int activity = poll(_fds.data(), _fds.size(), 1000);
-
-	// 	// ==============================================================================================================
-	// 	if (activity < 0 && !stopFlag)           //  <<------------- VALIDATE WHY THE EXCEPTION WAS THROWN
-	// 		throw ServerError("Error in poll");
-	// 	// ==============================================================================================================
-
-	// 	_acceptIncomingConnections();
-	// 	_serveClients();
-	// 	_checkTimeouts();
-	// }
 	while (!stopFlag)
 	{
 		int activity;
@@ -125,15 +110,15 @@ void Server::start(void)
 		do {
 			/* Check for any change in our file descriptors */
 			activity = poll(_fds.data(), _fds.size(), 1000);
-		} while (activity < 0 && errno == EINTR);  //  <<------------- VALIDATE IF ERRNO HERE IS ILEGAL
-
+		} while (activity < 0 && errno == EINTR);  //  <--- VALIDATE IF ERRNO HERE IS ILEGAL
+		
 		if (activity < 0 && !stopFlag) {          
 			perror("poll");
 			throw ServerError("Error in poll");
 		}
+		_checkTimeouts();
 		_acceptIncomingConnections();
 		_serveClients();
-		_checkTimeouts();
 	}
 }
 
