@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/27 16:43:50 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/28 11:42:53 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -293,7 +293,7 @@ void Server::_serveClients(void)
 			if (CgiRequestHandler::_canProcess(request))
 			{
 				Route cgi_route = getCgiRoute(request);
-				CgiRequestHandler cgi_obj(request, _fds[i].fd, cgi_route, _fds[i]);
+				CgiRequestHandler cgi_obj(request, _fds[i].fd, cgi_route);
 				cgi_obj.processRequest();
 			}
 			else

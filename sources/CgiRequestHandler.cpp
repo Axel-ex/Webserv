@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/27 16:29:23 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/28 17:13:46 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,37 +15,61 @@
 // STRUCTURE TO BE USED FOR VERIFYING TIMED-OUT PROCESSES
 std::map<pid_t, t_client_process> CgiRequestHandler::_open_processes;
 
-CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &location, t_pollfd pollfd)
+std::string CgiRequestHandler::getInterpreter(void) const
 {
-	// ============ REQUEST INFORMATION ==============
+	if (std::abs((int)(_location.cgi_extension.size() - _location.cgi_path.size())) > 1)
+	{
+		Log::log(ERROR, "Cgi extension and path vector differs in size more than 1 unit.");
+		return ("");
+	}
+	if (_extension == ".cgi")
+		return ("");
+	for (size_t i = 0; i < _location.cgi_extension.size(); i++)
+	{
+		if (_location.cgi_extension[i] == _extension)
+			return (_location.cgi_path[i]);
+	}
+	return ("");
+}
 
+CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &location)
+{
+
+	// ============ REQUEST INFORMATION ==============
 	_method = request.getMethod();
 	_resource = request.getResource();
 	_protocol = request.getProtocol();
 	_headers = request.getHeaders();
 	_body = request.getBody();
+	_client_fd = fd;
+	_location = location;
 	// ===============================================
 
-	decode(); // --> decode hexadecimal values in the requested URI
-	_location = location;
-
-	_pollfd = pollfd;
-
-	_document_root = _location.root.substr(0, _location.root.find(_location.url));
-	if (_document_root[0] == '.')
+	_document_root = _location.root.substr(0, _location.root.find(_location.url) - 1);
+	if (!_document_root.empty() && _document_root[0] == '.')
 		_document_root.erase(0, 1);
 
-	_client_fd = fd;
+	decode(); // --> decode hexadecimal values in the requested URI
+	_extension = getFileExtension(_decoded_resource);
+	_interpreter = getInterpreter();
 	_scriptName = getScriptName();
 	_scriptPath = getScriptPath();
 	_request_headers = parseHttpHeader();
-	_extension = getFileExtension(_resource);
 	_query_str = getQueryString();
 
-	// ============ ENVIRONMENT INITIALIZATION ==============
+	getPathInfo();
 	initCgiEnv();
 	initChEnv();
-	// ======================================================
+
+	Log::log(DEBUG, "METHOD: " + _method);
+	Log::log(DEBUG, "SCRIPT NAME: " + _scriptName);
+	Log::log(DEBUG, "SCRIPT INTERPRETER: " + _interpreter);
+	Log::log(DEBUG, "SCRIPT PATH: " + _scriptPath);
+	Log::log(DEBUG, "SCRIPT EXTENSION: " + _extension);
+	Log::log(DEBUG, "DOCUMENT ROOT: " + getRootPath());
+	Log::log(DEBUG, "QUERY STRING: " + _query_str);
+	Log::log(DEBUG, "PATH INFO: " + _pathInfo);
+	Log::log(DEBUG, "PATH TRANSLATED: " + _pathTranslated);
 }
 
 CgiRequestHandler::~CgiRequestHandler()
@@ -81,6 +105,15 @@ bool CgiRequestHandler::_canProcess(const Request &request)
 	return (false);
 }
 
+std::string CgiRequestHandler::getRootPath(void) const
+{
+	std::string wd = getWorkingPath();
+	std::string root = _location.root;
+	if (root[0] == '.')
+		root.erase(0, 1);
+	return (wd + root);
+}
+
 void CgiRequestHandler::initCgiEnv()
 {
 	if (_method == "POST")
@@ -91,23 +124,18 @@ void CgiRequestHandler::initCgiEnv()
 		_env["CONTENT_TYPE"] = getContentType(_headers);
 	}
 	_env["GATEWAY_INTERFACE"] = "CGI/1.1";
-
-	// ===================================================================
-	// 							FIX THIS DATA
 	_env["SCRIPT_NAME"] = _scriptName;
 	_env["SCRIPT_FILENAME"] = _scriptPath;
-	_env["PATH_INFO"] = _scriptPath;
-	_env["PATH_TRANSLATED"] = _scriptPath;
-	// ===================================================================
-
+	_env["PATH_INFO"] = _pathInfo;
+	_env["PATH_TRANSLATED"] = _pathTranslated;
 	_env["REQUEST_URI"] = _resource;
+	_env["REQUEST_METHOD"] = _method;
 	_env["SERVER_NAME"] = Config::getServerName();
 	_env["SERVER_PORT"] = intToString(Config::getPorts()[0]);
-	_env["REQUEST_METHOD"] = _method;
 	_env["SERVER_PROTOCOL"] = _protocol;
 	_env["REDIRECT_STATUS"] = "200";
 	_env["SERVER_SOFTWARE"] = "Aether_42";
-	_env["DOCUMENT_ROOT"] = _document_root;
+	_env["DOCUMENT_ROOT"] = getRootPath();
 	_env["QUERY_STRING"] = _query_str;
 
 	if (_request_headers.find("cookie") != _request_headers.end())
@@ -121,16 +149,26 @@ void CgiRequestHandler::initCgiEnv()
 		std::string key = "HTTP_" + name;
 		_env[key] = it->second;
 	}
-	_argv[0] = strdup(_env["SCRIPT_FILENAME"].c_str());
-	_argv[1] = strdup(_env["SCRIPT_FILENAME"].c_str());
-	_argv[2] = NULL;
+
+	if (_extension == ".cgi")
+	{
+		std::cout << RED << "PASSEI AQUI\n\n";
+		_argv[0] = strdup(_scriptPath.c_str());
+		_argv[1] = NULL;
+	}
+	else
+	{
+		_argv[0] = strdup(_interpreter.c_str());
+		_argv[1] = strdup(_scriptPath.c_str());
+		_argv[2] = NULL;
+	}
 }
 
 void CgiRequestHandler::initChEnv(void)
 {
 	int i = 0;
 	std::map<std::string, std::string>::iterator it = _env.begin();
-	
+
 	_ch_env = new char *[_env.size() + 1];
 	if (!_ch_env)
 		throw CgiError("Error allocating memory for CGI environment variables.");
@@ -149,29 +187,39 @@ void CgiRequestHandler::initChEnv(void)
 void CgiRequestHandler::processRequest()
 {
 	pid_t pid;
-	int cgi_pipe[2];
-
-	if (pipe(cgi_pipe) < 0)
+	if (open(_scriptPath.c_str(), X_OK) == -1)
+	{
+		sendHttpErrorResponse(_client_fd, errno);
+		return ;
+	}
+	if (pipe(_pipe_in) < 0 || pipe(_pipe_out) < 0)
 		throw CgiError("Error in pipe().");
 	if ((pid = fork()) < 0)
 		throw CgiError("Error in fork().");
 	if (pid == 0)
 	{
-		close(cgi_pipe[0]);
-		dup2(cgi_pipe[1], STDOUT_FILENO);
-		close(cgi_pipe[1]);
+		close(_pipe_out[0]);
+		dup2(_pipe_out[1], STDOUT_FILENO);
+		close(_pipe_out[1]);
 
-		if (execve(_env["SCRIPT_FILENAME"].c_str(), _argv, _ch_env) < 0)
+		close(_pipe_in[1]);
+		dup2(_pipe_in[0], STDIN_FILENO);
+		close(_pipe_in[0]);
+
+		if (execve(_argv[0], _argv, _ch_env) < 0)
 		{
 			sendHttpErrorResponse(_client_fd, errno);
-			exit(EXIT_FAILURE);
+			throw CgiError("Execve() could not execute: " + (std::string)_argv[0] + " -> errno: " + toString(errno));
 		}
 	}
 	else
 	{
-		close(cgi_pipe[1]);
+		close(_pipe_out[1]);
+		if (_method == "POST")
+			send(_pipe_in[0], _body.c_str(), _body.length(), 0);
+		close(_pipe_in[0]);
 
-		t_client_process c_process = {_method, clock(), _client_fd, cgi_pipe[0], _pollfd};
+		t_client_process c_process = {_method, clock(), _client_fd, _pipe_out[0]};
 		CgiRequestHandler::_open_processes[pid] = c_process;
 	}
 }
@@ -194,14 +242,15 @@ std::string getFileExtension(const std::string &url)
 
 	std::string path = (queryPos != std::string::npos) ? url.substr(0, queryPos) : url;
 
-	size_t dotPos = path.find_last_of('.');
+	size_t dotPos = path.find_first_of('.');
 	if (dotPos == std::string::npos)
 		return ("");
 
 	if (dotPos == path.size() - 1)
 		return ("");
-
-	return path.substr(dotPos);
+	path = path.substr(dotPos);
+	path = path.substr(0, path.find_first_of("/#"));
+	return (path);
 }
 
 bool startsWith(std::string str, const std::string &prefix)
@@ -237,12 +286,18 @@ std::string CgiRequestHandler::getWorkingPath(void) const
 
 std::string CgiRequestHandler::getScriptPath(void) const
 {
-
-	std::string script = _document_root + _resource;
+	std::string script = _document_root + _decoded_resource;
 	std::string wd = getWorkingPath();
 
 	script = script.substr(0, script.find('?'));
-	return (wd + script);
+	script = wd + script;
+	if (!script.empty() && script[script.length() - 1] == '/')
+		script = script.substr(0, script.length() - 1);
+
+	size_t scriptNamePos = script.rfind(_scriptName);
+	if (scriptNamePos != std::string::npos)
+		script = script.substr(0, scriptNamePos + _scriptName.length());
+	return (script);
 }
 
 std::string CgiRequestHandler::getContentType(const std::string &headers)
@@ -291,10 +346,28 @@ std::map<std::string, std::string> CgiRequestHandler::parseHttpHeader(void) cons
 
 std::string CgiRequestHandler::getScriptName(void) const
 {
-	std::string script = _resource.substr(0, _resource.find('?'));
-	if (script.find_last_of('/') != std::string::npos)
-		script = script.substr(script.find_last_of('/') + 1);
-	return (script);
+	std::string uri = _decoded_resource;
+
+	std::size_t query_pos = uri.find('?');
+	if (query_pos != std::string::npos)
+		uri = uri.substr(0, query_pos);
+
+	std::size_t fragment_pos = uri.find('#');
+	if (fragment_pos != std::string::npos)
+		uri = uri.substr(0, fragment_pos);
+
+	std::size_t ext_pos = uri.rfind(_extension);
+	if (ext_pos != std::string::npos)
+	{
+		if (ext_pos + _extension.length() == uri.length() ||
+			uri[ext_pos + _extension.length()] == '/')
+		{
+			std::size_t last_slash_pos = uri.rfind('/', ext_pos);
+			if (last_slash_pos != std::string::npos)
+				return (uri.substr(0, ext_pos + _extension.length()));
+		}
+	}
+	return (uri.substr(uri.rfind('/') + 1));
 }
 
 std::string intToString(int value)
@@ -315,16 +388,17 @@ unsigned int convertHex(const std::string &nb)
 
 std::string CgiRequestHandler::decode()
 {
-	size_t token = _resource.find("%");
+	_decoded_resource = _resource;
+	size_t token = _decoded_resource.find("%");
 	while (token != std::string::npos)
 	{
-		if (_resource.length() < token + 2)
+		if (_decoded_resource.length() < token + 2)
 			break;
-		char decimal = convertHex(_resource.substr(token + 1, 2));
-		_resource.replace(token, 3, toString(decimal));
-		token = _resource.find("%");
+		char decimal = convertHex(_decoded_resource.substr(token + 1, 2));
+		_decoded_resource.replace(token, 3, toString(decimal));
+		token = _decoded_resource.find("%");
 	}
-	return (_resource);
+	return (_decoded_resource);
 }
 
 void sendHttpErrorResponse(int client_fd, int error_code)
@@ -335,71 +409,80 @@ void sendHttpErrorResponse(int client_fd, int error_code)
 
 	switch (error_code)
 	{
-        case ENOENT:
-            status_code = 404;
-            reason_phrase = "Not Found";
-            error_message = "The requested resource was not found on this server.";
-            break;
-        case EACCES:
-            status_code = 403;
-            reason_phrase = "Forbidden";
-            error_message = "You do not have permission to access the requested resource.";
-            break;
-        case EINVAL:
-            status_code = 400;
-            reason_phrase = "Bad Request";
-            error_message = "The server could not understand the request due to invalid syntax.";
-            break;
-        case EPERM:
-            status_code = 401;
-            reason_phrase = "Unauthorized";
-            error_message = "Authentication is required and has failed or has not yet been provided.";
-            break;
-        case EFAULT:
-            status_code = 500;
-            reason_phrase = "Internal Server Error";
-            error_message = "The server encountered an internal error and was unable to complete your request.";
-            break;
-        case EEXIST:
-            status_code = 409;
-            reason_phrase = "Conflict";
-            error_message = "The request could not be completed due to a conflict with the current state of the resource.";
-            break;
-        case ENOTDIR:
-            status_code = 404;
-            reason_phrase = "Not Found";
-            error_message = "A component of the path is not a directory.";
-            break;
-		case ETIMEDOUT:
+	case ENOENT:
+		status_code = 404;
+		reason_phrase = "Not Found";
+		error_message = "The requested resource was not found on this server.";
+		break;
+	case EACCES:
+		status_code = 403;
+		reason_phrase = "Forbidden";
+		error_message = "You do not have permission to access the requested resource.";
+		break;
+	case EINVAL:
+		status_code = 400;
+		reason_phrase = "Bad Request";
+		error_message = "The server could not understand the request due to invalid syntax.";
+		break;
+	case EPERM:
+		status_code = 401;
+		reason_phrase = "Unauthorized";
+		error_message = "Authentication is required and has failed or has not yet been provided.";
+		break;
+	case EFAULT:
+		status_code = 500;
+		reason_phrase = "Internal Server Error";
+		error_message = "The server encountered an internal error and was unable to complete your request.";
+		break;
+	case EEXIST:
+		status_code = 409;
+		reason_phrase = "Conflict";
+		error_message = "The request could not be completed due to a conflict with the current state of the resource.";
+		break;
+	case ENOTDIR:
+		status_code = 404;
+		reason_phrase = "Not Found";
+		error_message = "A component of the path is not a directory.";
+		break;
+	case ETIMEDOUT:
 		status_code = 504;
 		reason_phrase = "Gateway Timeout";
 		error_message = "The server, while acting as a gateway or proxy, did not receive a timely response from the upstream server.";
 		break;
-        default:
-            status_code = 500;
-            reason_phrase = "Internal Server Error";
-            error_message = "An internal server error occurred.";
-            break;
-    }
+	default:
+		status_code = 500;
+		reason_phrase = "Internal Server Error";
+		error_message = "An internal server error occurred.";
+		break;
+	}
 
 	std::string response_body =
 		"<html>\n"
 		"<head><title>" +
 		toString(status_code) + " " + reason_phrase + "</title></head>\n"
-		"<body>\n"
-		"<h1>" +
+													  "<body>\n"
+													  "<h1>" +
 		reason_phrase + "</h1>\n"
-		"<p>" + error_message + "</p>\n"
-		"</body>\n"
-		"</html>\n";
+						"<p>" +
+		error_message + "</p>\n"
+						"</body>\n"
+						"</html>\n";
 
 	std::string response_headers =
 		"HTTP/1.1 " + toString(status_code) + " " + reason_phrase + "\r\n"
-		"Content-Type: text/html; charset=UTF-8\r\n"
-		"Content-Length: " +
+																	"Content-Type: text/html; charset=UTF-8\r\n"
+																	"Content-Length: " +
 		toString(response_body.length()) + "\r\n"
-		"Connection: close\r\n"
-		"\r\n";
+										   "Connection: close\r\n"
+										   "\r\n";
 	send(client_fd, response_headers.c_str(), response_headers.length(), 0);
 	send(client_fd, response_body.c_str(), response_body.length(), 0);
+}
+
+void CgiRequestHandler::getPathInfo(void)
+{
+	std::string uri = _decoded_resource.substr(0, _decoded_resource.find('?'));
+	std::string pathInfo = uri.substr(uri.find(_scriptName) + _scriptName.length());
+	_pathInfo = pathInfo.empty() ? "/" : pathInfo;
+	_pathTranslated = getRootPath() + _pathInfo;
 }
