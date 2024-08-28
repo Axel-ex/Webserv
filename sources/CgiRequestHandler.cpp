@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/28 17:13:46 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/08/28 17:30:32 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,16 +20,16 @@ std::string CgiRequestHandler::getInterpreter(void) const
 	if (std::abs((int)(_location.cgi_extension.size() - _location.cgi_path.size())) > 1)
 	{
 		Log::log(ERROR, "Cgi extension and path vector differs in size more than 1 unit.");
-		return ("");
+		return (_scriptPath);
 	}
 	if (_extension == ".cgi")
-		return ("");
+		return (_scriptPath);
 	for (size_t i = 0; i < _location.cgi_extension.size(); i++)
 	{
 		if (_location.cgi_extension[i] == _extension)
 			return (_location.cgi_path[i]);
 	}
-	return ("");
+	return (_scriptPath);
 }
 
 CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &location)
@@ -51,9 +51,9 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &loca
 
 	decode(); // --> decode hexadecimal values in the requested URI
 	_extension = getFileExtension(_decoded_resource);
-	_interpreter = getInterpreter();
 	_scriptName = getScriptName();
 	_scriptPath = getScriptPath();
+	_interpreter = getInterpreter();
 	_request_headers = parseHttpHeader();
 	_query_str = getQueryString();
 
@@ -149,19 +149,9 @@ void CgiRequestHandler::initCgiEnv()
 		std::string key = "HTTP_" + name;
 		_env[key] = it->second;
 	}
-
-	if (_extension == ".cgi")
-	{
-		std::cout << RED << "PASSEI AQUI\n\n";
-		_argv[0] = strdup(_scriptPath.c_str());
-		_argv[1] = NULL;
-	}
-	else
-	{
-		_argv[0] = strdup(_interpreter.c_str());
-		_argv[1] = strdup(_scriptPath.c_str());
-		_argv[2] = NULL;
-	}
+	_argv[0] = strdup(_interpreter.c_str());
+	_argv[1] = strdup(_scriptPath.c_str());
+	_argv[2] = NULL;
 }
 
 void CgiRequestHandler::initChEnv(void)
@@ -187,7 +177,7 @@ void CgiRequestHandler::initChEnv(void)
 void CgiRequestHandler::processRequest()
 {
 	pid_t pid;
-	if (open(_scriptPath.c_str(), X_OK) == -1)
+	if (open(_scriptPath.c_str(), F_OK) == -1)
 	{
 		sendHttpErrorResponse(_client_fd, errno);
 		return ;
@@ -209,7 +199,7 @@ void CgiRequestHandler::processRequest()
 		if (execve(_argv[0], _argv, _ch_env) < 0)
 		{
 			sendHttpErrorResponse(_client_fd, errno);
-			throw CgiError("Execve() could not execute: " + (std::string)_argv[0] + " -> errno: " + toString(errno));
+			throw CgiError("Execve() could not execute: " + _scriptPath + " -> errno: " + toString(errno));
 		}
 	}
 	else
