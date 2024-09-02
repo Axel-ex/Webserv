@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Parser.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: achabrer <marvin@42.fr>                    +#+  +:+       +#+        */
+/*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/16 10:11:15 by achabrer          #+#    #+#             */
-/*   Updated: 2024/08/02 13:18:06 by Axel             ###   ########.fr       */
+/*   Updated: 2024/08/16 17:01:58 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,8 @@ struct Route
 	std::vector<std::string> methods;
 	std::string upload_store;
 	std::string index;
-	std::string cgi_extension;
+	std::vector<std::string> cgi_path;
+	std::vector<std::string> cgi_extension;
 };
 
 class Parser
@@ -85,6 +86,8 @@ class Parser
 		void _loadErrors(void) const;
 		// Helper
 		bool _isHttpMethod(const std::string &method) const;
+        bool _isCgiPath(const std::string& path) const;
+        bool _isCgiExtension(const std::string& path) const;
 		bool _isValidPort(int port, const std::vector<int> &ports) const;
         // Debug
         void _debugTokenList(void) const;

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Parser_test.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
+/*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 09:20:15 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/02 13:31:31 by Axel             ###   ########.fr       */
+/*   Updated: 2024/08/16 17:11:07 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ TEST(Parser, Routes)
     ASSERT_EQ(routes[0].root, "./resources");
     ASSERT_EQ(routes[0].index, "index.html");
     ASSERT_EQ(routes[0].upload_store, "./uploads");
-    ASSERT_EQ(routes[0].cgi_extension, ".php");
+    ASSERT_EQ(routes[0].cgi_extension[0], ".php");
     Config::clear();
 }
 
