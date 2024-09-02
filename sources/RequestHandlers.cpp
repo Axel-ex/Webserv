@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/02 12:11:46 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/02 12:15:53 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,12 +147,8 @@ std::string    GetRequestHandler ::_get_file_content(std::string path, Response&
 void GetRequestHandler ::processRequest(const Request& request,
                                          Response& response) const
 {
-    // std::map<std::string, std::string>::iterator it;
     std::string headers;
 
-    // it = Config::getResources().find(request.getResource());
-    // if (it == Config::getResources().end())
-    //     return (createErrorResponse(NOT_FOUND, response));
     Config& config = Config::getInstance();
     const std::vector<Route>& routes = config.getRoutes();
     std::string req_path;

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/28 11:42:53 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/02 12:16:34 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,8 +39,6 @@ Server::Server(std::string config_file)
 	Parser parser;
 
 	parser.parse(config_file);
-	Config::parseFile(config_file);
-	(void)config_file;
 	Log::setLogLevel(DEBUG);
 	Log::clearScreen();
 }

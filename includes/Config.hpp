@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:13:18 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/02 13:21:10 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/02 12:16:59 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,8 +22,6 @@ class Config
 {
     public:
         static Config& getInstance(void);
-        static void parseFile(std::string file);
-        static void clear(void);
         ~Config();
 
         static std::vector<int>& getPorts(void);
