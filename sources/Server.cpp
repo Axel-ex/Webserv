@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/02 12:16:34 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/02 18:12:17 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,14 +25,7 @@
 #include <string>
 #include <cerrno>
 
-bool stopFlag(false);
 std::vector<t_pollfd> Server::_fds;
-
-void sigHandler(int signum)
-{
-	if (signum == SIGINT)
-		stopFlag = true;
-}
 
 Server::Server(std::string config_file)
 {
@@ -104,11 +97,11 @@ void Server::start(void)
 	{
 		int activity;
 
-		// Loop to handle EINTR error
+		// Loop to handle EINTR (syscall interruptions while polling) error
 		do {
-			/* Check for any change in our file descriptors */
+			// Check for any change in our file descriptors
 			activity = poll(_fds.data(), _fds.size(), 1000);
-		} while (activity < 0 && errno == EINTR);  //  <--- VALIDATE IF ERRNO HERE IS ILEGAL
+		} while (activity < 0 && errno == EINTR);
 		
 		if (activity < 0 && !stopFlag) {          
 			perror("poll");
