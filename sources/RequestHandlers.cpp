@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/09 15:36:52 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/02 12:11:46 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -97,13 +97,13 @@ std::string ARequestHandler::_getErrorReason(int error_code) const {
 
 	switch (error_code) {
 		default:
-			return ("Page not found");
+			return ("Page Not Found");
 		case NOT_FOUND:
-			return ("Page not found");
+			return ("Page Not Found");
 		case BAD_REQUEST:
-			return ("Bad request");
+			return ("Bad Request");
 		case INTERNAL_ERROR:
-			return ("Internal server error");
+			return ("Internal Server Error");
 	}
 }
 
