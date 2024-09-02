@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/17 10:11:03 by Axel              #+#    #+#             */
-/*   Updated: 2024/05/24 17:48:22 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/02 15:59:40 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ TEST(GETResponse, invalid_resource)
 	std::string status_line;
 	std::getline(stream, status_line);
 
-	ASSERT_EQ(status_line, "HTTP/1.1 404 Not Found\r");
+	ASSERT_EQ(status_line, "HTTP/1.1 404 Page Not Found\r");
 }
 
 TEST(GETResponse, invalid_protocol)
