@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/02 12:15:53 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/02 15:53:25 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -158,7 +158,7 @@ void GetRequestHandler ::processRequest(const Request& request,
     if (request.getResource().empty() || request.getResource() == "/")
     {
         if (routes.begin()->index.empty())
-            _createErrorResponse(BAD_REQUEST, response);
+            _createErrorResponse(NOT_FOUND, response);
         else
             req_path = "/" + routes.begin()->index;
     }
@@ -166,7 +166,7 @@ void GetRequestHandler ::processRequest(const Request& request,
         req_path = request.getResource();
     if (stat((routes.begin()->root + req_path).c_str(), &info) != 0)
     {
-        _createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(NOT_FOUND, response);
         return (Log::log(WARNING, "No such path"));
     }
     if (S_ISREG(info.st_mode))
@@ -174,7 +174,7 @@ void GetRequestHandler ::processRequest(const Request& request,
         cont_type = GetRequestHandler::_get_file_content(routes.begin()->root + req_path, response);
         if (cont_type.empty())
         {
-            _createErrorResponse(BAD_REQUEST, response);
+            _createErrorResponse(NOT_FOUND, response);
             return (Log::log(WARNING, "couldn't get path"));
         }
         //response.setBody(it->second);
@@ -187,7 +187,7 @@ void GetRequestHandler ::processRequest(const Request& request,
     }
     else
     {
-        _createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(NOT_FOUND, response);
         return (Log::log(WARNING, "Not a file"));
     }
 }
