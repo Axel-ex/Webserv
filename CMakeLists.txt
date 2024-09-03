@@ -22,6 +22,7 @@ set(srcs
 	${src_dir}RequestHandlers.cpp
 	${src_dir}CgiRequestHandler.cpp
 	${src_dir}Response.cpp
+	${src_dir}signal.cpp
 	${src_dir}main.cpp)
 
 set(headers
