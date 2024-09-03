@@ -6,3 +6,6 @@ build/
 uploads/
 .cache
 .vscode/
+objects/
+webserv
+
