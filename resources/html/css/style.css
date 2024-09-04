@@ -1,0 +1,74 @@
+/* Reset default styles */
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+/* Set up the body */
+body {
+	font-family: Arial, sans-serif;
+	background-color: #ffffff;
+	color: #333;
+}
+
+/* Header styles */
+header {
+	background-color: #007bff;
+	padding: 20px;
+	color: #fff;
+}
+
+header h1 {
+	font-size: 24px;
+	font-weight: bold;
+}
+
+/* Main content styles */
+main {
+	padding: 20px;
+}
+
+/* Footer styles */
+footer {
+	background-color: #007bff;
+	padding: 20px;
+	color: #fff;
+	text-align: center;
+}
+
+footer p {
+	margin-bottom: 10px;
+}
+
+footer a {
+	color: #fff;
+	text-decoration: none;
+}
+
+footer a:hover {
+	text-decoration: underline;
+}
+
+
+/* Style page content */
+#main {
+	transition: margin-left .5s;
+	position: relative;
+	top: 15px;
+	left: 80px;
+	font-size: 1vw;
+	cursor: pointer;
+}
+
+
+/* On smaller screens, where height is less than 450px, change the style of the sidenav */
+@media screen and (max-height: 450px) {
+	.sidenav {
+		padding-top: 15px;
+	}
+
+	.sidenav a {
+		font-size: 18px;
+	}
+}

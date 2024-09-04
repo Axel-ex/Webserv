@@ -1,0 +1,91 @@
+/* ============================================================= */
+/* 							NAV BAR 							 */
+/* ============================================================= */
+
+/* The side navigation menu */
+.sidenav {
+	position: fixed;
+	z-index: 1;
+	top: 225px;
+	/* Start from the top by default */
+	left: 0;
+	width: 0;
+	height: 100%;
+	/* background-color: #111; */
+	background-color: #16305f;
+	overflow-x: hidden;
+	transition: 0.5s;
+}
+
+/* Adjust the top margin to account for the banner */
+.sidenav.banner-active {
+	top: 225px;
+	/* This should match the height of your banner */
+}
+
+/* Adjust the height to ensure it doesn't overlap the content */
+.sidenav.banner-active {
+	height: calc(100% - 225px);
+	/* Subtract the banner height from 100% */
+}
+
+/* The navigation menu links */
+.sidenav a {
+	padding: 15px 15px 15px 32px;
+	text-decoration: none;
+	font-size: 18px;
+	/* color: #818181; */
+	color: #bebdbd;
+	display: block;
+	transition: 0.3s;
+	text-align: left;
+	text-transform: uppercase;
+}
+
+/* Adjust the position of the first link to be below the close button */
+
+/* When you mouse over the navigation links, change their color */
+.sidenav .pages a:hover {
+	color: #f1f1f1;
+	background-color: #4b6188d0;
+	transition: 0.1s;
+}
+
+/* Position and style the close button (top right corner) */
+.sidenav .closebtn {
+	position: absolute;
+	top: 0;
+	right: 25px;
+	font-size: 36px;
+	margin-left: 50px;
+}
+
+/* #closebtn:hover
+{
+	color: rgba(253, 39, 146, 0.767);
+} */
+
+/* When the sidenav is open, adjust the margin-left of the main content */
+.sidenav-open #main {
+	margin-left: 250px;
+	/* Adjust this value based on the width of your sidenav */
+}
+
+#openNav {
+	position: relative;
+	top: 10px;
+	/* Adjust this value to fine-tune spacing between banner and button */
+	left: 25px;
+	font-size: 24px;
+	cursor: pointer;
+	margin-top: -40px;
+	/* Optional: Use this to pull the button closer to the banner if needed */
+}
+
+#openNav:hover {
+	font-size: 29px;
+	transition: 0.2s;
+	/* color: rgb(24, 151, 255); */
+	color: #154296;
+
+}

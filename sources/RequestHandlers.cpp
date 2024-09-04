@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/02 15:53:25 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/04 16:02:13 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@
 //                               ABSTRACT HANDLER
 // =============================================================================
 void ARequestHandler::initializeMimeTypes() {
+    mimeTypes[".ico"] = "image/x-icon";
     mimeTypes[".html"] = "text/html";
     mimeTypes[".htm"] = "text/html";
     mimeTypes[".css"] = "text/css";
