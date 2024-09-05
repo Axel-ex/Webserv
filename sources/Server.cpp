@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/05 10:37:48 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/05 12:48:22 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -289,10 +289,9 @@ void Server::_serveClients(void)
 			else
 			{
 				Response response(request);
-				send(_fds[i].fd, response.getHeaders().c_str(),
-					 response.getHeaders().size(), 0);
-				send(_fds[i].fd, response.getBody().c_str(),
-					 response.getBody().size(), 0);
+				send(_fds[i].fd, response.getResponseBuffer().c_str(),
+					 response.getResponseBuffer().size(), 0);
+
 				close(_fds[i].fd);
 				_fds.erase(_fds.begin() + i);
 			}

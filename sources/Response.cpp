@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 15:00:56 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/10 12:57:22 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/05 12:46:15 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,10 @@ Response ::~Response(void) {}
 const std::string& Response::getBody(void) const { return (_body); }
 
 const std::string& Response::getHeaders(void) const { return (_headers); }
+
+const std::string Response::getResponseBuffer(void) const {
+	return (_headers + _body);
+}
 
 void Response ::setHeaders(const std::string& headers) { _headers = headers; }
 

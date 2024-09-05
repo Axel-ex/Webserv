@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 14:43:01 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/02 14:28:50 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/05 12:46:25 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,7 @@ class Response
 
         const std::string& getBody(void) const;
         const std::string& getHeaders(void) const;
+		const std::string getResponseBuffer(void) const;
 
         void setHeaders(const std::string& headers);
         void setBody(const std::string& body);
