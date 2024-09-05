@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/02 18:12:17 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/05 10:37:48 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -276,7 +276,6 @@ void Server::_serveClients(void)
 				continue;
 			}
 
-			// TODO: Try catch here?
 			Request request(request_buffer.getBuffer());
 			Log::logRequest(request);
 			Log::log(DEBUG, request_buffer.getBuffer());

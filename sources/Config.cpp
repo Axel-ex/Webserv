@@ -6,7 +6,7 @@
 /*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:17:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/02 12:17:52 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/05 10:03:02 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,7 @@ std::map<std::string, std::string>& Config::getResources(void)
 
 std::map<int, std::string>& Config::getDefaultErrors(void)
 {
-    return (getInstance()._default_errors);
+    return (getInstance()._errors);
 }
 
 std::map<int, std::string>& Config::getErrorPath(void)
@@ -66,12 +66,26 @@ void Config ::setRoutes(const Route& route)
     getInstance()._routes.push_back(route);
 }
 
-void Config::setDefaultErrors(int error_code, const std::string& content)
+void Config::setErrors(int error_code, const std::string& content)
 {
-    getInstance()._default_errors.insert(std::make_pair(error_code, content));
+    getInstance()._errors.insert(std::make_pair(error_code, content));
 }
 
 void Config::setErrorPath(int error_code, const std::string& path)
 {
     getInstance()._error_path.insert(std::make_pair(error_code, path));
+}
+
+// _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/ HELPER \_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
+void Config ::clear(void)
+{
+    Config &instance = getInstance();
+
+    instance._ports.clear();
+    instance._server_name.clear();
+    instance._resources.clear();
+    instance._errors.clear();
+	instance._routes.clear();
+	instance._errors.clear();
+	instance._max_body_size = 100;
 }

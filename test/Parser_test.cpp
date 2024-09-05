@@ -6,14 +6,13 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 09:20:15 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/02 12:09:09 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/05 08:40:38 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Config.hpp"
 #include "../includes/Parser.hpp"
 #include "gtest/gtest.h"
-#include <string>
 #include <vector>
 
 TEST(Parser, simple_config)

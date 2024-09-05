@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/16 10:11:15 by achabrer          #+#    #+#             */
-/*   Updated: 2024/08/16 17:01:58 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/05 11:53:26 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,6 @@
 #include <exception>
 #include <list>
 #include <map>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -89,6 +88,7 @@ class Parser
         bool _isCgiPath(const std::string& path) const;
         bool _isCgiExtension(const std::string& path) const;
 		bool _isValidPort(int port, const std::vector<int> &ports) const;
+		bool _isDuplicatedLocation(const std::string &url) const;
         // Debug
         void _debugTokenList(void) const;
         static std::string _tokenTypeToString(TokenType type);
