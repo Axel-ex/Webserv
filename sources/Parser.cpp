@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/05 11:42:43 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/05 12:11:25 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -254,7 +254,7 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it) const
         throw SynthaxException(*it,
                                "Config contains duplicated location blocks");
     Route route =
-        (Route){it->content, "", methods, "", "", cgi_path, cgi_extension};
+        (Route){it->content, "", methods, "uploads", "index.html", cgi_path, cgi_extension};
     for (; it->type != CLOSE_BRACKET; it++)
     {
         if (it->type != DIRECTIVE)
