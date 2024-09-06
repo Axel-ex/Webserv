@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/05 12:48:22 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/05 12:58:44 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -263,12 +263,6 @@ void Server::_serveClients(void)
 					continue;
 				request_buffer.appendBuffer(read_buffer, n);
 			}
-
-			/**
-			 * Mozilla uses autocompletion and prefetching. sometimes it will
-			 * send an empty request before the user even pressed enter to send
-			 * the request
-			 */
 			if (request_buffer.getBuffer().empty())
 			{
 				close(_fds[i].fd);
