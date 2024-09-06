@@ -13,6 +13,11 @@ body {
     line-height: 1.6;
 }
 
+pre {
+    font-size: 17px;
+    border: none !important;
+}
+
 /* Header styles */
 header {
     background-color: #007bff;
@@ -130,24 +135,22 @@ footer a:hover {
 
 /* Code block */
 code {
-    background-color: #f4f4f4;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Courier New', Courier, monospace;
+    font-size: 15px;
 }
 
 /* Headers */
 h1, h2 {
-    color: #96a4af;
     margin-bottom: 15px;
 }
 
 h1 {
+    color: #777777;
     font-size: 2em;
 	text-align: center;
 }
 
 h2 {
+    color: #9b9b9b;
 	text-align: center;
     font-size: 1.5em;
 }
