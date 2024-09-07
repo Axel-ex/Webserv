@@ -14,6 +14,7 @@
 #include "../includes/Config.hpp"
 #include "../includes/Log.hpp"
 #include "../includes/utils.hpp"
+#include <algorithm>
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -113,7 +114,11 @@ std::string ARequestHandler::_getErrorReason(int error_code) const {
 // =============================================================================
 bool GetRequestHandler ::_canProcess(const Request& request) const
 {
-    return (request.getMethod() == "GET" &&
+    Config& config = Config::getInstance();
+    const std::vector<Route>& routes = config.getRoutes();
+    std::vector<std::string> methods = routes.begin()->methods;
+    std::vector<std::string>::iterator it = std::find(methods.begin(), methods.end(), "GET");
+    return (it != methods.end() && request.getMethod() == "GET" &&
             request.getMethod().find(".cgi") == std::string::npos);
 }
 
@@ -166,6 +171,7 @@ void GetRequestHandler ::processRequest(const Request& request,
         req_path = request.getResource();
     if (stat((routes.begin()->root + req_path).c_str(), &info) != 0)
     {
+        std::cout << "Requested PATH ::.. " << (routes.begin()->root + req_path).c_str() << std::endl;
         _createErrorResponse(NOT_FOUND, response);
         return (Log::log(WARNING, "No such path"));
     }
@@ -197,7 +203,11 @@ void GetRequestHandler ::processRequest(const Request& request,
 // =============================================================================
 bool PostRequestHandler ::_canProcess(const Request& request) const
 {
-    return (request.getMethod() == "POST" &&
+    Config& config = Config::getInstance();
+    const std::vector<Route>& routes = config.getRoutes();
+    std::vector<std::string> methods = routes.begin()->methods;
+    std::vector<std::string>::iterator it = std::find(methods.begin(), methods.end(), "POST");
+    return (it != methods.end() && request.getMethod() == "POST" &&
             request.getResource().find(".cgi") == std::string::npos);
 }
 
@@ -319,10 +329,28 @@ void PostRequestHandler::createResponse(std::string resource,
     response.setHeaders(headers);
 }
 
+bool PostRequestHandler::_bodySizeCheck(const Request& request) const
+{
+    Config& config = Config::getInstance();
+    unsigned long max_body_size = config.getMaxBodySize();
+
+    return (request.getBody().size() <= max_body_size);
+}
+
 void PostRequestHandler::processRequest(const Request& request,
                                          Response& response) const
 {
     std::string content_type = _getContentType(request.getHeaders());
+    Config& config = Config::getInstance();
+    const std::vector<Route>& routes = config.getRoutes();
+    std::string upload_store = routes.begin()->upload_store;
+    if (!_bodySizeCheck(request))
+    {
+        _createErrorResponse(PAYLOAD_LARGE, response);
+        return (Log::log(WARNING, "Payload Too Large"));
+    }
+    if (upload_store.empty() || upload_store == "./" || upload_store == "/")
+        upload_store = "uploads";
     if (content_type.empty())
     {
         _createErrorResponse(BAD_REQUEST, response);
@@ -350,8 +378,8 @@ void PostRequestHandler::processRequest(const Request& request,
     if (content_type == "multipart/form-data")
     {
         // Write the file content to the file
-        _createDir("uploads");
-        file_name = "uploads/" + file_name;
+        _createDir(upload_store);
+        file_name = upload_store + "/" + file_name;
         std::ofstream ofs(file_name.c_str(),
                         std::ios_base::out | std::ios_base::trunc);
         if (!ofs)
@@ -368,7 +396,11 @@ void PostRequestHandler::processRequest(const Request& request,
 // =============================================================================
 bool DeleteRequestHandler ::_canProcess(const Request& request) const
 {
-    return (request.getMethod() == "DELETE");
+    Config& config = Config::getInstance();
+    const std::vector<Route>& routes = config.getRoutes();
+    std::vector<std::string> methods = routes.begin()->methods;
+    std::vector<std::string>::iterator it = std::find(methods.begin(), methods.end(), "DELETE");
+    return (it != methods.end() && request.getMethod() == "DELETE");
 }
 
 std::string _GetUserAgent(std::string userAgent)
