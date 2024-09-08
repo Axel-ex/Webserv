@@ -64,11 +64,10 @@ void ARequestHandler::setNextHandler(ARequestHandler* next) { _next = next; }
 void ARequestHandler::_createOkResponse(std::string resource,
                                         Response& response) const
 {
-    std::map<std::string, std::string>::iterator it;
     std::string headers;
 
-    it = Config::getResources().find(resource);
-    response.setBody(it->second);
+    (void)resource;
+    response.setBody("<h1>" + resource + "<h1/>");
     headers = "HTTP/1.1 200 OK\r\n";
     headers += "Content-Type: text/html\r\n";
     headers +=
@@ -171,7 +170,6 @@ void GetRequestHandler ::processRequest(const Request& request,
         req_path = request.getResource();
     if (stat((routes.begin()->root + req_path).c_str(), &info) != 0)
     {
-        std::cout << "Requested PATH ::.. " << (routes.begin()->root + req_path).c_str() << std::endl;
         _createErrorResponse(NOT_FOUND, response);
         return (Log::log(WARNING, "No such path"));
     }
@@ -362,11 +360,12 @@ void PostRequestHandler::processRequest(const Request& request,
         _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "couldn't get content boundaries"));
     }
-    
+
     std::string file_content;
-    if (content_type == "multipart/form-data")
+    if (content_type == "multipart/form-data" || content_type == "application/json" \
+        || content_type == "application/octet-stream")
         file_content = _getFileContent(request.getBody(), boundary);
-    else if (content_type == "application/x-www-form-urlencoded")
+    else //if (content_type == "application/x-www-form-urlencoded" || content_type = "text/plain")
         file_content = request.getBody();
     std::string file_name = _getFileName(request.getBody());
     if (file_content.empty() || (file_name.empty() && content_type == "multipart/form-data"))
@@ -375,17 +374,21 @@ void PostRequestHandler::processRequest(const Request& request,
         return (Log::log(WARNING, "couldn't process the file"));
     }
 
-    if (content_type == "multipart/form-data")
+    if (content_type == "multipart/form-data" || content_type == "application/json" \
+        || content_type == "application/octet-stream")
     {
         // Write the file content to the file
         _createDir(upload_store);
-        file_name = upload_store + "/" + file_name;
-        std::ofstream ofs(file_name.c_str(),
+        std::string dir = upload_store + "/" + file_name;
+        std::ofstream ofs(dir.c_str(),
                         std::ios_base::out | std::ios_base::trunc);
         if (!ofs)
             return (Log::log(WARNING, "Couldn't write to file"));
         ofs << file_content;
-        _createOkResponse("posted", response);
+        if (!ofs)
+            return (Log::log(WARNING, "Failed to write contente to file: " + file_name));
+        ofs.close();
+        _createOkResponse(file_name + " Posted", response);
     }
     else
         createResponse(file_content, response);

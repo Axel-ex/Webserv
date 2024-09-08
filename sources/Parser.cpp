@@ -374,7 +374,7 @@ void Parser::_loadErrors(void) const
     }
 
     // Then load the default if not provided
-    int tmp[] = {400, 404, 500};
+    int tmp[] = {400, 404, 413, 500};
     std::map<int, std::string> errors;
     std::vector<int> error_codes(tmp, tmp + sizeof(tmp) / sizeof(int));
     for (size_t i = 0; i < error_codes.size(); i++)
