@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/05 12:21:43 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/16 11:05:20 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -375,7 +375,7 @@ void Parser::_loadErrors(void) const
 
     // Then load the default if not provided
     int tmp[] = {400, 404, 413, 500};
-    std::map<int, std::string> errors;
+    std::map<int, std::string> errors = Config::getDefaultErrors();
     std::vector<int> error_codes(tmp, tmp + sizeof(tmp) / sizeof(int));
     for (size_t i = 0; i < error_codes.size(); i++)
     {
