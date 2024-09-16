@@ -59,6 +59,7 @@ class PostRequestHandler : public ARequestHandler
     private:
         bool _canProcess(const Request& request) const;
 
+        bool _bodySizeCheck(const Request& request) const;
         std::string _getContentType(const std::string& headers) const;
         std::string _getBoundary(const std::string& headers) const;
         std::string _getFileContent(const std::string& body,

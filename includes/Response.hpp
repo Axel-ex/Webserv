@@ -20,6 +20,7 @@
 #define BAD_REQUEST 400
 #define NOT_FOUND 404
 #define INTERNAL_ERROR 500
+#define PAYLOAD_LARGE 413
 
 class Response
 {

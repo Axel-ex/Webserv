@@ -2,15 +2,25 @@
 <html>
 
 <head>
-	<title>POST Request Form</title>
+    <title>POST Request Form</title>
 </head>
 
 <body>
-	<form action="http://localhost:8000/resource1" method="POST">
-		<label for="data">Data:</label>
-		<input type="text" id="data" name="data">
-		<input type="submit" value="Submit">
-	</form>
+    <form id="dynamicForm" method="POST">
+        <label for="data">Data:</label>
+        <input type="text" id="data" name="data">
+        <input type="submit" value="Submit">
+    </form>
+
+    <script>
+        // JavaScript to dynamically set the action URL based on the current host and port
+        document.addEventListener("DOMContentLoaded", function() {
+            const form = document.getElementById('dynamicForm');
+            const currentHost = window.location.host;  // This gets the current host (e.g., localhost:5000)
+            const protocol = window.location.protocol; // This gets the protocol (http: or https:)
+            form.action = `${protocol}//${currentHost}/resource1`;  // Sets the action dynamically
+        });
+    </script>
 </body>
 
 </html>
