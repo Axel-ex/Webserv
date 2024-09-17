@@ -1,0 +1,14 @@
+.banner {
+	width: 100%;
+	min-width: 00px;
+	height: 225px;
+	/* Adjust the height as needed */
+	background-image: url('../img/banner.png');
+	/* Replace with your image path */
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	position: fixed;
+	z-index: 1000;
+	/* Allows for overlay text or other content */
+}

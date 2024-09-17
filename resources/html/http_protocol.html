@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="./css/style.css">
+	<link rel="stylesheet" href="./css/navbar.css">
+	<link rel="stylesheet" href="./css/banner.css">
+
+	<title>HTTP Protocol</title>
+</head>
+
+<body>
+	<div class="banner">
+	</div>
+	<!-- Side Navigation Bar -->
+	<div id="mySidenav" class="sidenav">
+		<div style="padding-bottom: 50px;">
+			<a id="closebtn" href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+		</div>
+		<div class="pages">
+			<a href="index.html">Home</a>
+			<a href="server_architecture.html">Server Architecture</a>
+			<a href="http_protocol.html">Understanding HTTP</a>
+			<a href="socket.html">Socket Programming</a>
+			<a href="request_handling.html">Request Handling</a>
+			<a href="cgi_handler.html">CGI Implementation</a>
+			<a href="logging.html">Logging and Monitoring</a>
+			<!-- <a href="security.html">Security Considerations</a> -->
+			<!-- <a href="performance_optimization.html">Performance Optimization</a> -->
+			<!-- <a href="conclusion.html">Conclusion</a> -->
+		</div>
+	</div>
+
+	<!-- Open Side Nav Button -->
+	<span id="openNav" onclick="openNav()" ;>&#9776;</span>
+
+	<!-- Main Content -->
+	<div id="main">
+		<h1>Understanding the HTTP Protocol</h1>
+
+		<p>The <b>Hypertext Transfer Protocol (HTTP)</b> is a cornerstone of modern internet communication, acting as
+			the
+			primary protocol that facilitates the exchange of data between clients (such as web browsers) and servers.
+			It serves as the foundation for data transmission across the <b>World Wide Web</b>, establishing a standardized
+			method for devices to request and deliver web content.
+		</p>
+
+		At its core, HTTP defines the rules and conventions for how information is transmitted, enabling seamless
+		interactions between web browsers and servers. Through this protocol, a wide variety of content—including
+		text, images, videos, and other multimedia—can be exchanged over the internet, ensuring users can access the
+		content they need.
+		<p>
+			HTTP operates within an application layer of network protocols, designed specifically for distributed,
+			collaborative, hypermedia systems. Each time a user navigates to a website or opens a web-based application,
+			they engage with HTTP, often without even realizing it. When a user enters a URL or clicks a link, their
+			browser sends an HTTP request to the server, which responds by delivering the appropriate resources—such as
+			an HTML page, image, or other media files.
+		</p>
+		<p>
+			As a stateless protocol, HTTP treats each request as an independent transaction, meaning no session data is
+			retained between interactions unless specifically managed through techniques like cookies or session
+			tracking. This characteristic of HTTP allows it to be highly scalable, supporting the vast number of global
+			users accessing web services simultaneously.
+		</p>
+
+		<p>
+			HTTP has undergone several evolutions since its inception. The most widely adopted version, HTTP/1.1,
+			introduced persistent connections and pipelining, significantly improving performance. More recently, HTTP/2
+			and HTTP/3 have been developed to further enhance speed, security, and efficiency by introducing features
+			like multiplexing, header compression, and improved congestion control.
+		</p>
+		
+		<p>
+		In essence, HTTP is not just a protocol for transmitting data but a fundamental enabler of the
+		interconnected world we experience today, powering the dynamic, media-rich content we interact with on a
+		daily basis. It remains an indispensable part of the internet's infrastructure, underpinning everything from
+		simple webpage requests to complex, real-time web applications.
+		</p>
+		<br>
+		<hr>
+		<br>
+		<div class="illustration">
+			<h2>HTTP Request-Response Cycle</h2>
+			<p>HTTP is a request-response protocol, which means that for every request sent by a client (typically a web
+				browser), the server responds with a corresponding response. The basic flow of an HTTP request-response
+				cycle is as follows:
+
+			<ul>
+				<li> Client sends an HTTP request: The client (usually a web browser) initiates the process by sending
+					an HTTP request to the server. This request includes a request method (GET, POST, PUT, DELETE,
+					etc.), the target URI (Uniform Resource Identifier, e.g., a URL), headers, and an optional request
+					body.
+				</li>
+				<li> Server processes the request: The server receives the request and processes it based on the
+					requested method and resource. This may involve retrieving data from a database, executing
+					server-side scripts, or performing other operations.
+				</li>
+				<li> Server sends an HTTP response: After processing the request, the server sends an HTTP response back
+					to the client. The response includes a status code (e.g., 200 OK, 404 Not Found), response headers,
+					and an optional response body containing the requested data or content.
+				</li>
+				<li> Client processes the response: The client receives the server’s response and processes it
+					accordingly. For example, if the response contains an HTML page, the browser will render and display
+					it. If it’s an image or other media file, the browser will display or handle it appropriately.
+				</li>
+			</ul>
+
+			</p>
+			<ul>
+				<li>The client sends an HTTP request to the server.</li>
+				<li>The server processes the request and sends back an HTTP response.</li>
+			</ul>
+			<img src="img/responseflow.png" alt="HTTP Request-Response Cycle">
+		</div>
+
+		<h2>HTTP Methods</h2>
+		<p>HTTP defines a set of request methods to indicate the desired action to be performed for a given resource.
+			Here are the common HTTP methods:</p>
+
+		<ul>
+			<li><strong>GET</strong> – Requests data from a server (read).</li>
+			<li><strong>POST</strong> – Sends data to a server to create/update a resource.</li>
+			<li><strong>PUT</strong> – Updates an existing resource.</li>
+			<li><strong>DELETE</strong> – Deletes a resource.</li>
+			<li><strong>HEAD</strong> – Same as GET but only retrieves the headers.</li>
+		</ul>
+
+		<div class="illustration">
+			<img src="images/http-methods.png" alt="HTTP Methods Diagram">
+		</div>
+
+		<h2>HTTP Request Structure</h2>
+		<p>An HTTP request is composed of the following key elements:</p>
+		<ul>
+			<li><strong>Request Line</strong> – Contains the method (e.g., GET), the resource path, and the HTTP
+				version.</li>
+			<li><strong>Headers</strong> – Provide meta-information (e.g., content type, authorization).</li>
+			<li><strong>Body</strong> (optional) – Contains the data to be sent (usually in POST or PUT requests).</li>
+		</ul>
+
+		<div class="illustration">
+			<h2>HTTP Request Example</h2>
+			<img src="images/http-request-example.png" alt="Example of an HTTP Request">
+		</div>
+
+		<h2>HTTP Response Structure</h2>
+		<p>Once the server processes the request, it sends an HTTP response back to the client. The response includes:
+		</p>
+		<ul>
+			<li><strong>Status Line</strong> – Contains the HTTP version, status code, and status message (e.g., 200
+				OK).</li>
+			<li><strong>Headers</strong> – Similar to the request, headers provide meta-information.</li>
+			<li><strong>Body</strong> – The actual data requested by the client (e.g., HTML content).</li>
+		</ul>
+
+		<div class="illustration">
+			<img src="images/http-response-example.png" alt="Example of an HTTP Response">
+		</div>
+
+		<h2>HTTP Status Codes</h2>
+		<p>HTTP status codes are issued by a server in response to a client's request. They are grouped into five
+			categories:</p>
+		<ul>
+			<li><strong>1xx Informational</strong> – The request was received, continuing process.</li>
+			<li><strong>2xx Success</strong> – The request was successfully received, understood, and accepted.</li>
+			<li><strong>3xx Redirection</strong> – Further action needs to be taken to complete the request.</li>
+			<li><strong>4xx Client Error</strong> – The request contains bad syntax or cannot be fulfilled.</li>
+			<li><strong>5xx Server Error</strong> – The server failed to fulfill a valid request.</li>
+		</ul>
+
+		<div class="illustration">
+			<h2>Common HTTP Status Codes</h2>
+			<img src="images/http-status-codes.png" alt="HTTP Status Codes">
+		</div>
+
+		<h2>HTTPS: A Secure Version of HTTP</h2>
+		<p>HTTPS (Hypertext Transfer Protocol Secure) is the secure version of HTTP. It uses encryption through SSL/TLS
+			protocols to secure the communication between the client and server. This ensures that sensitive information
+			like login credentials and payment details are protected from eavesdroppers.</p>
+
+		<div class="illustration">
+			<h2>Difference Between HTTP and HTTPS</h2>
+			<img src="images/http-vs-https.png" alt="HTTP vs HTTPS">
+		</div>
+
+		<h2>Conclusion</h2>
+		<p>HTTP is a core protocol that powers the web, enabling the communication between clients (web browsers) and
+			servers. Understanding how it works, along with its methods and structure, is essential for web development
+			and network communication. As the web evolves, the adoption of HTTPS ensures that this communication remains
+			secure.</p>
+
+	</div>
+
+	<!-- JavaScript -->
+	<script src="./js/script.js"></script>
+</body>
+
+</html>

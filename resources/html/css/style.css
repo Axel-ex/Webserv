@@ -1,0 +1,182 @@
+/* Reset default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Set up the body */
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    line-height: 1.6;
+}
+
+pre {
+    font-size: 17px;
+    border: none !important;
+}
+
+/* Header styles */
+header {
+    background-color: #007bff;
+    padding: 20px;
+    color: #fff;
+}
+
+header h1 {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Main content styles */
+main {
+    padding: 20px;
+}
+
+/* Footer styles */
+footer {
+    background-color: #007bff;
+    padding: 20px;
+    color: #fff;
+    text-align: center;
+}
+
+footer p {
+    margin-bottom: 10px;
+}
+
+footer a {
+    color: #fff;
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* Style page content */
+#main {
+	transition: margin-left .5s;
+	max-width: 1500px;
+	position: relative;
+	top: 300px;
+	left: 50%;
+	transform: translateX(-50%);
+	font-size: 1.1em;
+	padding: 20px;
+	background-color: #fff;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+	border-radius: 8px;
+	margin: 0;
+}
+
+/* Side Navigation Bar */
+.sidenav {
+    height: 100%;
+    width: 250px;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color: #111;
+    overflow-x: hidden;
+    padding-top: 20px;
+}
+
+.sidenav a {
+    padding: 10px 15px;
+    text-decoration: none;
+    font-size: 18px;
+    color: #818181;
+    display: block;
+    transition: 0.3s;
+}
+
+.sidenav a:hover {
+    color: #f1f1f1;
+}
+
+.sidenav .closebtn {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+    margin-left: 50px;
+}
+
+/* Open Side Nav Button */
+#openNav {
+    font-size: 30px;
+    cursor: pointer;
+    color: #007bff;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+}
+
+/* Illustrations */
+.illustration {
+    border: 1px solid #ccc;
+    padding: 20px;
+    margin: 20px 0;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.illustration img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Code block */
+code {
+    font-size: 15px;
+}
+
+/* Headers */
+h1, h2 {
+    margin-bottom: 15px;
+}
+
+h1 {
+    color: #777777;
+    font-size: 2em;
+	text-align: center;
+}
+
+h2 {
+    color: #9b9b9b;
+	text-align: center;
+    font-size: 1.5em;
+}
+
+/* Paragraphs */
+p {
+    margin-bottom: 15px;
+}
+
+/* Lists */
+ul {
+    margin-bottom: 15px;
+    padding-left: 20px;
+}
+
+ul li {
+    margin-bottom: 10px;
+}
+
+/* On smaller screens, where height is less than 450px, change the style of the sidenav */
+@media screen and (max-height: 450px) {
+    .sidenav {
+        padding-top: 15px;
+    }
+
+    .sidenav a {
+        font-size: 18px;
+    }
+}
