@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/24 13:31:48 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/16 11:05:20 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -213,8 +213,8 @@ void Parser ::_parseServerDirective(std::list<Token>::iterator& it)
             Config::setServerName((++it)->content);
         else if (it->content == "error_page")
         {
-            int error_code = std::atoi((it++)->content.c_str());
-            std::string path_to_html = (it++)->content;
+            int error_code = std::atoi((++it)->content.c_str());
+            std::string path_to_html = (++it)->content;
             Config::setErrorPath(error_code, path_to_html);
         }
         else if (it->content == "listen")
@@ -249,8 +249,12 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it) const
     std::vector<std::string> methods;
     std::vector<std::string> cgi_path;
     std::vector<std::string> cgi_extension;
-    
-    Route route = (Route){it->content, "", methods, "", "", cgi_path, cgi_extension};
+
+    if (_isDuplicatedLocation(it->content))
+        throw SynthaxException(*it,
+                               "Config contains duplicated location blocks");
+    Route route =
+        (Route){it->content, "", methods, "./uploads", "index.html", cgi_path, cgi_extension};
     for (; it->type != CLOSE_BRACKET; it++)
     {
         if (it->type != DIRECTIVE)
@@ -275,7 +279,8 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it) const
             while ((++it)->type == ARGUMENT)
             {
                 if (!_isCgiExtension(it->content))
-                    throw SynthaxException(*it, "Syntax error on CGI extension");
+                    throw SynthaxException(*it,
+                                           "Syntax error on CGI extension");
                 route.cgi_extension.push_back(it->content);
             }
         }
@@ -300,6 +305,17 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it) const
 bool Parser::_isHttpMethod(const std::string& method) const
 {
     return (method == "GET" || method == "POST" || method == "DELETE");
+}
+
+bool Parser::_isDuplicatedLocation(const std::string& url) const
+{
+    std::vector<Route> routes = Config::getRoutes();
+    for (size_t i = 0; i < routes.size(); i++)
+    {
+        if (routes[i].url == url)
+            return (true);
+    }
+    return (false);
 }
 
 bool Parser::_isCgiPath(const std::string& path) const
@@ -347,15 +363,28 @@ bool Parser::_isValidPort(int port_nb, const std::vector<int>& ports) const
  */
 void Parser::_loadErrors(void) const
 {
-    int tmp[] = {400, 404, 500};
-    std::vector<int> error_codes(tmp, tmp + sizeof(tmp) / sizeof(int));
+    std::map<int, std::string> error_path = Config::getErrorPath();
+    std::map<int, std::string>::iterator it_error_path;
 
+    for (it_error_path = error_path.begin(); it_error_path != error_path.end();
+         it_error_path++)
+    {
+        std::string content = _readFile(it_error_path->second);
+        Config::setErrors(it_error_path->first, content);
+    }
+
+    // Then load the default if not provided
+    int tmp[] = {400, 404, 413, 500};
+    std::map<int, std::string> errors = Config::getDefaultErrors();
+    std::vector<int> error_codes(tmp, tmp + sizeof(tmp) / sizeof(int));
     for (size_t i = 0; i < error_codes.size(); i++)
     {
+        if (errors.find(error_codes[i]) != errors.end())
+            continue;
         std::string path =
             "./resources/errors/" + toString(error_codes[i]) + ".html";
         std::string content = _readFile(path);
-		 Config::setDefaultErrors(error_codes[i], content);
+        Config::setErrors(error_codes[i], content);
     }
 }
 

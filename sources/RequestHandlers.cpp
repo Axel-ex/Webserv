@@ -14,6 +14,7 @@
 #include "../includes/Config.hpp"
 #include "../includes/Log.hpp"
 #include "../includes/utils.hpp"
+#include <algorithm>
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -64,11 +65,10 @@ void ARequestHandler::setNextHandler(ARequestHandler* next) { _next = next; }
 void ARequestHandler::_createOkResponse(std::string resource,
                                         Response& response) const
 {
-    std::map<std::string, std::string>::iterator it;
     std::string headers;
 
-    it = Config::getResources().find(resource);
-    response.setBody(it->second);
+    (void)resource;
+    response.setBody("<h1>" + resource + "<h1/>");
     headers = "HTTP/1.1 200 OK\r\n";
     headers += "Content-Type: text/html\r\n";
     headers +=
@@ -114,7 +114,11 @@ std::string ARequestHandler::_getErrorReason(int error_code) const {
 // =============================================================================
 bool GetRequestHandler ::_canProcess(const Request& request) const
 {
-    return (request.getMethod() == "GET" &&
+    Config& config = Config::getInstance();
+    const std::vector<Route>& routes = config.getRoutes();
+    std::vector<std::string> methods = routes.begin()->methods;
+    std::vector<std::string>::iterator it = std::find(methods.begin(), methods.end(), "GET");
+    return (it != methods.end() && request.getMethod() == "GET" &&
             request.getMethod().find(".cgi") == std::string::npos);
 }
 
@@ -198,7 +202,11 @@ void GetRequestHandler ::processRequest(const Request& request,
 // =============================================================================
 bool PostRequestHandler ::_canProcess(const Request& request) const
 {
-    return (request.getMethod() == "POST" &&
+    Config& config = Config::getInstance();
+    const std::vector<Route>& routes = config.getRoutes();
+    std::vector<std::string> methods = routes.begin()->methods;
+    std::vector<std::string>::iterator it = std::find(methods.begin(), methods.end(), "POST");
+    return (it != methods.end() && request.getMethod() == "POST" &&
             request.getResource().find(".cgi") == std::string::npos);
 }
 
@@ -320,10 +328,28 @@ void PostRequestHandler::createResponse(std::string resource,
     response.setHeaders(headers);
 }
 
+bool PostRequestHandler::_bodySizeCheck(const Request& request) const
+{
+    Config& config = Config::getInstance();
+    unsigned long max_body_size = config.getMaxBodySize();
+
+    return (request.getBody().size() <= max_body_size);
+}
+
 void PostRequestHandler::processRequest(const Request& request,
                                          Response& response) const
 {
     std::string content_type = _getContentType(request.getHeaders());
+    Config& config = Config::getInstance();
+    const std::vector<Route>& routes = config.getRoutes();
+    std::string upload_store = routes.begin()->upload_store;
+    if (!_bodySizeCheck(request))
+    {
+        _createErrorResponse(PAYLOAD_LARGE, response);
+        return (Log::log(WARNING, "Payload Too Large"));
+    }
+    if (upload_store.empty() || upload_store == "./" || upload_store == "/")
+        upload_store = "uploads";
     if (content_type.empty())
     {
         _createErrorResponse(BAD_REQUEST, response);
@@ -335,11 +361,12 @@ void PostRequestHandler::processRequest(const Request& request,
         _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "couldn't get content boundaries"));
     }
-    
+
     std::string file_content;
-    if (content_type == "multipart/form-data")
+    if (content_type == "multipart/form-data" || content_type == "application/json" \
+        || content_type == "application/octet-stream")
         file_content = _getFileContent(request.getBody(), boundary);
-    else if (content_type == "application/x-www-form-urlencoded")
+    else //if (content_type == "application/x-www-form-urlencoded" || content_type = "text/plain")
         file_content = request.getBody();
     std::string file_name = _getFileName(request.getBody());
     if (file_content.empty() || (file_name.empty() && content_type == "multipart/form-data"))
@@ -348,17 +375,21 @@ void PostRequestHandler::processRequest(const Request& request,
         return (Log::log(WARNING, "couldn't process the file"));
     }
 
-    if (content_type == "multipart/form-data")
+    if (content_type == "multipart/form-data" || content_type == "application/json" \
+        || content_type == "application/octet-stream")
     {
         // Write the file content to the file
-        _createDir("uploads");
-        file_name = "uploads/" + file_name;
-        std::ofstream ofs(file_name.c_str(),
+        _createDir(upload_store);
+        std::string dir = upload_store + "/" + file_name;
+        std::ofstream ofs(dir.c_str(),
                         std::ios_base::out | std::ios_base::trunc);
         if (!ofs)
             return (Log::log(WARNING, "Couldn't write to file"));
         ofs << file_content;
-        _createOkResponse("posted", response);
+        if (!ofs)
+            return (Log::log(WARNING, "Failed to write contente to file: " + file_name));
+        ofs.close();
+        _createOkResponse(file_name + " Posted", response);
     }
     else
         createResponse(file_content, response);
@@ -369,7 +400,11 @@ void PostRequestHandler::processRequest(const Request& request,
 // =============================================================================
 bool DeleteRequestHandler ::_canProcess(const Request& request) const
 {
-    return (request.getMethod() == "DELETE");
+    Config& config = Config::getInstance();
+    const std::vector<Route>& routes = config.getRoutes();
+    std::vector<std::string> methods = routes.begin()->methods;
+    std::vector<std::string>::iterator it = std::find(methods.begin(), methods.end(), "DELETE");
+    return (it != methods.end() && request.getMethod() == "DELETE");
 }
 
 std::string _GetUserAgent(std::string userAgent)

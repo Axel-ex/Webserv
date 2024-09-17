@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:13:18 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/02 12:16:59 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/05 10:03:05 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@ class Config
 {
     public:
         static Config& getInstance(void);
+		void clear();
         ~Config();
 
         static std::vector<int>& getPorts(void);
@@ -37,7 +38,7 @@ class Config
         static void setMaxBodySize(int max_body_size);
         static void setRoutes(const Route& route);
 		static void setErrorPath(int error_code, const std::string &path);
-		static void setDefaultErrors(int error_code, const std::string& content);
+		static void setErrors(int error_code, const std::string& content);
 
     private:
         Config(void);
@@ -48,7 +49,7 @@ class Config
         std::vector<Route> _routes;
 
         std::map<std::string, std::string> _resources;
-        std::map<int, std::string> _default_errors;
+        std::map<int, std::string> _errors;
         std::map<int, std::string> _error_path;
 };
 

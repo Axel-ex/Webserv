@@ -6,14 +6,13 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 20:08:09 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/27 14:39:24 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/05 12:18:42 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Log.hpp"
 #include "../includes/Server.hpp"
 #include "../includes/utils.hpp"
-#include "../includes/CgiRequestHandler.hpp"
 #include <csignal>
 #include <cstdlib>
 #include <cstring>

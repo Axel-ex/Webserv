@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/02 18:12:17 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/05 12:58:44 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -263,12 +263,6 @@ void Server::_serveClients(void)
 					continue;
 				request_buffer.appendBuffer(read_buffer, n);
 			}
-
-			/**
-			 * Mozilla uses autocompletion and prefetching. sometimes it will
-			 * send an empty request before the user even pressed enter to send
-			 * the request
-			 */
 			if (request_buffer.getBuffer().empty())
 			{
 				close(_fds[i].fd);
@@ -276,7 +270,6 @@ void Server::_serveClients(void)
 				continue;
 			}
 
-			// TODO: Try catch here?
 			Request request(request_buffer.getBuffer());
 			Log::logRequest(request);
 			Log::log(DEBUG, request_buffer.getBuffer());
@@ -290,10 +283,9 @@ void Server::_serveClients(void)
 			else
 			{
 				Response response(request);
-				send(_fds[i].fd, response.getHeaders().c_str(),
-					 response.getHeaders().size(), 0);
-				send(_fds[i].fd, response.getBody().c_str(),
-					 response.getBody().size(), 0);
+				send(_fds[i].fd, response.getResponseBuffer().c_str(),
+					 response.getResponseBuffer().size(), 0);
+
 				close(_fds[i].fd);
 				_fds.erase(_fds.begin() + i);
 			}

@@ -2,16 +2,27 @@
 <html>
 
 <head>
-	<title>File Upload Form</title>
+    <title>File Upload Form</title>
 </head>
 
 <body>
-	<h2>Upload your File</h2>
-	<form action="http://localhost:8080/upload" method="post" enctype="multipart/form-data">
-		<label for="file">Select File:</label><br>
-		<input type="file" id="file" name="file"><br><br>
-		<input type="submit" value="Upload">
-	</form>
+    <h2>Upload your File</h2>
+    <form id="uploadForm" method="post" enctype="multipart/form-data">
+        <label for="file">Select File:</label><br>
+        <input type="file" id="file" name="file"><br><br>
+        <input type="submit" value="Upload">
+    </form>
+
+    <script>
+        // JavaScript to dynamically set the form action URL based on the current host and port
+        document.addEventListener("DOMContentLoaded", function() {
+            const form = document.getElementById('uploadForm');
+            const currentHost = window.location.host;  // This gets the current host (e.g., localhost:5000)
+            const protocol = window.location.protocol; // This gets the protocol (http: or https:)
+            form.action = `${protocol}//${currentHost}/uploads`;  // Sets the action dynamically to the /uploads endpoint
+        });
+    </script>
 </body>
 
 </html>
+
