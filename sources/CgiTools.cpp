@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/21 15:24:44 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/21 16:56:31 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/21 17:22:50 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -182,4 +182,13 @@ void sendHttpErrorResponse(int client_fd, int error_code)
 
 	send(client_fd, response_headers.c_str(), response_headers.length(), 0);
 	send(client_fd, response_body.c_str(), response_body.length(), 0);
+}
+
+long	getTime(void)
+{
+	struct timeval	tv;
+
+	if (gettimeofday(&tv, NULL))
+		std::runtime_error("Function 'gettimeofday failed.\n");
+	return (tv.tv_sec + (tv.tv_usec / 1e6));
 }

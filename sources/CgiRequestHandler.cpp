@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/21 17:11:30 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/21 17:23:33 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -210,7 +210,7 @@ void CgiRequestHandler::processRequest()
 			send(_pipe_in[0], _body.c_str(), _body.length(), 0);
 		close(_pipe_in[0]);
 
-		t_client_process c_process = {_method, clock(), _client_fd, _pipe_out[0]};
+		t_client_process c_process = {_method, getTime(), _client_fd, _pipe_out[0]};
 		CgiRequestHandler::_open_processes[pid] = c_process;
 	}
 }

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:34:18 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/21 16:53:08 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/21 17:23:10 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ typedef struct pollfd t_pollfd;
 typedef struct _s_client_process
 {
 	std::string method;
-	clock_t start_time;
+	long start_time;
 	int client_fd;
 	int cgi_fd;
 } t_client_process;

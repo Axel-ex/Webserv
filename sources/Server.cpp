@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/05 12:58:44 by Axel             ###   ########.fr       */
+/*   Updated: 2024/09/21 17:24:48 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -169,13 +169,13 @@ Route getCgiRoute(const Request &request)
 // ==========================================================================================
 void Server::_checkTimeouts()
 {
-	clock_t now;
-	double elapsed;
+	long now;
+	long elapsed;
 	std::map<pid_t, t_client_process>::iterator it = CgiRequestHandler::_open_processes.begin();
 	for (; it != CgiRequestHandler::_open_processes.end(); it++)
 	{
-		now = clock();
-		elapsed = static_cast<double>(now - it->second.start_time) / CLOCKS_PER_SEC * 1e4;
+		now = getTime();
+		elapsed = now - it->second.start_time;
 		Log::log(WARNING, ("Process [" + toString(RED) + toString(it->first) + toString(RESET) + "]" + " running for: " + toString(elapsed) + " seconds."));
 		if (elapsed > CGI_TIMEOUT)
 		{
