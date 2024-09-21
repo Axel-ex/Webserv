@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/21 16:49:07 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/21 17:11:30 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -174,6 +174,7 @@ void CgiRequestHandler::initChEnv(void)
 // ==========================================================================================
 // 									PROCESSING REQUESTED SCRIPT
 // ==========================================================================================
+
 void CgiRequestHandler::processRequest()
 {
 	pid_t pid;
@@ -225,48 +226,6 @@ std::string CgiRequestHandler::getQueryString(void)
 		query = _resource.substr(_resource.find("?") + 1);
 	return (query);
 }
-
-// std::string getFileExtension(const std::string &url)
-// {
-// 	size_t queryPos = url.find('?');
-
-// 	std::string path = (queryPos != std::string::npos) ? url.substr(0, queryPos) : url;
-
-// 	size_t dotPos = path.find_first_of('.');
-// 	if (dotPos == std::string::npos)
-// 		return ("");
-
-// 	if (dotPos == path.size() - 1)
-// 		return ("");
-// 	path = path.substr(dotPos);
-// 	path = path.substr(0, path.find_first_of("/#"));
-// 	return (path);
-// }
-
-// bool startsWith(std::string str, const std::string &prefix)
-// {
-// 	if (prefix[0] != '/' && str[0] == '/')
-// 		str.erase(0, 1);
-// 	if (prefix.size() > str.size())
-// 		return (false);
-// 	for (size_t i = 0; i < prefix.size(); i++)
-// 	{
-// 		if (str[i] != prefix[i])
-// 			return (false);
-// 	}
-// 	return (true);
-// }
-
-// bool isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions)
-// {
-// 	std::string extension = getFileExtension(url);
-// 	for (size_t i = 0; i < cgi_extensions.size(); ++i)
-// 	{
-// 		if (extension == cgi_extensions[i])
-// 			return (true);
-// 	}
-// 	return (false);
-// }
 
 std::string CgiRequestHandler::getWorkingPath(void) const
 {
@@ -360,15 +319,6 @@ std::string CgiRequestHandler::getScriptName(void) const
 	return (uri.substr(uri.rfind('/') + 1));
 }
 
-// unsigned int convertHex(const std::string &nb)
-// {
-// 	unsigned int x;
-// 	std::stringstream ss;
-// 	ss << nb;
-// 	ss >> std::hex >> x;
-// 	return (x);
-// }
-
 std::string CgiRequestHandler::decode()
 {
 	_decoded_resource = _resource;
@@ -383,84 +333,6 @@ std::string CgiRequestHandler::decode()
 	}
 	return (_decoded_resource);
 }
-
-// void sendHttpErrorResponse(int client_fd, int error_code)
-// {
-// 	std::string error_message;
-// 	int status_code = 500;
-// 	std::string reason_phrase = "Internal Server Error";
-
-// 	switch (error_code)
-// 	{
-// 	case ENOENT:
-// 		status_code = 404;
-// 		reason_phrase = "Not Found";
-// 		error_message = "The requested resource was not found on this server.";
-// 		break;
-// 	case EACCES:
-// 		status_code = 403;
-// 		reason_phrase = "Forbidden";
-// 		error_message = "You do not have permission to access the requested resource.";
-// 		break;
-// 	case EINVAL:
-// 		status_code = 400;
-// 		reason_phrase = "Bad Request";
-// 		error_message = "The server could not understand the request due to invalid syntax.";
-// 		break;
-// 	case EPERM:
-// 		status_code = 401;
-// 		reason_phrase = "Unauthorized";
-// 		error_message = "Authentication is required and has failed or has not yet been provided.";
-// 		break;
-// 	case EFAULT:
-// 		status_code = 500;
-// 		reason_phrase = "Internal Server Error";
-// 		error_message = "The server encountered an internal error and was unable to complete your request.";
-// 		break;
-// 	case EEXIST:
-// 		status_code = 409;
-// 		reason_phrase = "Conflict";
-// 		error_message = "The request could not be completed due to a conflict with the current state of the resource.";
-// 		break;
-// 	case ENOTDIR:
-// 		status_code = 404;
-// 		reason_phrase = "Not Found";
-// 		error_message = "A component of the path is not a directory.";
-// 		break;
-// 	case ETIMEDOUT:
-// 		status_code = 504;
-// 		reason_phrase = "Gateway Timeout";
-// 		error_message = "The server, while acting as a gateway or proxy, did not receive a timely response from the upstream server.";
-// 		break;
-// 	default:
-// 		status_code = 500;
-// 		reason_phrase = "Internal Server Error";
-// 		error_message = "An internal server error occurred.";
-// 		break;
-// 	}
-
-// 	std::string response_body =
-// 		"<html>\n"
-// 		"<head><title>" +
-// 		toString(status_code) + " " + reason_phrase + "</title></head>\n"
-// 													  "<body>\n"
-// 													  "<h1>" +
-// 		reason_phrase + "</h1>\n"
-// 						"<p>" +
-// 		error_message + "</p>\n"
-// 						"</body>\n"
-// 						"</html>\n";
-
-// 	std::string response_headers =
-// 		"HTTP/1.1 " + toString(status_code) + " " + reason_phrase + "\r\n"
-// 																	"Content-Type: text/html; charset=UTF-8\r\n"
-// 																	"Content-Length: " +
-// 		toString(response_body.length()) + "\r\n"
-// 										   "Connection: close\r\n"
-// 										   "\r\n";
-// 	send(client_fd, response_headers.c_str(), response_headers.length(), 0);
-// 	send(client_fd, response_body.c_str(), response_body.length(), 0);
-// }
 
 void CgiRequestHandler::getPathInfo(void)
 {
