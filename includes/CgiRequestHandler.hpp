@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:34:18 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/08/28 16:56:16 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/21 16:53:08 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@
 #include <cerrno>
 
 #define MAXPATHLEN 4096
-#define CGI_TIMEOUT 20
+#define CGI_TIMEOUT 5
 
 typedef struct pollfd t_pollfd;
 typedef struct _s_client_process
@@ -104,5 +104,6 @@ std::string intToString(int value);
 bool startsWith(std::string str, const std::string &prefix);
 bool isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions);
 void sendHttpErrorResponse(int client_fd, int error_code);
+unsigned int convertHex(const std::string &nb);
 
 #endif // CGIREQUESTHANDLER_HPP
