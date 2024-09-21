@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/08/27 15:15:18 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/21 17:21:21 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,8 @@
 #include <ctime>
 #include <fcntl.h>
 #include <cstdio>
-
+#include <fstream>
+#include <sys/time.h>
 
 template <typename T>
 
@@ -41,7 +42,8 @@ std::string toString(T val)
 }
 
 extern bool stopFlag;
-void sigHandler(int signum);
-void sigHandler2(int signum);
+void    sigHandler(int signum);
+void    sigHandler2(int signum);
+long	getTime(void);
 
 #endif  // UTILS_HPP_

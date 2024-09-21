@@ -10,6 +10,7 @@ INCLUDE_DIR = includes
 
 SRCS = $(addprefix $(SRC_DIR)/, 	main.cpp 				\
 									CgiRequestHandler.cpp 	\
+									CgiTools.cpp 	\
 									Config.cpp 				\
 									Log.cpp 				\
 									Parser.cpp 				\
