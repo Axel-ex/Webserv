@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/21 17:23:33 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/21 17:47:15 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,15 +61,15 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &loca
 	initCgiEnv();
 	initChEnv();
 
-	Log::log(DEBUG, "METHOD: " + _method);
-	Log::log(DEBUG, "SCRIPT NAME: " + _scriptName);
-	Log::log(DEBUG, "SCRIPT INTERPRETER: " + _interpreter);
-	Log::log(DEBUG, "SCRIPT PATH: " + _scriptPath);
-	Log::log(DEBUG, "SCRIPT EXTENSION: " + _extension);
-	Log::log(DEBUG, "DOCUMENT ROOT: " + getRootPath());
-	Log::log(DEBUG, "QUERY STRING: " + _query_str);
-	Log::log(DEBUG, "PATH INFO: " + _pathInfo);
-	Log::log(DEBUG, "PATH TRANSLATED: " + _pathTranslated);
+	Log::log(DEBUG, toString(YELLOW) + "METHOD: " + toString(RESET) + _method);
+	Log::log(DEBUG, toString(YELLOW) + "SCRIPT NAME: " + toString(RESET) + _scriptName);
+	Log::log(DEBUG, toString(YELLOW) + "SCRIPT INTERPRETER: " + toString(RESET) + _interpreter);
+	Log::log(DEBUG, toString(YELLOW) + "SCRIPT PATH: " + toString(RESET) + _scriptPath);
+	Log::log(DEBUG, toString(YELLOW) + "SCRIPT EXTENSION: " + toString(RESET) + _extension);
+	Log::log(DEBUG, toString(YELLOW) + "DOCUMENT ROOT: " + toString(RESET) + getRootPath());
+	Log::log(DEBUG, toString(YELLOW) + "QUERY STRING: " + toString(RESET) + _query_str);
+	Log::log(DEBUG, toString(YELLOW) + "PATH INFO: " + toString(RESET) + _pathInfo);
+	Log::log(DEBUG, toString(YELLOW) + "PATH TRANSLATED: " + toString(RESET) + _pathTranslated);
 }
 
 CgiRequestHandler::~CgiRequestHandler()
