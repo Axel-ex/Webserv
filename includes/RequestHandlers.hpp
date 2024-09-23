@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:41:40 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/09 15:34:42 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/22 20:00:48 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,7 @@ class ARequestHandler
 class GetRequestHandler : public ARequestHandler
 {
     public:
+        Route   best_route;
         void processRequest(const Request& request, Response& response) const;
         std::string _get_file_content(std::string path,
                                       Response& response) const;

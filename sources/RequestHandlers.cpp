@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/04 16:02:13 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/22 20:01:15 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,6 +120,8 @@ bool GetRequestHandler ::_canProcess(const Request& request) const
     std::vector<std::string>::iterator it = std::find(methods.begin(), methods.end(), "GET");
     return (it != methods.end() && request.getMethod() == "GET" &&
             request.getMethod().find(".cgi") == std::string::npos);
+    Route route = getBestRoute(request);
+    return (!route.url.empty());
 }
 
 std::string    GetRequestHandler ::_get_file_content(std::string path, Response& response) const
@@ -159,6 +161,11 @@ void GetRequestHandler ::processRequest(const Request& request,
     std::string req_path;
     std::string cont_type;
     struct stat info;
+
+    Route route = getBestRoute(request);
+    
+    if (!route.root.empty())
+        Log::log(DEBUG, "route FOR THE BEST ROUTE: " + toString(YELLOW) + route.root + toString(RESET));
 
     if (request.getResource().empty() || request.getResource() == "/")
     {
