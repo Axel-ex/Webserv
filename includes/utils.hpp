@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/09/21 17:21:21 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/23 19:19:15 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,6 @@ std::string toString(T val)
 extern bool stopFlag;
 void    sigHandler(int signum);
 void    sigHandler2(int signum);
-long	getTime(void);
+double	getTime(void);
 
 #endif  // UTILS_HPP_

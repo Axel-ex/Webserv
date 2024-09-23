@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/23 18:17:59 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/23 19:34:52 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -205,7 +205,6 @@ void CgiRequestHandler::processRequest()
 	}
 	else
 	{
-		double _start_time = getTime();
 		close(_pipe_out[1]);
 		if (_method == "POST")
 		{
@@ -214,19 +213,14 @@ void CgiRequestHandler::processRequest()
 			while (bytesRemaining > 0)
 			{
 				int bytesToWrite = std::min(BUFSIZ, bytesRemaining);
-				write(_pipe_in[1], _body.c_str() + bytesWritten, bytesToWrite);
+				if (write(_pipe_in[1], _body.c_str() + bytesWritten, bytesToWrite) == -1)
+				{
+					sendHttpErrorResponse(_client_fd, 500);
+					close(_pipe_in[1]);
+					throw CgiError("write() failed.");
+				} 
 				bytesWritten += bytesToWrite;
 				bytesRemaining -= bytesToWrite;
-
-				// Check if the process has exceeded the time limit
-				double elapsed = getTime() - _start_time;
-				Log::log(WARNING, ("Process uploading for .. " + toString(RED) + toString(elapsed) + toString(RESET) + " seconds."));
-				if (elapsed > CGI_TIMEOUT)
-				{
-					sendHttpErrorResponse(_client_fd, ETIMEDOUT);
-					close(_pipe_in[1]);
-					return;
-				}
 			}
 		}
 		close(_pipe_in[1]);
