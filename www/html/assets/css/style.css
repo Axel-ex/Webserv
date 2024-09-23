@@ -216,13 +216,11 @@ ul li {
 
 .center-table thead tr:first-child th {
     text-align: center;
-    /* Center-align the content of the first row of the table header */
 }
 
-.center-table tbody tr td:first-child,
-.center-table tbody tr td:nth-child(2) {
+.center-table tbody tr td:first-child
+{
     text-align: center;
-    /* Center-align the first and second cells of each row */
 }
 
 
@@ -269,8 +267,8 @@ ul li {
 }
 
 .profile-pic {
-    width: 100px;
-    height: 100px;
+    width: 200px;
+    height: 200px;
     border-radius: 50%;
     background-color: #ccc;
     margin-bottom: 10px;
@@ -319,19 +317,3 @@ ul li {
     color: white; /* Change text color on hover */
     transform: translateY(-2px); /* Slight lift effect on hover */
 }
-
-/* .github-button {
-    display: inline-block;
-    padding: 10px 15px;
-    background-color: #7b8c9e;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    text-decoration: none;
-    font-size: 16px;
-    transition: background-color 0.3s;
-}
-
-.github-button:hover {
-    background-color: #007bff;
-} */

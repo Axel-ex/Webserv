@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/23 18:26:58 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/23 23:16:46 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -219,6 +219,11 @@ void Server::_sigchldHandler(int signum)
 					response += std::string(buffer, bytesRead);
 				send(it->second.client_fd, response.c_str(), response.length(), 0);
 			}
+			else
+			{
+				Log::log(ERROR, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] FINISHED WITH EXIT CODE: " + toString(WEXITSTATUS(status))));
+				sendHttpErrorResponse(it->second.client_fd, 500);
+			}
 
 		}
 		else if (WIFSIGNALED(status))
@@ -228,7 +233,7 @@ void Server::_sigchldHandler(int signum)
 				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS BEEN KILLED."));
 			else
 			{
-				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] RECEIVED THE SIGNAL: " + toString(signal)));
+				Log::log(ERROR, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] RECEIVED THE SIGNAL: " + toString(signal)));
 				sendHttpErrorResponse(it->second.client_fd, 500);
 			}
 		}
