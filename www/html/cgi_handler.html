@@ -4,10 +4,10 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" href="./css/style.css">
-	<link rel="stylesheet" href="./css/navbar.css">
-	<link rel="stylesheet" href="./css/banner.css">
-	<title>CGI Handler</title>
+	<link rel="stylesheet" href="./assets/css/style.css">
+	<link rel="stylesheet" href="./assets/css/navbar.css">
+	<link rel="stylesheet" href="./assets/css/banner.css">
+	<title>CGI Implementation</title>
 </head>
 
 <body>
@@ -35,10 +35,361 @@
 	<!-- Main Content -->
 	<div id="main">
 
+		<h1>CGI Implementation in C++: Handling Client Requests</h1>
+
+		<p>CGI (Common Gateway Interface) is a standard protocol that allows web servers to execute external programs,
+			often scripts, to generate web pages dynamically. This capability is crucial for creating interactive and
+			dynamic web applications. By using CGI, web servers can handle client requests, execute scripts, and return
+			the generated output to the client seamlessly.</p>
+
+		<p>CGI scripts can be written in various programming languages, including C++, Python, Perl, and more. The
+			primary benefit of CGI is its ability to extend the functionality of a web server by enabling it to interact
+			with other applications and databases. This interaction allows for the creation of dynamic content based on
+			user input, database queries, or other real-time data sources.</p>
+
+		<p>Some key benefits of using CGI include:</p>
+		<ul>
+			<li><strong>Language Agnostic:</strong> CGI scripts can be written in any language that can read from
+				standard input and write to standard output.</li>
+			<li><strong>Flexibility:</strong> CGI allows for the integration of various backend services and databases,
+				enabling the creation of complex web applications.</li>
+			<li><strong>Security:</strong> Properly implemented CGI scripts can enhance security by isolating the
+				execution of scripts from the web server.</li>
+			<li><strong>Scalability:</strong> CGI can handle multiple simultaneous requests, making it suitable for
+				high-traffic websites.</li>
+		</ul>
+
+		<p>In this guide, we’ll walk through the initialization, execution, and response handling of CGI scripts in a
+			C++ project. We will cover the following steps:</p>
+		<ul>
+			<li>Initializing the CGI environment</li>
+			<li>Creating pipes for communication</li>
+			<li>Forking the process</li>
+			<li>Executing the CGI script</li>
+			<li>Handling the CGI script output</li>
+			<li>Post handling of child processes</li>
+		</ul>
+
+		<br>
+		<hr>
+		<br>
+
+		<h2>1. Initializing the CGI Environment</h2>
+
+		<p>The first step in handling a CGI request is to initialize the environment variables required by the CGI
+			script. Environment variables provide the necessary context for the CGI script to execute correctly. They
+			include information about the request, the server, and the client. These variables are crucial because they
+			allow the CGI script to understand the context in which it is running and to interact with the server and
+			client appropriately.</p>
+
+		<p>Some important environment variables for CGI include:</p>
+		<ul>
+			<li><strong>CONTENT_LENGTH:</strong> The length of the request body, used primarily in POST requests.</li>
+			<li><strong>CONTENT_TYPE:</strong> The MIME type of the request body, indicating the format of the data
+				being sent.</li>
+			<li><strong>GATEWAY_INTERFACE:</strong> The version of the CGI specification being used.</li>
+			<li><strong>SCRIPT_NAME:</strong> The name of the CGI script being executed.</li>
+			<li><strong>REQUEST_METHOD:</strong> The HTTP method used for the request (e.g., GET, POST).</li>
+			<li><strong>QUERY_STRING:</strong> The query string portion of the URL, used in GET requests to pass
+				parameters.</li>
+			<li><strong>SERVER_NAME:</strong> The name of the server handling the request.</li>
+			<li><strong>SERVER_PORT:</strong> The port number on which the server is listening.</li>
+			<li><strong>HTTP_COOKIE:</strong> The cookies sent by the client, if any.</li>
+		</ul>
+
+		<p>These environment variables are set up by the server and passed to the CGI script, allowing it to process the
+			request and generate an appropriate response. This is done by setting up a map of environment variables and
+			converting them into a format that can be passed to the <code>execve()</code> system call.</p>
+
+		<div class="illustration">
+			<pre class="prettyprint">void CgiRequestHandler::initCgiEnv()
+{
+    if (_method == "POST")
+    {
+        std::stringstream out;
+        out &lt;&lt; _body.length();
+        _env["CONTENT_LENGTH"] = out.str();
+        _env["CONTENT_TYPE"] = getContentType(_headers);
+    }
+    _env["GATEWAY_INTERFACE"] = "CGI/1.1";
+    _env["SCRIPT_NAME"] = _scriptName;
+    _env["SCRIPT_FILENAME"] = _scriptPath;
+    _env["PATH_INFO"] = _pathInfo;
+    _env["PATH_TRANSLATED"] = _pathTranslated;
+    _env["REQUEST_URI"] = _resource;
+    _env["REQUEST_METHOD"] = _method;
+    _env["SERVER_NAME"] = Config::getServerName();
+    _env["SERVER_PORT"] = toString(Config::getPorts()[0]);
+    _env["SERVER_PROTOCOL"] = _protocol;
+    _env["REDIRECT_STATUS"] = "200";
+    _env["SERVER_SOFTWARE"] = "Aether_42";
+    _env["DOCUMENT_ROOT"] = getRootPath();
+    _env["QUERY_STRING"] = _query_str;
+
+    if (_request_headers.find("cookie") != _request_headers.end())
+        _env["HTTP_COOKIE"] = _request_headers["cookie"];
+
+    for (std::map&lt;std::string, std::string&gt;::iterator it = _request_headers.begin();
+         it != _request_headers.end(); ++it)
+    {
+        std::string name = it->first;
+        std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+        std::string key = "HTTP_" + name;
+        _env[key] = it->second;
+    }
+    _argv[0] = strdup(_interpreter.c_str());
+    _argv[1] = strdup(_scriptPath.c_str());
+    _argv[2] = NULL;
+}</pre>
+		</div>
+
+		<ul>
+			<li><strong>initCgiEnv()</strong>: Initializes the environment variables required by the CGI script.</li>
+			<li><strong>_env</strong>: A map of environment variables.</li>
+			<li><strong>_argv</strong>: An array of arguments to be passed to the CGI script.</li>
+		</ul>
+		<br>
+		<hr>
+		<br>
+		<h2>2. Forking the Process</h2>
+
+		<p>The server forks a new process to execute the CGI script. The child process will execute the script, while
+			the parent process will handle the communication.</p>
+
+		<div class="illustration">
+			<pre class="prettyprint">if ((pid = fork()) &lt; 0)
+	throw CgiError("Error in fork().");</pre>
+		</div>
+
+		<ul>
+			<li><strong>fork()</strong>: Creates a new process by duplicating the current process.</li>
+		</ul>
+		<br>
+		<hr>
+		<br>
+		<h2>3. Creating Pipes for Communication</h2>
+
+		<p>To handle input and output between the server and the CGI script, pipes are created. Pipes are a form of
+			inter-process communication (IPC) that allow data to flow from one process to another. In the context of
+			CGI, pipes are used to redirect the standard input and output of the CGI script, enabling the server to send
+			data to the script and read the script's output.</p>
+
+		<p>The server creates two pipes: one for sending data to the CGI script (input pipe) and one for receiving data
+			from the CGI script (output pipe). The handling of these pipes depends on the HTTP method of the request:
+		</p>
+
+		<ul>
+			<li><strong>GET Method:</strong> For GET requests, the server typically does not need to send any data to
+				the CGI script. The script reads the query string from the environment variables and generates a
+				response based on that.</li>
+			<li><strong>POST Method:</strong> For POST requests, the server sends the request body to the CGI script
+				through the input pipe. The script processes this data and generates a response.</li>
+		</ul>
+
+		<p>Here is how the pipes are created and used in the C++ implementation:</p>
+
+		<div class="illustration">
+			<pre class="prettyprint">if (pipe(_pipe_in) &lt; 0 || pipe(_pipe_out) &lt; 0)
+	throw CgiError("Error in pipe().");</pre>
+		</div>
+
+		<ul>
+			<li><strong>pipe()</strong>: Creates a pair of file descriptors for inter-process communication.</li>
+		</ul>
+
+		<p>In the child process, the standard input and output are redirected to the pipes, and the CGI script is
+			executed using <code>execve()</code>:</p>
+
+		<div class="illustration">
+			<pre class="prettyprint">if (pid == 0)
+{
+	close(_pipe_out[0]);
+	dup2(_pipe_out[1], STDOUT_FILENO);
+	close(_pipe_out[1]);
+	close(_pipe_in[1]);
+	dup2(_pipe_in[0], STDIN_FILENO);
+	close(_pipe_in[0]);
+	if (execve(_argv[0], _argv, _ch_env) &lt; 0)
+	{
+		sendHttpErrorResponse(_client_fd, errno);
+		throw CgiError("Execve() could not execute: " + _scriptPath + " -&gt; errno: " + toString(errno));
+	}
+}</pre>
+		</div>
+
+		<ul>
+			<li><strong>dup2()</strong>: Duplicates a file descriptor.</li>
+			<li><strong>execve()</strong>: Executes the CGI script.</li>
+		</ul>
+
+		<p>In the parent process, the server handles the communication with the CGI script:</p>
+
+		<div class="illustration">
+			<pre class="prettyprint">else
+{
+	close(_pipe_out[1]);
+	if (_method == "POST")
+		send(_pipe_in[0], _body.c_str(), _body.length(), 0);
+	close(_pipe_in[0]);
+	t_client_process c_process = {_method, getTime(), _client_fd, _pipe_out[0]};
+	CgiRequestHandler::_open_processes[pid] = c_process;
+}</pre>
+		</div>
+
+		<ul>
+			<li><strong>send()</strong>: Sends data to the pipe.</li>
+			<li><strong>_open_processes</strong>: A map of open CGI processes.</li>
+		</ul>
+
+		<br>
+		<hr>
+		<br>
+		<h2>4. Executing the CGI Script</h2>
+
+		<p>In the child process, the standard input and output are redirected to the pipes, and the CGI script is
+			executed using <code>execve()</code>. The <code>execve()</code> function replaces the current process image
+			with a new process image specified by the given path, arguments, and environment variables.</p>
+
+		<p>The variables used by <code>execve()</code> include:</p>
+		<ul>
+			<li><strong>_argv:</strong> An array of arguments to be passed to the CGI script. The first argument is the
+				path to the interpreter, and the second argument is the path to the script.</li>
+			<li><strong>_ch_env:</strong> An array of environment variables required by the CGI script, initialized in
+				the <code>initChEnv()</code> method.</li>
+		</ul>
+
+		<p>If <code>execve()</code> fails, it sets the global variable <code>errno</code> to indicate the error. The
+			server then generates an appropriate HTTP response based on the error code using the
+			<code>sendHttpErrorResponse()</code> function from <code>CgiTools.cpp</code>. This function maps the error
+			code to an HTTP status code and sends a corresponding error message to the client.
+		</p>
+
+		<div class="illustration">
+			<pre class="prettyprint">if (pid == 0)
+{
+	# 		PIPE management ...     #
+	if (execve(_argv[0], _argv, _ch_env) &lt; 0)
+	{
+		sendHttpErrorResponse(_client_fd, errno);
+		throw CgiError("Execve() could not execute: " + _scriptPath + " -&gt; errno: " + toString(errno));
+	}
+}</pre>
+		</div>
+
+		<ul>
+			<li><strong>execve()</strong>: Executes the CGI script with the specified arguments and environment
+				variables.</li>
+			<li><strong>errno</strong>: A global variable set by system calls and some library functions in the event of
+				an error to indicate what went wrong.</li>
+			<li><strong>sendHttpErrorResponse()</strong>: Sends an appropriate HTTP error response to the client based
+				on the error code.</li>
+		</ul>
+
+		<br>
+		<hr>
+		<br>
+		<h2>5. Post Handling of Child Processes</h2>
+
+		<p>After the CGI script has been executed, the server needs to handle the termination of the child processes.
+			This is done using a signal handler for the <code>SIGCHLD</code> signal, which is triggered when a child
+			process terminates. The server reads the output from the CGI script and sends it back to the client.</p>
+
+		<h3>Signal Handler for Finished/Interrupted Processes</h3>
+
+		<p>The server sets up a signal handler to catch the <code>SIGCHLD</code> signal. This handler processes the
+			termination of child processes, reads their output, and sends it back to the client.</p>
+
+		<div class="illustration">
+			<pre class="prettyprint">void Server::_sigchldHandler(int signum)
+{
+    (void)signum;
+    int status;
+    pid_t pid;
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
+    {
+        std::map&lt;pid_t, t_client_process&gt;::iterator it = CgiRequestHandler::_open_processes.find(pid);
+        int fd_position = 0;
+        int client_fd = it->second.client_fd;
+        for (size_t i = 0; i < _fds.size(); i++)
+        {
+            if (_fds[i].fd == it->second.client_fd)
+            {
+                fd_position = i;
+                break;
+            }
+        }
+        if (WIFEXITED(status))
+        {
+            if (WEXITSTATUS(status) == 0)
+            {
+                Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS FINISHED ITS EXECUTION."));
+                char buffer[BUFSIZ];
+                std::string response;
+                ssize_t bytesRead;
+                while ((bytesRead = read(it->second.cgi_fd, buffer, BUFSIZ)) > 0)
+                    response += std::(buffer, bytesRead);
+                send(it->second.client_fd, response.c_str(), response.length(), 0);
+            }
+        }
+        else if (WIFSIGNALED(status))
+        {
+            int signal = WTERMSIG(status);
+            if (signal == SIGKILL)
+                Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS BEEN KILLED."));
+            else
+                Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "RECEIVED THE SIGNAL: " + toString(signal)));
+        }
+        close(client_fd);
+        close(it->second.cgi_fd);
+        _fds.erase(_fds.begin() + fd_position);
+        CgiRequestHandler::_open_processes.erase(it);
+    }
+}</pre>
+		</div>
+
+		<p>This mechanism ensures that the server can efficiently handle the termination of CGI processes and send the
+			generated content back to the client.</p>
+		<br>
+		<hr>
+		<br>
+		<h2>Conclusion</h2>
+
+		<p>Implementing CGI in a C++ project is a powerful way to enable dynamic content generation on a web server. By
+			leveraging the Common Gateway Interface, developers can create interactive and responsive web applications
+			that can handle complex user interactions and data processing tasks. The process involves several critical
+			steps:</p>
+
+		<ul>
+			<li><strong>Initializing the Environment:</strong> Setting up the necessary environment variables that
+				provide context and information to the CGI script, ensuring it can execute correctly and interact with
+				the server and client.</li>
+			<li><strong>Creating Pipes:</strong> Establishing communication channels between the server and the CGI
+				script using pipes, which facilitate the flow of data between processes.</li>
+			<li><strong>Forking the Process:</strong> Creating a new process to execute the CGI script, allowing the
+				server to handle multiple requests concurrently.</li>
+			<li><strong>Executing the Script:</strong> Running the CGI script with the appropriate arguments and
+				environment variables, and handling any errors that may occur during execution.</li>
+			<li><strong>Handling the Output:</strong> Reading the output generated by the CGI script and sending it back
+				to the client, ensuring a seamless user experience.</li>
+		</ul>
+
+		<p>By following these steps, developers can effectively integrate CGI into their web servers, enabling the
+			creation of robust and scalable web applications. The use of CGI allows for greater flexibility and
+			functionality, as it supports various programming languages and can interact with different backend services
+			and databases. Proper implementation of CGI also enhances security by isolating script execution from the
+			web server, reducing the risk of vulnerabilities.</p>
+
+		<p>Overall, CGI remains a valuable tool in the web development toolkit, providing a standardized way to execute
+			external programs and generate dynamic web content. With careful planning and implementation, CGI can
+			significantly enhance the capabilities of a web server and improve the overall user experience.</p>
+
+		<p>This approach allows the server to handle dynamic content generation efficiently and securely.</p>
+
 	</div>
 
 	<!-- JavaScript -->
-	<script src="./js/script.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+	<script src="./assets/js/script.js"></script>
 </body>
 
 </html>
