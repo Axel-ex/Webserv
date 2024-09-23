@@ -214,6 +214,24 @@ ul li {
     /* Make the header text bold */
 }
 
+.center-table thead tr:first-child th {
+    text-align: center;
+    /* Center-align the content of the first row of the table header */
+}
+
+.center-table tbody tr td:first-child,
+.center-table tbody tr td:nth-child(2) {
+    text-align: center;
+    /* Center-align the first and second cells of each row */
+}
+
+
+.center-table tbody tr td:first-child {
+    text-align: center;
+    background-color: #cccccc;
+    /* Center-align the first cell of each row */
+}
+
 .center-table tr:nth-child(even) {
     background-color: #f9f9f9;
     /* Add a background color to even rows */
@@ -223,3 +241,97 @@ ul li {
     background-color: #ddd;
     /* Add a hover effect for rows */
 }
+
+.introduction {
+    text-align: center;
+    padding: 20px;
+}
+
+.team {
+    text-align: center;
+    padding: 20px;
+}
+
+.profiles {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    /* Space between profiles */
+}
+
+.profile {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    /* Aligns children vertically */
+    align-items: center;
+    /* Centers children horizontally */
+}
+
+.profile-pic {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: #ccc;
+    margin-bottom: 10px;
+    background-size: cover;
+    background-position: center;
+}
+
+/* Additional styles for names */
+.profile p {
+    margin: 0;
+    /* Remove default margin */
+    font-size: 16px;
+    /* Font size for names */
+    text-align: center;
+    /* Center the text */
+}
+
+#profile1 {
+    background-image: url('/assets/img/ebmarque.jpg');
+}
+
+#profile2 {
+    background-image: url('/assets/img/axel.jpg');
+}
+
+#profile3 {
+    background-image: url('/assets/img/tmoutin.jpg');
+}
+
+.github-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #ffffff; /* White background */
+    color: #007bff; /* Primary text color */
+    border: 2px solid #007bff; /* Border color */
+    border-radius: 5px; /* Rounded corners */
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500; /* Slightly bolder text */
+    transition: background-color 0.3s, color 0.3s, transform 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+
+.github-button:hover {
+    background-color: #007bff; /* Change background on hover */
+    color: white; /* Change text color on hover */
+    transform: translateY(-2px); /* Slight lift effect on hover */
+}
+
+/* .github-button {
+    display: inline-block;
+    padding: 10px 15px;
+    background-color: #7b8c9e;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.github-button:hover {
+    background-color: #007bff;
+} */
