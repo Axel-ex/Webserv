@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/21 17:47:15 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/23 18:17:59 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &loca
 	_resource = request.getResource();
 	_protocol = request.getProtocol();
 	_headers = request.getHeaders();
-	_body = request.getBody();
+	_body = request.getBody() + "\0";
 	_client_fd = fd;
 	_location = location;
 	// ===============================================
@@ -118,10 +118,10 @@ void CgiRequestHandler::initCgiEnv()
 {
 	if (_method == "POST")
 	{
-		std::stringstream out;
-		out << _body.length();
-		_env["CONTENT_LENGTH"] = out.str();
+		_env["CONTENT_LENGTH"] = toString(_body.size());
 		_env["CONTENT_TYPE"] = getContentType(_headers);
+		Log::log(DEBUG, toString(YELLOW) + "CONTENT TYPE: " + toString(RESET) + _env["CONTENT_TYPE"]);
+		Log::log(DEBUG, toString(YELLOW) + "CONTENT LENGTH: " + toString(RESET) + _env["CONTENT_LENGTH"]);
 	}
 	_env["GATEWAY_INTERFACE"] = "CGI/1.1";
 	_env["SCRIPT_NAME"] = _scriptName;
@@ -181,7 +181,7 @@ void CgiRequestHandler::processRequest()
 	if (open(_scriptPath.c_str(), F_OK) == -1)
 	{
 		sendHttpErrorResponse(_client_fd, errno);
-		return ;
+		return;
 	}
 	if (pipe(_pipe_in) < 0 || pipe(_pipe_out) < 0)
 		throw CgiError("Error in pipe().");
@@ -205,10 +205,31 @@ void CgiRequestHandler::processRequest()
 	}
 	else
 	{
+		double _start_time = getTime();
 		close(_pipe_out[1]);
 		if (_method == "POST")
-			send(_pipe_in[0], _body.c_str(), _body.length(), 0);
-		close(_pipe_in[0]);
+		{
+			int bytesWritten = 0;
+			int bytesRemaining = _body.length();
+			while (bytesRemaining > 0)
+			{
+				int bytesToWrite = std::min(BUFSIZ, bytesRemaining);
+				write(_pipe_in[1], _body.c_str() + bytesWritten, bytesToWrite);
+				bytesWritten += bytesToWrite;
+				bytesRemaining -= bytesToWrite;
+
+				// Check if the process has exceeded the time limit
+				double elapsed = getTime() - _start_time;
+				Log::log(WARNING, ("Process uploading for .. " + toString(RED) + toString(elapsed) + toString(RESET) + " seconds."));
+				if (elapsed > CGI_TIMEOUT)
+				{
+					sendHttpErrorResponse(_client_fd, ETIMEDOUT);
+					close(_pipe_in[1]);
+					return;
+				}
+			}
+		}
+		close(_pipe_in[1]);
 
 		t_client_process c_process = {_method, getTime(), _client_fd, _pipe_out[0]};
 		CgiRequestHandler::_open_processes[pid] = c_process;
@@ -255,15 +276,13 @@ std::string CgiRequestHandler::getContentType(const std::string &headers)
 	size_t content_type_pos = headers.find(content_type_key);
 	if (content_type_pos == std::string::npos)
 		return ("");
+
 	content_type_pos += content_type_key.size();
-	size_t content_type_end_pos;
-	if (headers.find("\r\n", content_type_pos) < headers.find(";", content_type_pos))
-		content_type_end_pos = headers.find("\r\n", content_type_pos);
-	else
-		content_type_end_pos = headers.find(";", content_type_pos);
-	std::string content_type =
-		headers.substr(content_type_pos, content_type_end_pos - content_type_pos);
-	return (content_type);
+	size_t content_type_end_pos = headers.find("\r\n", content_type_pos);
+
+	// Capture the entire Content-Type line, including any parameters like boundary
+	std::string content_type = headers.substr(content_type_pos, content_type_end_pos - content_type_pos);
+	return content_type;
 }
 
 std::map<std::string, std::string> CgiRequestHandler::parseHttpHeader(void) const

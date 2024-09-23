@@ -58,18 +58,19 @@ footer a:hover {
 
 /* Style page content */
 #main {
-	transition: margin-left .5s;
-	max-width: 1500px;
-	position: relative;
-	top: 300px;
-	left: 50%;
-	transform: translateX(-50%);
-	font-size: 1.1em;
-	padding: 20px;
-	background-color: #fff;
-	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-	border-radius: 8px;
-	margin: 0;
+    transition: margin-left .5s;
+    max-width: 1500px;
+    position: relative;
+    top: 300px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.1em;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    margin: 0;
+
 }
 
 /* Side Navigation Bar */
@@ -139,25 +140,28 @@ code {
 }
 
 /* Headers */
-h1, h2 {
+h1,
+h2 {
     margin-bottom: 15px;
 }
 
 h1 {
     color: #777777;
     font-size: 2em;
-	text-align: center;
+    text-align: center;
 }
 
 h2 {
     color: #9b9b9b;
-	text-align: center;
+    text-align: center;
     font-size: 1.5em;
 }
 
 /* Paragraphs */
 p {
     margin-bottom: 15px;
+    text-align: justify;
+    max-width: max-content;
 }
 
 /* Lists */
@@ -179,4 +183,43 @@ ul li {
     .sidenav a {
         font-size: 18px;
     }
+}
+
+.center-table {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin: 20px 0;
+}
+
+.center-table table {
+    width: auto;
+    border-collapse: collapse;
+    border: 1px solid #ddd;
+}
+
+.center-table th,
+.center-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    /* Add padding to the table cells */
+    text-align: left;
+    /* Align text to the left */
+}
+
+.center-table th {
+    background-color: #f2f2f2;
+    /* Add a background color to the header cells */
+    font-weight: bold;
+    /* Make the header text bold */
+}
+
+.center-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+    /* Add a background color to even rows */
+}
+
+.center-table tr:hover {
+    background-color: #ddd;
+    /* Add a hover effect for rows */
 }

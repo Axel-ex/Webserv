@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/04 16:02:13 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/23 13:08:56 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -318,7 +318,7 @@ void PostRequestHandler::createResponse(std::string resource,
         decoded = decoded.substr(decoded.find("& ") + 2);
     }
     page = "<!DOCTYPE html><html><head><title>Passed: \
-            </title></head><body><h1>"+content+"</h1>";
+            </title></head><body><h1>"+content+"</h1><br><br>";
     response.setBody(page);
     headers = "HTTP/1.1 200 OK\r\n";
     headers += "Content-Type: text/html\r\n";

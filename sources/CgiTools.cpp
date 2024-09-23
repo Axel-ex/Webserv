@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/21 15:24:44 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/21 17:22:50 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/23 13:08:56 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -173,7 +173,7 @@ void sendHttpErrorResponse(int client_fd, int error_code)
 		break;
 	}
 	std::string response_body = "<html>\n<head><title>" + toString(status_code) + " " + reason_phrase +
-								"</title></head>\n<body>\n<h1>" + reason_phrase + "</h1>\n<p>" +
+								"</title></head>\n<body>\n<h1>" + reason_phrase + "</h1><br><br>\n<p>" +
 								error_message + "</p>\n</body>\n</html>\n";
 
 	std::string response_headers = "HTTP/1.1 " + toString(status_code) + " " + reason_phrase + "\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length: " +

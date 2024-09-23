@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/21 17:24:48 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/23 18:26:58 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -227,7 +227,10 @@ void Server::_sigchldHandler(int signum)
 			if (signal == SIGKILL)
 				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS BEEN KILLED."));
 			else
-				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "RECEIVED THE SIGNAL: " + toString(signal)));
+			{
+				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] RECEIVED THE SIGNAL: " + toString(signal)));
+				sendHttpErrorResponse(it->second.client_fd, 500);
+			}
 		}
 		close(client_fd);
 		close(it->second.cgi_fd);
@@ -272,7 +275,7 @@ void Server::_serveClients(void)
 
 			Request request(request_buffer.getBuffer());
 			Log::logRequest(request);
-			Log::log(DEBUG, request_buffer.getBuffer());
+			// Log::log(DEBUG, request_buffer.getBuffer());
 
 			if (CgiRequestHandler::_canProcess(request))
 			{

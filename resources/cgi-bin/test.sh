@@ -37,7 +37,7 @@ echo -e "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"
 echo "<html>"
 echo "<head><title>CGI Script Response</title></head>"
 echo "<body>"
-echo "<h1>CGI Script Response</h1>"
+echo "<h1>CGI Script Response</h1><br><br>"
 
 if [ -n "$name" ] && [ -n "$age" ]; then
     echo "<p>Hello, <b>$name</b>! You are <b>$age</b> years old.</p>"
