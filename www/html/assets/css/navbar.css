@@ -6,7 +6,7 @@
 .sidenav {
 	position: fixed;
 	z-index: 1;
-	top: 225px;
+	top: 200px;
 	/* Start from the top by default */
 	left: 0;
 	width: 0;
@@ -19,13 +19,13 @@
 
 /* Adjust the top margin to account for the banner */
 .sidenav.banner-active {
-	top: 225px;
+	top: 200px;
 	/* This should match the height of your banner */
 }
 
 /* Adjust the height to ensure it doesn't overlap the content */
 .sidenav.banner-active {
-	height: calc(100% - 225px);
+	height: calc(100% - 200px);
 	/* Subtract the banner height from 100% */
 }
 
@@ -73,7 +73,7 @@
 
 #openNav {
 	position: fixed;
-	top: 300px;
+	top: 275px;
 	/* Adjust this value to fine-tune spacing between banner and button */
 	left: 25px;
 	font-size: 24px;

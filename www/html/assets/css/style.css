@@ -59,9 +59,10 @@ footer a:hover {
 /* Style page content */
 #main {
     transition: margin-left .5s;
+    width: 90vw;
     max-width: 1500px;
     position: relative;
-    top: 300px;
+    top: 275px;
     left: 50%;
     transform: translateX(-50%);
     font-size: 1.1em;

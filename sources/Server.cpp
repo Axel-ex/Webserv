@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/23 23:16:46 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/24 11:32:48 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -280,7 +280,7 @@ void Server::_serveClients(void)
 
 			Request request(request_buffer.getBuffer());
 			Log::logRequest(request);
-			// Log::log(DEBUG, request_buffer.getBuffer());
+			Log::log(DEBUG, request_buffer.getBuffer());
 
 			if (CgiRequestHandler::_canProcess(request))
 			{
