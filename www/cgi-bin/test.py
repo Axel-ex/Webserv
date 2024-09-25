@@ -50,7 +50,7 @@ def process_form_data(form):
     return form_html
 
 # Início da resposta HTTP
-print("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n")
+print("Content-Type: text/html; charset=UTF-8\r\n\r\n")
 
 # Geração do HTML de resposta
 print(f"""

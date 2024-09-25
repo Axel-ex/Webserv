@@ -5,7 +5,7 @@ import html
 import os
 import sys
 
-print("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n")
+print("Content-Type: text/html; charset=UTF-8\r\n\r\n")
 
 def main():
 	# Start the HTML response

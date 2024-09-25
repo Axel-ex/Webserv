@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define o cabeçalho HTTP para conteúdo HTML
-echo -e "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"
+echo -e "Content-Type: text/html; charset=UTF-8\r\n\r\n"
 echo ""
 
 # Coletando estatísticas do sistema
@@ -83,18 +83,20 @@ cat <<EOT
 
     <div id="main">
         <h1 style="text-align:center;">Server Statistics</h1>
-        <div class="stats-container">
-            <div class="stats-item">
-                <h2>CPU Usage</h2>
-                $(create_pie_chart $cpu_usage)
-            </div>
-            <div class="stats-item">
-                <h2>Storage Usage</h2>
-                $(create_pie_chart $(printf "%.0f" $storage_used_percentage))  <!-- Adaptando o valor do armazenamento -->
-            </div>
-            <div class="stats-item">
-                <h2>Disk Usage</h2>
-                $(create_pie_chart $disk_usage)
+		<div class="illustration">
+            <div class="stats-container">
+                <div class="stats-item">
+                    <h2>CPU Usage</h2>
+                    $(create_pie_chart $cpu_usage)
+                </div>
+                <div class="stats-item">
+                    <h2>Storage Usage</h2>
+                    $(create_pie_chart $(printf "%.0f" $storage_used_percentage))  <!-- Adaptando o valor do armazenamento -->
+                </div>
+                <div class="stats-item">
+                    <h2>Disk Usage</h2>
+                    $(create_pie_chart $disk_usage)
+                </div>
             </div>
         </div>
         <div style="text-align: center; margin-top: 40px;">

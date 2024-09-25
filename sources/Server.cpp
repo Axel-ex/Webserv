@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/25 15:16:54 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/25 16:42:06 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -198,9 +198,11 @@ void Server::_sigchldHandler(int signum)
 				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS FINISHED ITS EXECUTION."));
 				char buffer[BUFSIZ];
 				std::string response;
+				std::string ok = "HTTP/1.1 200 OK\r\n";
 				ssize_t bytesRead;
 				while ((bytesRead = read(it->second.cgi_fd, buffer, BUFSIZ)) > 0)
 					response += std::string(buffer, bytesRead);
+				send(it->second.client_fd, ok.c_str(), ok.length(), 0);
 				send(it->second.client_fd, response.c_str(), response.length(), 0);
 			}
 			else

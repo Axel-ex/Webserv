@@ -2,7 +2,7 @@
 
 import cgi
 
-print("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n")
+print("Content-Type: text/html; charset=UTF-8\r\n\r\n")
 
 print("""
 <!DOCTYPE html>
