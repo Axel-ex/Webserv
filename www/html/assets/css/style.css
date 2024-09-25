@@ -118,6 +118,7 @@ footer a:hover {
     left: 15px;
 }
 
+
 /* Illustrations */
 .illustration {
     border: 1px solid #ccc;
@@ -126,6 +127,7 @@ footer a:hover {
     background-color: #f9f9f9;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow: auto; /* Add this line to handle overflow */
 }
 
 .illustration img {
@@ -138,6 +140,8 @@ footer a:hover {
 /* Code block */
 code {
     font-size: 15px;
+    white-space: pre-wrap; /* Add this line to allow wrapping */
+    word-wrap: break-word; /* Add this line to break long words */
 }
 
 /* Headers */
@@ -268,9 +272,10 @@ ul li {
 }
 
 .profile-pic {
-    width: 200px;
-    height: 200px;
+    width: 160px;
+    height: 160px;
     border-radius: 50%;
+    border: dotted black 1px;
     background-color: #ccc;
     margin-bottom: 10px;
     background-size: cover;
