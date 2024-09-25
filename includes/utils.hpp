@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/09/23 19:19:15 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/25 13:27:51 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,8 @@
 #include <cstdio>
 #include <fstream>
 #include <sys/time.h>
+#include "Config.hpp"
+#include "Request.hpp"
 
 template <typename T>
 
@@ -42,8 +44,10 @@ std::string toString(T val)
 }
 
 extern bool stopFlag;
-void    sigHandler(int signum);
-void    sigHandler2(int signum);
-double	getTime(void);
+void        sigHandler(int signum);
+void        sigHandler2(int signum);
+double	    getTime(void);
+std::string getMatch(std::vector<Route> &routes, std::string &resource, std::string method);
+Route       getBestRoute(const Request& request);
 
 #endif  // UTILS_HPP_

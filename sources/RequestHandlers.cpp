@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/23 13:08:56 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/25 13:50:25 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,12 +114,9 @@ std::string ARequestHandler::_getErrorReason(int error_code) const {
 // =============================================================================
 bool GetRequestHandler ::_canProcess(const Request& request) const
 {
-    Config& config = Config::getInstance();
-    const std::vector<Route>& routes = config.getRoutes();
-    std::vector<std::string> methods = routes.begin()->methods;
-    std::vector<std::string>::iterator it = std::find(methods.begin(), methods.end(), "GET");
-    return (it != methods.end() && request.getMethod() == "GET" &&
-            request.getMethod().find(".cgi") == std::string::npos);
+    Route best_route = getBestRoute(request);
+    // Log::log(DEBUG, "LOCATION ROOTED TO: " + best_route.root);
+    return (!best_route.url.empty() && request.getMethod() == "GET");
 }
 
 std::string    GetRequestHandler ::_get_file_content(std::string path, Response& response) const
@@ -152,6 +149,7 @@ std::string    GetRequestHandler ::_get_file_content(std::string path, Response&
 void GetRequestHandler ::processRequest(const Request& request,
                                          Response& response) const
 {
+    // Route best_route = getBestRoute(request);
     std::string headers;
 
     Config& config = Config::getInstance();
