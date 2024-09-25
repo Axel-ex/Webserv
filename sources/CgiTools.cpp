@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/21 15:24:44 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/23 19:19:31 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/25 15:10:49 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,20 +36,6 @@ std::string getFileExtension(const std::string &url)
 	path = path.substr(dotPos);
 	path = path.substr(0, path.find_first_of("/#"));
 	return (path);
-}
-
-bool startsWith(std::string str, const std::string &prefix)
-{
-	if (prefix[0] != '/' && str[0] == '/')
-		str.erase(0, 1);
-	if (prefix.size() > str.size())
-		return (false);
-	for (size_t i = 0; i < prefix.size(); i++)
-	{
-		if (str[i] != prefix[i])
-			return (false);
-	}
-	return (true);
 }
 
 bool isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions)

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/23 19:34:52 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/25 15:12:42 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &loca
 	_location = location;
 	// ===============================================
 
-	_document_root = _location.root.substr(0, _location.root.find(_location.url) - 1);
+	_document_root = _location.root.substr(0, _location.root.find(_location.url));
 	if (!_document_root.empty() && _document_root[0] == '.')
 		_document_root.erase(0, 1);
 
@@ -90,19 +90,23 @@ CgiRequestHandler::~CgiRequestHandler()
 
 bool CgiRequestHandler::_canProcess(const Request &request)
 {
-	std::vector<Route> routes = Config::getRoutes();
-	std::string resource = request.getResource();
-	std::string method = request.getMethod();
+	Route best_route = getBestRoute(request);
+	if (best_route.url.empty() || best_route.cgi_extension.empty() || best_route.cgi_path.empty())
+		return (false);
+	return (isExtensionAllowed(request.getResource(), best_route.cgi_extension));
+	// std::vector<Route> routes = Config::getRoutes();
+	// std::string resource = request.getResource();
+	// std::string method = request.getMethod();
 
-	for (size_t i = 0; i < routes.size(); i++)
-	{
-		if (std::find(routes[i].methods.begin(), routes[i].methods.end(), method) != routes[i].methods.end())
-		{
-			if (startsWith(resource, routes[i].url) && isExtensionAllowed(resource, routes[i].cgi_extension))
-				return (true);
-		}
-	}
-	return (false);
+	// for (size_t i = 0; i < routes.size(); i++)
+	// {
+	// 	if (std::find(routes[i].methods.begin(), routes[i].methods.end(), method) != routes[i].methods.end())
+	// 	{
+	// 		if (startsWith(resource, routes[i].url) && isExtensionAllowed(resource, routes[i].cgi_extension))
+	// 			return (true);
+	// 	}
+	// }
+	// return (false);
 }
 
 std::string CgiRequestHandler::getRootPath(void) const

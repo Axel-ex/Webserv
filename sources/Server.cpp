@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/25 13:50:45 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/25 15:16:54 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,22 +147,6 @@ ssize_t Server::_readFd(int fd_index, char *buffer, size_t buffer_size)
 	return (n);
 }
 
-Route getCgiRoute(const Request &request)
-{
-	std::vector<Route> routes = Config::getRoutes();
-	std::string resource = request.getResource();
-	std::string method = request.getMethod();
-
-	for (size_t i = 0; i < routes.size(); i++)
-	{
-		if (std::find(routes[i].methods.begin(), routes[i].methods.end(), method) != routes[i].methods.end())
-		{
-			if (startsWith(resource, routes[i].url) && isExtensionAllowed(resource, routes[i].cgi_extension))
-				return (routes[i]);
-		}
-	}
-	return (routes[0]);
-}
 
 // ==========================================================================================
 // 									LOOK FOR TIMED-OUT PROCESSES
@@ -284,7 +268,7 @@ void Server::_serveClients(void)
 
 			if (CgiRequestHandler::_canProcess(request))
 			{
-				Route cgi_route = getCgiRoute(request);
+				Route cgi_route = getBestRoute(request);
 				CgiRequestHandler cgi_obj(request, _fds[i].fd, cgi_route);
 				cgi_obj.processRequest();
 			}

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:34:18 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/23 22:07:14 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/25 15:11:11 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,8 +100,6 @@ class CgiRequestHandler
 };
 
 std::string getFileExtension(const std::string &url);
-std::string intToString(int value);
-bool startsWith(std::string str, const std::string &prefix);
 bool isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions);
 void sendHttpErrorResponse(int client_fd, int error_code);
 unsigned int convertHex(const std::string &nb);
