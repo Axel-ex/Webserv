@@ -69,13 +69,13 @@ cat <<EOT
             <a id="closebtn" href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
         </div>
         <div class="pages">
-            <a href="index.html">Home</a>
-            <a href="server_architecture.html">Server Architecture</a>
-            <a href="http_protocol.html">Understanding HTTP</a>
-            <a href="socket.html">Socket Programming</a>
-            <a href="request_handling.html">Request Handling</a>
-            <a href="cgi_handler.html">CGI Implementation</a>
-            <a href="logging.html">Logging and Monitoring</a>
+            <a href="/index.html">Home</a>
+            <a href="/server_architecture.html">Server Architecture</a>
+            <a href="/http_protocol.html">Understanding HTTP</a>
+            <a href="/socket.html">Socket Programming</a>
+            <a href="/request_handling.html">Request Handling</a>
+            <a href="/cgi_handler.html">CGI Implementation</a>
+            <a href="/logging.html">Logging and Monitoring</a>
         </div>
     </div>
 
