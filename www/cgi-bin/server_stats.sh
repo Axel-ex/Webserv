@@ -5,7 +5,7 @@ echo -e "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"
 echo ""
 
 # Coletando estatísticas do sistema
-cpu_usage=$(top -l 1 | grep "CPU usage" | awk '{print $3}' | sed 's/%//')  # Uso de CPU (sem a parte decimal)
+cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | sed 's/%//') # Uso de CPU (sem a parte decimal)
 storage_free=$(df / | awk 'NR==2 {print $4}')  # Espaço livre (em blocos)
 storage_used=$(df / | awk 'NR==2 {print $3}')  # Espaço usado (em blocos)
 disk_usage=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')  # Uso de Disco (percentual)
