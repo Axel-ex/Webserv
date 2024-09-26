@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/26 15:17:00 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/26 15:24:36 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -289,10 +289,8 @@ void Server::_serveClients(void)
 					else
 					{
 						// Caso o session_id não corresponda a uma sessão válida (session ID inválido, expirado, etc.)
-						// Crie uma nova sessão
 						std::string newSessionId = generateUniqueSessionID();
 						_activeSessions[newSessionId] = UserSession(); // Nova sessão
-						// Definir cookie com novo session_id
 						Cookie sessionCookie;
 						sessionCookie.name = "session_id";
 						sessionCookie.value = newSessionId;
@@ -309,7 +307,6 @@ void Server::_serveClients(void)
 					// Nenhum cookie de sessão, criar uma nova sessão
 					std::string newSessionId = generateUniqueSessionID();
 					_activeSessions[newSessionId] = UserSession(); // Nova sessão
-					// Definir cookie com novo session_id
 					Cookie sessionCookie;
 					sessionCookie.name = "session_id";
 					sessionCookie.value = newSessionId;
