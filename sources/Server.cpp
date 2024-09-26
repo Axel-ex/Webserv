@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/26 14:51:38 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/26 15:17:00 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -283,27 +283,42 @@ void Server::_serveClients(void)
 				// Check if session cookie exists
 				if (request.hasCookie("session_id"))
 				{
-					sessionId = request.getCookieValue("session_id");
-					Log::log(DEBUG, "Existing session: " + sessionId);
+					std::string sessionId = request.getCookie("session_id");
+					if (_activeSessions.find(sessionId) != _activeSessions.end())
+						_activeSessions[sessionId].updateLastActive();
+					else
+					{
+						// Caso o session_id não corresponda a uma sessão válida (session ID inválido, expirado, etc.)
+						// Crie uma nova sessão
+						std::string newSessionId = generateUniqueSessionID();
+						_activeSessions[newSessionId] = UserSession(); // Nova sessão
+						// Definir cookie com novo session_id
+						Cookie sessionCookie;
+						sessionCookie.name = "session_id";
+						sessionCookie.value = newSessionId;
+						sessionCookie.expires = generateExpiryDate(3600);
+						sessionCookie.maxAge = "3600";
+						sessionCookie.path = "/";
+						sessionCookie.secure = true;
+						sessionCookie.httpOnly = true;
+						response.setCookie(sessionCookie);
+					}
 				}
 				else
 				{
-					// Generate a new session ID for the user
-					sessionId = generateUniqueSessionID();
-					Log::log(DEBUG, "Generated new session ID: " + sessionId);
-
-					// Set a new session cookie
+					// Nenhum cookie de sessão, criar uma nova sessão
+					std::string newSessionId = generateUniqueSessionID();
+					_activeSessions[newSessionId] = UserSession(); // Nova sessão
+					// Definir cookie com novo session_id
 					Cookie sessionCookie;
 					sessionCookie.name = "session_id";
-					sessionCookie.value = generateUniqueSessionID();
+					sessionCookie.value = newSessionId;
 					sessionCookie.expires = generateExpiryDate(3600);
 					sessionCookie.maxAge = "3600";
 					sessionCookie.path = "/";
 					sessionCookie.secure = true;
 					sessionCookie.httpOnly = true;
 					response.setCookie(sessionCookie);
-					// Store the session in memory for the future
-					activeSessions[sessionId] = UserSession(); // Assume a UserSession struct for user state
 				}
 
 				send(_fds[i].fd, response.getResponseBuffer().c_str(),

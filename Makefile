@@ -25,6 +25,7 @@ SRCS = $(addprefix $(SRC_DIR)/, 	main.cpp 				\
 
 HEADERS = $(addprefix $(INCLUDE_DIR)/,  CgiRequestHandler.hpp 	\
 										Config.hpp 				\
+										UserSession.hpp			\
 										Log.hpp 				\
 										Parser.hpp 				\
 										Request.hpp 			\

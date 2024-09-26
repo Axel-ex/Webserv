@@ -6,12 +6,14 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/26 14:37:27 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/26 15:08:22 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVER_HPP
 #define SERVER_HPP
+
+#include "UserSession.hpp"
 
 #include <exception>
 #include <netinet/in.h>
@@ -21,6 +23,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
+#include <map>
 #include <string>
 
 typedef struct pollfd t_pollfd;
@@ -55,7 +58,8 @@ class Server
 
     private:
         static std::vector<t_pollfd> _fds;
-	
+        std::map<std::string, UserSession> _activeSessions;
+
         void _acceptIncomingConnections(void);
         void _serveClients(void);
 		ssize_t _readFd(int fd, char *buffer, size_t buffer_size);
