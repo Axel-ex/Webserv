@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/25 14:58:41 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/26 13:14:43 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -155,7 +155,7 @@ void GetRequestHandler ::processRequest(const Request& request,
     std::string cont_type;
     struct stat info;
     
-    if (resource.empty() || resource == "/")
+    if (resource == best_route.url || resource == best_route.url + "/")
         req_path = best_route.root +  "/" + best_route.index;
     else
         req_path = best_route.root + resource;

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/26 09:52:34 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/26 12:00:14 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,8 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &loca
 	_body = request.getBody() + "\0";
 	_client_fd = fd;
 	_location = location;
+	if (_resource == location.url || _resource == location.url + "/")
+			_resource = location.url + "/" + location.index;
 	// ===============================================
 
 	_document_root = _location.root.substr(0, _location.root.find(_location.url));
@@ -93,6 +95,8 @@ bool CgiRequestHandler::_canProcess(const Request &request)
 	Route best_route = getBestRoute(request);
 	if (best_route.url.empty() || best_route.cgi_extension.empty() || best_route.cgi_path.empty())
 		return (false);
+	if (request.getResource() == best_route.url || request.getResource() == best_route.url + "/")	
+		return (true);
 	return (isExtensionAllowed(request.getResource(), best_route.cgi_extension));
 }
 
