@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/25 16:42:06 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/26 09:59:22 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,12 +98,14 @@ void Server::start(void)
 		int activity;
 
 		// Loop to handle EINTR (syscall interruptions while polling) error
-		do {
+		do
+		{
 			// Check for any change in our file descriptors
 			activity = poll(_fds.data(), _fds.size(), 1000);
 		} while (activity < 0 && errno == EINTR);
-		
-		if (activity < 0 && !stopFlag) {          
+
+		if (activity < 0 && !stopFlag)
+		{
 			perror("poll");
 			throw ServerError("Error in poll");
 		}
@@ -146,7 +148,6 @@ ssize_t Server::_readFd(int fd_index, char *buffer, size_t buffer_size)
 	}
 	return (n);
 }
-
 
 // ==========================================================================================
 // 									LOOK FOR TIMED-OUT PROCESSES
@@ -210,7 +211,6 @@ void Server::_sigchldHandler(int signum)
 				Log::log(ERROR, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] FINISHED WITH EXIT CODE: " + toString(WEXITSTATUS(status))));
 				sendHttpErrorResponse(it->second.client_fd, 500);
 			}
-
 		}
 		else if (WIFSIGNALED(status))
 		{
@@ -279,7 +279,6 @@ void Server::_serveClients(void)
 				Response response(request);
 				send(_fds[i].fd, response.getResponseBuffer().c_str(),
 					 response.getResponseBuffer().size(), 0);
-
 				close(_fds[i].fd);
 				_fds.erase(_fds.begin() + i);
 			}
