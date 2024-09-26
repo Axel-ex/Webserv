@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/09/25 13:27:51 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/26 14:38:35 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,5 +49,8 @@ void        sigHandler2(int signum);
 double	    getTime(void);
 std::string getMatch(std::vector<Route> &routes, std::string &resource, std::string method);
 Route       getBestRoute(const Request& request);
+std::string generateUniqueSessionID();
+std::string generateExpiryDate(int maxAgeInSeconds);
+
 
 #endif  // UTILS_HPP_

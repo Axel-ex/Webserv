@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/26 09:59:22 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/26 14:51:38 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -265,6 +265,7 @@ void Server::_serveClients(void)
 			}
 
 			Request request(request_buffer.getBuffer());
+			request.parseCookie();
 			Log::logRequest(request);
 			// Log::log(DEBUG, request_buffer.getBuffer());
 
@@ -277,6 +278,34 @@ void Server::_serveClients(void)
 			else
 			{
 				Response response(request);
+				std::string sessionId;
+
+				// Check if session cookie exists
+				if (request.hasCookie("session_id"))
+				{
+					sessionId = request.getCookieValue("session_id");
+					Log::log(DEBUG, "Existing session: " + sessionId);
+				}
+				else
+				{
+					// Generate a new session ID for the user
+					sessionId = generateUniqueSessionID();
+					Log::log(DEBUG, "Generated new session ID: " + sessionId);
+
+					// Set a new session cookie
+					Cookie sessionCookie;
+					sessionCookie.name = "session_id";
+					sessionCookie.value = generateUniqueSessionID();
+					sessionCookie.expires = generateExpiryDate(3600);
+					sessionCookie.maxAge = "3600";
+					sessionCookie.path = "/";
+					sessionCookie.secure = true;
+					sessionCookie.httpOnly = true;
+					response.setCookie(sessionCookie);
+					// Store the session in memory for the future
+					activeSessions[sessionId] = UserSession(); // Assume a UserSession struct for user state
+				}
+
 				send(_fds[i].fd, response.getResponseBuffer().c_str(),
 					 response.getResponseBuffer().size(), 0);
 				close(_fds[i].fd);

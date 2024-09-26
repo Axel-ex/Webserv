@@ -6,12 +6,18 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/25 13:22:10 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/25 13:26:23 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/26 14:38:15 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 
 #include "../includes/utils.hpp"
+
+#include <random>
+#include <sstream>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 
 std::string getMatch(std::vector<Route> &routes, std::string &resource, std::string method)
 {
@@ -45,4 +51,40 @@ Route getBestRoute(const Request& request)
 			return (routes[i]);
 	}
 	return (emptyRoute);
+}
+
+std::string generateUniqueSessionID()
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 255);
+
+    unsigned char buffer[16];
+    for (int i = 0; i < sizeof(buffer); ++i)
+    {
+        buffer[i] = dis(gen);
+    }
+
+    std::stringstream ss;
+    for (int i = 0; i < sizeof(buffer); ++i)
+    {
+        ss << std::hex << (int)buffer[i];
+    }
+
+    return ss.str();
+}
+
+
+std::string generateExpiryDate(int maxAgeInSeconds)
+{
+    time_t now = time(0);
+    time_t expiryTime = now + maxAgeInSeconds;
+
+    struct tm gmtTime;
+    gmtime_r(&expiryTime, &gmtTime);
+
+    std::stringstream ss;
+    ss << std::put_time(&gmtTime, "%a, %d %b %Y %H:%M:%S GMT");
+
+    return (ss.str());
 }
