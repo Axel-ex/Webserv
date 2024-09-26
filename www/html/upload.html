@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/navbar.css">
+    <link rel="stylesheet" href="/assets/css/banner.css">
+    <title>File Upload Test</title>
+</head>
+<body>
+    <div class='banner'></div>
+    <div id='mySidenav' class='sidenav'>
+        <div style='padding-bottom: 50px;'>
+            <a id='closebtn' href='javascript:void(0)' class='closebtn' onclick='closeNav()'>&times;</a>
+        </div>
+        <div class='pages'>
+            <a href='/index.html'>Home</a>
+            <a href='/server_architecture.html'>Server Architecture</a>
+            <a href='/http_protocol.html'>Understanding HTTP</a>
+            <a href='/socket.html'>Socket Programming</a>
+            <a href='/request_handling.html'>Request Handling</a>
+            <a href='/cgi_handler.html'>CGI Implementation</a>
+            <a href='/logging.html'>Logging and Monitoring</a>
+        </div>
+    </div>
+    <span id='openNav' onclick='openNav()'>&#9776;</span>
+    <div id='main'>
+        <h1>Upload a File to Test CGI 'Post' Script</h1><br><br>
+
+        <h2>Select a File to Upload</h2>
+        <div class='center-table'>
+            <form action="/cgi-bin/test.py" method="post" enctype="multipart/form-data">
+                <label for="file">Choose a file:</label><br>
+                <input type="file" id="file" name="file"><br><br>
+
+                <label for="name">Enter your name:</label><br>
+                <input type="text" id="name" name="name"><br><br>
+
+                <input type="submit" value="Upload File">
+            </form>
+        </div>
+    </div>
+
+    <script src='/assets/js/script.js'></script>
+</body>
+</html>

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/21 17:24:48 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/26 09:59:22 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,12 +98,14 @@ void Server::start(void)
 		int activity;
 
 		// Loop to handle EINTR (syscall interruptions while polling) error
-		do {
+		do
+		{
 			// Check for any change in our file descriptors
 			activity = poll(_fds.data(), _fds.size(), 1000);
 		} while (activity < 0 && errno == EINTR);
-		
-		if (activity < 0 && !stopFlag) {          
+
+		if (activity < 0 && !stopFlag)
+		{
 			perror("poll");
 			throw ServerError("Error in poll");
 		}
@@ -145,23 +147,6 @@ ssize_t Server::_readFd(int fd_index, char *buffer, size_t buffer_size)
 		Log::log(ERROR, "reading client request");
 	}
 	return (n);
-}
-
-Route getCgiRoute(const Request &request)
-{
-	std::vector<Route> routes = Config::getRoutes();
-	std::string resource = request.getResource();
-	std::string method = request.getMethod();
-
-	for (size_t i = 0; i < routes.size(); i++)
-	{
-		if (std::find(routes[i].methods.begin(), routes[i].methods.end(), method) != routes[i].methods.end())
-		{
-			if (startsWith(resource, routes[i].url) && isExtensionAllowed(resource, routes[i].cgi_extension))
-				return (routes[i]);
-		}
-	}
-	return (routes[0]);
 }
 
 // ==========================================================================================
@@ -214,12 +199,18 @@ void Server::_sigchldHandler(int signum)
 				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS FINISHED ITS EXECUTION."));
 				char buffer[BUFSIZ];
 				std::string response;
+				std::string ok = "HTTP/1.1 200 OK\r\n";
 				ssize_t bytesRead;
 				while ((bytesRead = read(it->second.cgi_fd, buffer, BUFSIZ)) > 0)
 					response += std::string(buffer, bytesRead);
+				send(it->second.client_fd, ok.c_str(), ok.length(), 0);
 				send(it->second.client_fd, response.c_str(), response.length(), 0);
 			}
-
+			else
+			{
+				Log::log(ERROR, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] FINISHED WITH EXIT CODE: " + toString(WEXITSTATUS(status))));
+				sendHttpErrorResponse(it->second.client_fd, 500);
+			}
 		}
 		else if (WIFSIGNALED(status))
 		{
@@ -227,7 +218,10 @@ void Server::_sigchldHandler(int signum)
 			if (signal == SIGKILL)
 				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS BEEN KILLED."));
 			else
-				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "RECEIVED THE SIGNAL: " + toString(signal)));
+			{
+				Log::log(ERROR, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] RECEIVED THE SIGNAL: " + toString(signal)));
+				sendHttpErrorResponse(it->second.client_fd, 500);
+			}
 		}
 		close(client_fd);
 		close(it->second.cgi_fd);
@@ -272,11 +266,11 @@ void Server::_serveClients(void)
 
 			Request request(request_buffer.getBuffer());
 			Log::logRequest(request);
-			Log::log(DEBUG, request_buffer.getBuffer());
+			// Log::log(DEBUG, request_buffer.getBuffer());
 
 			if (CgiRequestHandler::_canProcess(request))
 			{
-				Route cgi_route = getCgiRoute(request);
+				Route cgi_route = getBestRoute(request);
 				CgiRequestHandler cgi_obj(request, _fds[i].fd, cgi_route);
 				cgi_obj.processRequest();
 			}
@@ -285,7 +279,6 @@ void Server::_serveClients(void)
 				Response response(request);
 				send(_fds[i].fd, response.getResponseBuffer().c_str(),
 					 response.getResponseBuffer().size(), 0);
-
 				close(_fds[i].fd);
 				_fds.erase(_fds.begin() + i);
 			}

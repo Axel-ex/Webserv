@@ -19,6 +19,7 @@ SRCS = $(addprefix $(SRC_DIR)/, 	main.cpp 				\
 									RequestHandlers.cpp 	\
 									Response.cpp 			\
 									Server.cpp 				\
+									ServerTools.cpp 		\
 									signal.cpp )
 
 

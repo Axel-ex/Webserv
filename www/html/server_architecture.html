@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="./assets/css/style.css">
+	<link rel="stylesheet" href="./assets/css/navbar.css">
+	<link rel="stylesheet" href="./assets/css/banner.css">
+	<title>Server Architecture</title>
+</head>
+
+<body>
+	<div class="banner">
+	</div>
+	<!-- Side Navigation Bar -->
+	<div id="mySidenav" class="sidenav">
+		<div style="padding-bottom: 50px;">
+			<a id="closebtn" href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+		</div>
+		<div class="pages">
+			<a href="index.html">Home</a>
+			<a href="server_architecture.html">Server Architecture</a>
+			<a href="http_protocol.html">Understanding HTTP</a>
+			<a href="socket.html">Socket Programming</a>
+			<a href="request_handling.html">Request Handling</a>
+			<a href="cgi_handler.html">CGI Implementation</a>
+			<a href="logging.html">Logging and Monitoring</a>
+		</div>
+	</div>
+
+	<!-- Open Side Nav Button -->
+	<span id="openNav" onclick="openNav()">&#9776;</span>
+
+	<!-- Main Content -->
+	<div id="main">
+		<h1>Server Architecture</h1>
+		<br><br>
+		<p>Our server architecture is meticulously designed to efficiently manage multiple client connections using the
+			poll
+			system call. This modular architecture ensures seamless scalability and maintainability, making it ideal for
+			dynamic
+			and high-traffic environments. In this section, we will delve into the various components of our server,
+			including
+			configuration management, request handling, CGI processing, and logging mechanisms, providing a
+			comprehensive
+			overview of how each part contributes to the overall robustness and efficiency of the system.</p>
+		<h2>Configuration</h2>
+		<p>The server configuration is specified in a configuration file, such as <code>default.conf</code>. This file
+			defines various parameters such as ports, server name, maximum body size, error pages, and routes. The
+			configuration is parsed and loaded into the server using the <code>Parser</code> class.</p>
+
+		<h2>Parsing</h2>
+		<p>The <code>Parser</code> class is responsible for reading and interpreting the configuration file. It
+			tokenizes the file content and validates the syntax. The parsed data is then stored in the
+			<code>Config</code> singleton, which provides easy access to configuration parameters throughout the server.
+		</p>
+
+		<h3>Reading the Configuration File</h3>
+		<p>The <code>_readFile</code> method reads the content of the configuration file and returns it as a string.</p>
+		<button onclick="toggleReadMore()">Read more...</button>
+		<div id="readMoreContent" style="display: none;">
+			<div class="illustration">
+				<pre class="prettyprint">
+std::string Parser::_readFile(const std::string& path)
+{
+	std::ifstream ifs;
+	std::string line;
+	std::stringstream file_content;
+
+	ifs.open(path.c_str());
+	if (!ifs.is_open())
+		throw std::runtime_error("Couldn't open the file " + path + ": file doesn't exist");
+	while (ifs.good())
+	{
+		std::getline(ifs, line);
+		file_content << line << '\n';
+	}
+	ifs.close();
+	return (file_content.str());
+}
+				</pre>
+			</div>
+
+			<h3>Tokenizing the File Content</h3>
+			<p>After reading the file, the <code>_tokenize</code> method splits the file content into tokens. Each token
+				represents a meaningful unit such as a directive, argument, or bracket. The method also handles special
+				cases like semicolons at the end of tokens.</p>
+			<div class="illustration">
+				<pre class="prettyprint">
+void Parser::_tokenize(std::string& file_content)
+{
+	std::string line;
+	std::stringstream file_stream(file_content);
+	int line_nb = 0;
+
+	while (std::getline(file_stream, line))
+	{
+		std::stringstream line_stream(line);
+		std::string word;
+		line_nb++;
+
+		if (line.empty())
+			continue;
+		while (line_stream >> word)
+		{
+			Token new_token;
+
+			new_token.content = word;
+			new_token.line_nb = line_nb;
+			_setTokenType(new_token);
+			_token_list.push_back(new_token);
+
+			// If semicolon is found at the end of the token we just inserted,
+			// remove it and insert a semicolon token.
+			if (_token_list.back().content[word.size() - 1] == ';')
+			{
+				_token_list.back().content.erase(word.size() - 1);
+				_token_list.push_back((Token){SEMICOLON, ";", line_nb});
+			}
+		}
+	}
+}
+				</pre>
+			</div>
+
+			<h3>Setting Token Types</h3>
+			<p>The <code>_setTokenType</code> method determines the type of each token based on its content. It checks
+				if
+				the token matches any known types (e.g., OPEN_BRACKET, CLOSE_BRACKET, SERVER). If not, it classifies the
+				token as either a directive or an argument.</p>
+			<div class="illustration">
+				<pre class="prettyprint">
+void Parser::_setTokenType(Token& token)
+{
+	std::map<std::string, TokenType>::iterator it = _token_definition.find(token.content);
+	if (it != _token_definition.end())
+		token.type = it->second;
+	else
+	{
+		if (_token_list.back().type == SEMICOLON || _token_list.back().type == OPEN_BRACKET || _token_list.back().type == CLOSE_BRACKET)
+			token.type = DIRECTIVE;
+		else
+			token.type = ARGUMENT;
+	}
+}
+				</pre>
+			</div>
+
+			<h3>Parsing the Token List</h3>
+			<p>Once the tokens are identified, the <code>_parseTokenList</code> method processes them to extract
+				configuration parameters. It checks for unclosed brackets and directives without arguments, and then
+				parses
+				server and location directives.</p>
+			<div class="illustration">
+				<pre class="prettyprint">
+void Parser::_parseTokenList(void)
+{
+	std::list<Token>::iterator it;
+
+	// Check unclosed bracket and directives without argument
+	_matchBrackets();
+	_checkInvalidDirective();
+	for (it = _token_list.begin(); it != _token_list.end(); it++)
+	{
+		if (it->type == SERVER)
+			_parseServerDirective(it);
+		else
+			throw SynthaxException(*it, "Out of context directive");
+	}
+}
+				</pre>
+			</div>
+
+			<h3>Matching Brackets</h3>
+			<p>The <code>_matchBrackets</code> method ensures that all opened brackets are properly closed. It uses a
+				stack
+				to keep track of opened brackets and throws an exception if it finds unmatched brackets.</p>
+			<div class="illustration">
+				<pre class="prettyprint">
+void Parser::_matchBrackets(void) const
+{
+	std::stack<Token> brackets;
+	std::list<Token>::const_iterator it;
+
+	for (it = _token_list.begin(); it != _token_list.end(); it++)
+	{
+		if (it->type == OPEN_BRACKET)
+			brackets.push(*it);
+		if (it->type == CLOSE_BRACKET)
+		{
+			if (brackets.empty())
+				throw SynthaxException(*it, "Unmatched bracket");
+			brackets.pop();
+		}
+	}
+	if (!brackets.empty())
+		throw SynthaxException(brackets.top(), "Unmatched bracket");
+}
+				</pre>
+			</div>
+
+			<h3>Checking Invalid Directives</h3>
+			<p>The <code>_checkInvalidDirective</code> method checks for directives without arguments and throws an
+				exception if it finds any.</p>
+			<div class="illustration">
+				<pre class="prettyprint">
+void Parser::_checkInvalidDirective(void) const
+{
+	std::list<Token>::const_iterator it;
+	std::list<Token>::const_iterator next_it;
+
+	for (it = _token_list.begin(); it != _token_list.end(); it++)
+	{
+		next_it = it;
+		next_it++;
+
+		if (next_it == _token_list.end())
+			break;
+		if ((it->type == DIRECTIVE && next_it->type != ARGUMENT) || (it->type == LOCATION && next_it->type != ARGUMENT))
+			throw SynthaxException(*it, "Directive with no arguments");
+	}
+}
+				</pre>
+			</div>
+
+			<h3>Parsing Server Directives</h3>
+			<p>The <code>_parseServerDirective</code> method processes server blocks in the configuration file. It
+				extracts
+				parameters like server name, error pages, ports, and maximum body size, and stores them in the
+				<code>Config</code> class.
+			</p>
+			<div class="illustration">
+				<pre class="prettyprint">
+void Parser::_parseServerDirective(std::list<Token>::iterator& it)
+{
+	// While we dont reach the end of the block we parse the tokens. We
+	// ignore any token that are not directives or location.
+	for (; it->type != CLOSE_BRACKET; it++)
+	{
+		if (it->type != DIRECTIVE && it->type != LOCATION)
+			continue;
+		else if (it->type == LOCATION)
+			_parseLocationDirective(++it);
+		else if (it->content == "server_name")
+			Config::setServerName((++it)->content);
+		else if (it->content == "error_page")
+		{
+			int error_code = std::atoi((++it)->content.c_str());
+			std::string path_to_html = (++it)->content;
+			Config::setErrorPath(error_code, path_to_html);
+		}
+		else if (it->content == "listen")
+		{
+			while ((++it)->type != SEMICOLON)
+			{
+				int port_nb = std::atoi((it)->content.c_str());
+				if (!_isValidPort(port_nb, Config::getPorts()))
+					throw SynthaxException(*it, "Invalid port number");
+				Config::setPort(port_nb);
+			}
+		}
+		else if (it->content == "client_max_body_size")
+		{
+			it++;
+			int body_size = std::atoi(it->content.c_str());
+			Config::setMaxBodySize(body_size);
+		}
+		else
+			throw SynthaxException(*it, "Unrecognised directive");
+	}
+}
+				</pre>
+			</div>
+
+			<h3>Parsing Location Directives</h3>
+			<p>The <code>_parseLocationDirective</code> method processes location blocks within server blocks. It
+				extracts
+				parameters like root, index, upload store, CGI paths, and methods, and stores them in the
+				<code>Config</code> class.
+			</p>
+			<div class="illustration">
+				<pre class="prettyprint">
+void Parser::_parseLocationDirective(std::list<Token>::iterator& it) const
+{
+	// Init the Route struct with empty values.
+	std::vector<std::string> methods;
+	std::vector<std::string> cgi_path;
+	std::vector<std::string> cgi_extension;
+
+	if (_isDuplicatedLocation(it->content))
+		throw SynthaxException(*it, "Config contains duplicated location blocks");
+	Route route = (Route){it->content, "", methods, "./uploads", "index.html", cgi_path, cgi_extension};
+	for (; it->type != CLOSE_BRACKET; it++)
+	{
+		if (it->type != DIRECTIVE)
+			continue;
+		else if (it->content == "root")
+			route.root = (++it)->content;
+		else if (it->content == "index")
+			route.index = (++it)->content;
+		else if (it->content == "upload_store")
+			route.upload_store = (++it)->content;
+		else if (it->content == "cgi_path")
+		{
+			while ((++it)->type == ARGUMENT)
+			{
+				if (!_isCgiPath(it->content))
+					throw SynthaxException(*it, "Unrecognised CGI path");
+				route.cgi_path.push_back(it->content);
+			}
+		}
+		else if (it->content == "cgi_extension")
+		{
+			while ((++it)->type == ARGUMENT)
+			{
+				if (!_isCgiExtension(it->content))
+					throw SynthaxException(*it, "Syntax error on CGI extension");
+			}
+		}
+		else if (it->content == "methods")
+		{
+			while ((++it)->type == ARGUMENT)
+			{
+				if (!_isHttpMethod(it->content))
+					throw SynthaxException(*it, "Invalid HTTP method");
+				route.methods.push_back(it->content);
+			}
+		}
+		else
+			throw SynthaxException(*it, "Unrecognised directive");
+	}
+	Config::setRoutes(route);
+}
+				</pre>
+			</div>
+
+			<h3>Loading Default Error Pages</h3>
+			<p>The <code>_loadErrors</code> method loads default error pages into the configuration if they are not
+				provided
+				in the configuration file.</p>
+			<div class="illustration">
+				<pre class="prettyprint">
+void Parser::_loadErrors(void) const
+{
+	std::map<int, std::string> error_path = Config::getErrorPath();
+	std::map<int, std::string>::iterator it_error_path;
+
+	for (it_error_path = error_path.begin(); it_error_path != error_path.end(); it_error_path++)
+	{
+		// Load error pages
+	}
+
+	// Then load the default if not provided
+	int tmp[] = {400, 404, 413, 500};
+	std::map<int, std::string> errors = Config::getDefaultErrors();
+	std::vector<int> error_codes(tmp, tmp + sizeof(tmp) / sizeof(int));
+	for (size_t i = 0; i < error_codes.size(); i++)
+	{
+		if (errors.find(error_codes[i]) != errors.end())
+			continue;
+		// Load default error pages
+	}
+}
+				</pre>
+			</div>
+
+			<h3>Helper Methods</h3>
+			<p>The <code>Parser</code> class also includes several helper methods to validate ports, CGI paths, CGI
+				extensions, and HTTP methods.</p>
+			<div class="illustration">
+				<pre class="prettyprint">
+bool Parser::_isHttpMethod(const std::string& method) const
+{
+	return (method == "GET" || method == "POST" || method == "DELETE");
+}
+
+bool Parser::_isDuplicatedLocation(const std::string& url) const
+{
+	std::vector<Route> routes = Config::getRoutes();
+	for (size_t i = 0; i < routes.size(); i++)
+	{
+		if (routes[i].url == url)
+			return true;
+	}
+	return false;
+}
+
+bool Parser::_isCgiPath(const std::string& path) const
+{
+	std::string command = "which " + path + " > /dev/null 2>&1";
+	int result = system(command.c_str());
+	return (result == 0);
+}
+
+bool Parser::_isCgiExtension(const std::string& extension) const
+{
+	if (extension.empty() || extension[0] != '.')
+		return false;
+	for (size_t i = 0; extension[i] != '\0'; i++)
+	{
+		if (extension[i] == '.')
+			return false;
+	}
+	return true;
+}
+
+bool Parser::_isValidPort(int port_nb, const std::vector<int>& ports) const
+{
+	if (port_nb < 0 || port_nb > 65535)
+		return false;
+	for (size_t i = 0; i < ports.size(); i++)
+	{
+		if (port_nb == ports[i])
+			return false;
+	}
+	return true;
+}
+				</pre>
+			</div>
+
+			<h3>Debugging</h3>
+			<p>The <code>Parser</code> class includes a <code>_debugTokenList</code> method to print the token list for
+				debugging purposes.</p>
+			<div class="illustration">
+				<pre class="prettyprint">
+void Parser::_debugTokenList(void) const
+{
+	std::list<Token>::const_iterator it;
+
+	for (it = _token_list.begin(); it != _token_list.end(); it++)
+	{
+		std::cout << "Token: " << it->content << ", Type: " << _tokenTypeToString(it->type) << ", Line: " << it->line_nb << std::endl;
+	}
+	std::cout << std::endl;
+}
+
+std::string Parser::_tokenTypeToString(TokenType type)
+{
+	switch (type)
+	{
+	case OPEN_BRACKET:
+		return "OPEN_BRACKET";
+	case CLOSE_BRACKET:
+		return "CLOSE_BRACKET";
+	case SERVER:
+		return "SERVER";
+	case LOCATION:
+		return "LOCATION";
+	case DIRECTIVE:
+		return "DIRECTIVE";
+	case ARGUMENT:
+		return "ARGUMENT";
+	case SEMICOLON:
+		return "SEMICOLON";
+	default:
+		return "UNKNOWN";
+	}
+}
+				</pre>
+			</div>
+
+			<h3>Exception Handling</h3>
+			<p>The <code>Parser</code> class includes a nested <code>SynthaxException</code> class to handle syntax
+				errors
+				during parsing. It provides detailed error messages, including the line number and content of the
+				problematic token.</p>
+			<div class="illustration">
+				<pre class="prettyprint">
+class SynthaxException : public std::exception
+{
+public:
+	SynthaxException(const Token& token, const std::string& reason);
+	virtual ~SynthaxException() throw(){};
+	virtual const char* what() const throw();
+
+private:
+	Token _token;
+	std::string _reason;
+	mutable std::string _msg;
+};
+
+SynthaxException::SynthaxException(const Token& token, const std::string& reason)
+	: _token(token), _reason(reason)
+{
+}
+
+const char* SynthaxException::what() const throw()
+{
+	std::stringstream msg;
+	msg << _reason << " line " << _token.line_nb << ": ";
+	msg << "content: " << _token.content << ", type: " << _tokenTypeToString(_token.type) << std::endl;
+
+	_msg = msg.str();
+	return (_msg.c_str());
+}
+				</pre>
+			</div>
+		</div>
+
+
+		<br>
+		<hr>
+		<br>
+		<h2>Configuration Management</h2>
+		<p>The <code>Config</code> class is a crucial component in our server architecture, responsible for managing
+			configuration parameters. It reads the configuration file, parses it, and stores the configuration
+			parameters in a structured format.</p>
+
+		<h3>Configuration File</h3>
+		<p>The configuration file, such as <code>default.conf</code>, contains various parameters that define the
+			server's behavior. These parameters include ports, server name, maximum body size, error pages, and routes.
+		</p>
+
+		<h3>Parsing Configuration</h3>
+		<p>The <code>Parser</code> class reads the configuration file and tokenizes its content. It validates the syntax
+			and extracts the configuration parameters. The parsed data is then stored in the <code>Config</code> class.
+		</p>
+
+		<h3>Config Class</h3>
+		<p>The <code>Config</code> class is a singleton that provides easy access to configuration parameters throughout
+			the server. Here's a simplified version of how the <code>Config</code> class might look:</p>
+		<div class="illustration">
+			<pre class="prettyprint">
+class Config {
+public:
+    static Config& getInstance() {
+        static Config instance;
+        return instance;
+    }
+
+    void loadConfig(const std::string& configFilePath);
+    const std::vector<int>& getPorts() const;
+    const std::string& getServerName() const;
+    // Other getters for configuration parameters
+
+private:
+    Config() {}
+    Config(const Config&) = delete;
+    Config& operator=(const Config&) = delete;
+
+    std::vector<int> ports;
+    std::string serverName;
+    // Other configuration parameters
+};
+            </pre>
+		</div>
+
+		<h3>Loading Configuration</h3>
+		<p>The <code>loadConfig</code> method in the <code>Config</code> class is responsible for loading the
+			configuration parameters from the parsed data. Here's an example of how this method might be implemented:
+		</p>
+		<div class="illustration">
+			<pre class="prettyprint">
+void Config::loadConfig(const std::string& configFilePath) {
+    Parser parser;
+    parser.parse(configFilePath);
+
+    // Example of setting configuration parameters
+    ports = parser.getPorts();
+    serverName = parser.getServerName();
+    // Set other configuration parameters
+}
+
+const std::vector<int>& Config::getPorts() const {
+    return ports;
+}
+
+const std::string& Config::getServerName() const {
+    return serverName;
+}
+
+// Other getters for configuration parameters
+            </pre>
+		</div>
+
+		<h3>Accessing Configuration</h3>
+		<p>Throughout the server, you can access the configuration parameters using the <code>Config</code> singleton
+			instance. For example, in the <code>Server</code> class, you can access the ports like this:</p>
+		<div class="illustration">
+			<pre class="prettyprint">
+void Server::init() {
+    const std::vector<int>& ports = Config::getInstance().getPorts();
+    for (size_t i = 0; i < ports.size(); i++) {
+        int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+        // Bind and listen on the socket
+        // Add the socket to the poll list
+    }
+}
+            </pre>
+		</div>
+		<h2>Initialization</h2>
+		<p>The server is initialized with the configuration file. During initialization, the server sets up signal
+			handlers, prepares to accept incoming connections, and logs the startup process. The initialization process
+			is handled by the <code>Server</code> class.</p>
+		<div class="illustration">
+			<pre class="prettyprint">
+Server server(config_file);
+server.init();
+server.start();
+            </pre>
+		</div>
+
+		<h2>Connection Handling</h2>
+		<p>The server uses a vector of poll file descriptors to monitor multiple sockets for incoming connections and
+			data. When a new connection is accepted, it is added to the poll list for further monitoring. This is
+			managed by the <code>Server::init</code> and <code>Server::_acceptIncomingConnections</code> methods.</p>
+		<div class="illustration">
+			<pre class="prettyprint">
+void Server::init()
+{
+    for (size_t i = 0; i < Config::getPorts().size(); i++)
+    {
+        int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+        // Bind and listen on the socket
+        // Add the socket to the poll list
+    }
+}
+            </pre>
+		</div>
+
+		<h2>Request Handling</h2>
+		<p>Once a connection is established, the server reads the incoming request, processes it, and sends back the
+			appropriate response. The server supports both regular HTTP requests and CGI requests. This is handled by
+			the <code>Server::_serveClients</code> method.</p>
+		<div class="illustration">
+			<pre class="prettyprint">
+void Server::_serveClients(void)
+{
+    for (size_t i = Config::getPorts().size(); i < _fds.size(); ++i)
+    {
+        if (_fds[i].revents & POLLIN)
+        {
+            // Read and process the request
+            // Send the response
+        }
+    }
+}
+            </pre>
+		</div>
+
+		<h2>CGI Handling</h2>
+		<p>The server can handle CGI requests by spawning child processes to execute the CGI scripts. The output of the
+			CGI script is then sent back to the client. This is managed by the <code>CgiRequestHandler</code> class.</p>
+		<div class="illustration">
+			<pre class="prettyprint">
+if (CgiRequestHandler::_canProcess(request))
+{
+	Route cgi_route = getCgiRoute(request);
+	CgiRequestHandler cgi_obj(request, _fds[i].fd, cgi_route);
+	cgi_obj.processRequest();
+}
+			</pre>
+		</div>
+
+		<h3>Timeout and Process Management</h3>
+		<p>The server also monitors CGI processes for timeouts and handles finished or interrupted child processes. This
+			is crucial to ensure that the server remains responsive and does not hang due to long-running or stuck CGI
+			scripts.</p>
+
+		<h4>Checking for Timed-Out Processes</h4>
+		<p>The server periodically checks for CGI processes that have exceeded the allowed execution time. If a process
+			exceeds the timeout, it is terminated, and an appropriate error response is sent to the client. This is
+			managed by the <code>Server::_checkTimeouts</code> method.</p>
+		<div class="illustration">
+			<pre class="prettyprint">
+void Server::_checkTimeouts()
+{
+	long now;
+	long elapsed;
+	std::map<pid_t, t_client_process>::iterator it = CgiRequestHandler::_open_processes.begin();
+	for (; it != CgiRequestHandler::_open_processes.end(); it++)
+	{
+		now = getTime();
+		elapsed = now - it->second.start_time;
+		Log::log(WARNING, ("Process [" + toString(RED) + toString(it->first) + toString(RESET) + "]" + " running for: " + toString(elapsed) + " seconds."));
+		if (elapsed > CGI_TIMEOUT)
+		{
+			Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(it->first) + RESET + "]: Exceeded the time limit."));
+			sendHttpErrorResponse(it->second.client_fd, ETIMEDOUT);
+			kill(it->first, SIGKILL);
+		}
+	}
+}
+			</pre>
+		</div>
+
+		<h4>Handling Finished or Interrupted Processes</h4>
+		<p>The server uses a signal handler to manage finished or interrupted CGI processes. When a child process
+			finishes or is interrupted, the server cleans up the resources and sends the appropriate response to the
+			client. This is managed by the <code>Server::_sigchldHandler</code> method.</p>
+		<div class="illustration">
+			<pre class="prettyprint">
+void Server::_sigchldHandler(int signum)
+{
+	(void)signum;
+	int status;
+	pid_t pid;
+	while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
+	{
+		std::map<pid_t, t_client_process>::iterator it = CgiRequestHandler::_open_processes.find(pid);
+		int fd_position = 0;
+		int client_fd = it->second.client_fd;
+		for (size_t i = 0; i < _fds.size(); i++)
+		{
+			if (_fds[i].fd == it->second.client_fd)
+			{
+				fd_position = i;
+				break;
+			}
+		}
+		if (WIFEXITED(status))
+		{
+			if (WEXITSTATUS(status) == 0)
+			{
+				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS FINISHED ITS EXECUTION."));
+				char buffer[BUFSIZ];
+				std::string response;
+				ssize_t bytesRead;
+				while ((bytesRead = read(it->second.cgi_fd, buffer, BUFSIZ)) > 0)
+					response += std::string(buffer, bytesRead);
+				send(it->second.client_fd, response.c_str(), response.length(), 0);
+			}
+			else
+			{
+				Log::log(ERROR, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] FINISHED WITH EXIT CODE: " + toString(WEXITSTATUS(status))));
+				sendHttpErrorResponse(it->second.client_fd, 500);
+			}
+		}
+		else if (WIFSIGNALED(status))
+		{
+			int signal = WTERMSIG(status);
+			if (signal == SIGKILL)
+				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS BEEN KILLED."));
+			else
+			{
+				Log::log(ERROR, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] RECEIVED THE SIGNAL: " + toString(signal)));
+				sendHttpErrorResponse(it->second.client_fd, 500);
+			}
+		}
+		close(client_fd);
+		close(it->second.cgi_fd);
+		_fds.erase(_fds.begin() + fd_position);
+		CgiRequestHandler::_open_processes.erase(it);
+	}
+}
+			</pre>
+		</div>
+
+
+		<p>This approach ensures that the configuration parameters are loaded once and can be accessed globally
+			throughout the server.</p>
+	</div>
+
+	<!-- JavaScript -->
+	<script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+	<script src="./assets/js/script.js"></script>
+</body>
+
+</html>

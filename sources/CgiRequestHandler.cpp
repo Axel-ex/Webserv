@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/21 17:47:15 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/26 09:52:34 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,12 +40,12 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &loca
 	_resource = request.getResource();
 	_protocol = request.getProtocol();
 	_headers = request.getHeaders();
-	_body = request.getBody();
+	_body = request.getBody() + "\0";
 	_client_fd = fd;
 	_location = location;
 	// ===============================================
 
-	_document_root = _location.root.substr(0, _location.root.find(_location.url) - 1);
+	_document_root = _location.root.substr(0, _location.root.find(_location.url));
 	if (!_document_root.empty() && _document_root[0] == '.')
 		_document_root.erase(0, 1);
 
@@ -90,19 +90,10 @@ CgiRequestHandler::~CgiRequestHandler()
 
 bool CgiRequestHandler::_canProcess(const Request &request)
 {
-	std::vector<Route> routes = Config::getRoutes();
-	std::string resource = request.getResource();
-	std::string method = request.getMethod();
-
-	for (size_t i = 0; i < routes.size(); i++)
-	{
-		if (std::find(routes[i].methods.begin(), routes[i].methods.end(), method) != routes[i].methods.end())
-		{
-			if (startsWith(resource, routes[i].url) && isExtensionAllowed(resource, routes[i].cgi_extension))
-				return (true);
-		}
-	}
-	return (false);
+	Route best_route = getBestRoute(request);
+	if (best_route.url.empty() || best_route.cgi_extension.empty() || best_route.cgi_path.empty())
+		return (false);
+	return (isExtensionAllowed(request.getResource(), best_route.cgi_extension));
 }
 
 std::string CgiRequestHandler::getRootPath(void) const
@@ -118,10 +109,10 @@ void CgiRequestHandler::initCgiEnv()
 {
 	if (_method == "POST")
 	{
-		std::stringstream out;
-		out << _body.length();
-		_env["CONTENT_LENGTH"] = out.str();
+		_env["CONTENT_LENGTH"] = toString(_body.size());
 		_env["CONTENT_TYPE"] = getContentType(_headers);
+		Log::log(DEBUG, toString(YELLOW) + "CONTENT TYPE: " + toString(RESET) + _env["CONTENT_TYPE"]);
+		Log::log(DEBUG, toString(YELLOW) + "CONTENT LENGTH: " + toString(RESET) + _env["CONTENT_LENGTH"]);
 	}
 	_env["GATEWAY_INTERFACE"] = "CGI/1.1";
 	_env["SCRIPT_NAME"] = _scriptName;
@@ -181,7 +172,7 @@ void CgiRequestHandler::processRequest()
 	if (open(_scriptPath.c_str(), F_OK) == -1)
 	{
 		sendHttpErrorResponse(_client_fd, errno);
-		return ;
+		return;
 	}
 	if (pipe(_pipe_in) < 0 || pipe(_pipe_out) < 0)
 		throw CgiError("Error in pipe().");
@@ -207,8 +198,23 @@ void CgiRequestHandler::processRequest()
 	{
 		close(_pipe_out[1]);
 		if (_method == "POST")
-			send(_pipe_in[0], _body.c_str(), _body.length(), 0);
-		close(_pipe_in[0]);
+		{
+			int bytesWritten = 0;
+			int bytesRemaining = _body.length();
+			while (bytesRemaining > 0)
+			{
+				int bytesToWrite = std::min(BUFSIZ, bytesRemaining);
+				if (write(_pipe_in[1], _body.c_str() + bytesWritten, bytesToWrite) == -1)
+				{
+					sendHttpErrorResponse(_client_fd, 500);
+					close(_pipe_in[1]);
+					throw CgiError("write() failed.");
+				} 
+				bytesWritten += bytesToWrite;
+				bytesRemaining -= bytesToWrite;
+			}
+		}
+		close(_pipe_in[1]);
 
 		t_client_process c_process = {_method, getTime(), _client_fd, _pipe_out[0]};
 		CgiRequestHandler::_open_processes[pid] = c_process;
@@ -255,15 +261,13 @@ std::string CgiRequestHandler::getContentType(const std::string &headers)
 	size_t content_type_pos = headers.find(content_type_key);
 	if (content_type_pos == std::string::npos)
 		return ("");
+
 	content_type_pos += content_type_key.size();
-	size_t content_type_end_pos;
-	if (headers.find("\r\n", content_type_pos) < headers.find(";", content_type_pos))
-		content_type_end_pos = headers.find("\r\n", content_type_pos);
-	else
-		content_type_end_pos = headers.find(";", content_type_pos);
-	std::string content_type =
-		headers.substr(content_type_pos, content_type_end_pos - content_type_pos);
-	return (content_type);
+	size_t content_type_end_pos = headers.find("\r\n", content_type_pos);
+
+	// Capture the entire Content-Type line, including any parameters like boundary
+	std::string content_type = headers.substr(content_type_pos, content_type_end_pos - content_type_pos);
+	return content_type;
 }
 
 std::map<std::string, std::string> CgiRequestHandler::parseHttpHeader(void) const

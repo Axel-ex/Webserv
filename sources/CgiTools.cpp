@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/21 15:24:44 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/21 17:22:50 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/25 15:10:49 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,20 +36,6 @@ std::string getFileExtension(const std::string &url)
 	path = path.substr(dotPos);
 	path = path.substr(0, path.find_first_of("/#"));
 	return (path);
-}
-
-bool startsWith(std::string str, const std::string &prefix)
-{
-	if (prefix[0] != '/' && str[0] == '/')
-		str.erase(0, 1);
-	if (prefix.size() > str.size())
-		return (false);
-	for (size_t i = 0; i < prefix.size(); i++)
-	{
-		if (str[i] != prefix[i])
-			return (false);
-	}
-	return (true);
 }
 
 bool isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions)
@@ -173,7 +159,7 @@ void sendHttpErrorResponse(int client_fd, int error_code)
 		break;
 	}
 	std::string response_body = "<html>\n<head><title>" + toString(status_code) + " " + reason_phrase +
-								"</title></head>\n<body>\n<h1>" + reason_phrase + "</h1>\n<p>" +
+								"</title></head>\n<body>\n<h1>" + reason_phrase + "</h1><br><br>\n<p>" +
 								error_message + "</p>\n</body>\n</html>\n";
 
 	std::string response_headers = "HTTP/1.1 " + toString(status_code) + " " + reason_phrase + "\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length: " +
@@ -184,11 +170,11 @@ void sendHttpErrorResponse(int client_fd, int error_code)
 	send(client_fd, response_body.c_str(), response_body.length(), 0);
 }
 
-long	getTime(void)
+double	getTime(void)
 {
 	struct timeval	tv;
 
 	if (gettimeofday(&tv, NULL))
-		std::runtime_error("Function 'gettimeofday failed.\n");
+		throw std::runtime_error("Function 'gettimeofday failed.\n");
 	return (tv.tv_sec + (tv.tv_usec / 1e6));
 }

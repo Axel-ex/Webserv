@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/04 16:02:13 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/25 14:58:41 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,12 +114,8 @@ std::string ARequestHandler::_getErrorReason(int error_code) const {
 // =============================================================================
 bool GetRequestHandler ::_canProcess(const Request& request) const
 {
-    Config& config = Config::getInstance();
-    const std::vector<Route>& routes = config.getRoutes();
-    std::vector<std::string> methods = routes.begin()->methods;
-    std::vector<std::string>::iterator it = std::find(methods.begin(), methods.end(), "GET");
-    return (it != methods.end() && request.getMethod() == "GET" &&
-            request.getMethod().find(".cgi") == std::string::npos);
+    Route best_route = getBestRoute(request);
+    return (!best_route.url.empty() && request.getMethod() == "GET");
 }
 
 std::string    GetRequestHandler ::_get_file_content(std::string path, Response& response) const
@@ -152,37 +148,31 @@ std::string    GetRequestHandler ::_get_file_content(std::string path, Response&
 void GetRequestHandler ::processRequest(const Request& request,
                                          Response& response) const
 {
+    Route best_route = getBestRoute(request);
+    std::string resource = request.getResource();
     std::string headers;
-
-    Config& config = Config::getInstance();
-    const std::vector<Route>& routes = config.getRoutes();
     std::string req_path;
     std::string cont_type;
     struct stat info;
-
-    if (request.getResource().empty() || request.getResource() == "/")
-    {
-        if (routes.begin()->index.empty())
-            _createErrorResponse(NOT_FOUND, response);
-        else
-            req_path = "/" + routes.begin()->index;
-    }
+    
+    if (resource.empty() || resource == "/")
+        req_path = best_route.root +  "/" + best_route.index;
     else
-        req_path = request.getResource();
-    if (stat((routes.begin()->root + req_path).c_str(), &info) != 0)
+        req_path = best_route.root + resource;
+
+    if (stat((req_path).c_str(), &info) != 0)
     {
         _createErrorResponse(NOT_FOUND, response);
         return (Log::log(WARNING, "No such path"));
     }
     if (S_ISREG(info.st_mode))
     {
-        cont_type = GetRequestHandler::_get_file_content(routes.begin()->root + req_path, response);
+        cont_type = GetRequestHandler::_get_file_content(req_path, response);
         if (cont_type.empty())
         {
             _createErrorResponse(NOT_FOUND, response);
             return (Log::log(WARNING, "couldn't get path"));
         }
-        //response.setBody(it->second);
         headers = "HTTP/1.1 200 OK\r\n";
         headers += "Content-Type: " + cont_type +"\r\n";
         headers +=
@@ -202,12 +192,8 @@ void GetRequestHandler ::processRequest(const Request& request,
 // =============================================================================
 bool PostRequestHandler ::_canProcess(const Request& request) const
 {
-    Config& config = Config::getInstance();
-    const std::vector<Route>& routes = config.getRoutes();
-    std::vector<std::string> methods = routes.begin()->methods;
-    std::vector<std::string>::iterator it = std::find(methods.begin(), methods.end(), "POST");
-    return (it != methods.end() && request.getMethod() == "POST" &&
-            request.getResource().find(".cgi") == std::string::npos);
+    Route best_route = getBestRoute(request);
+    return (!best_route.url.empty() && request.getMethod() == "POST");
 }
 
 std::string PostRequestHandler ::_getBoundary(const std::string& headers) const
@@ -318,7 +304,7 @@ void PostRequestHandler::createResponse(std::string resource,
         decoded = decoded.substr(decoded.find("& ") + 2);
     }
     page = "<!DOCTYPE html><html><head><title>Passed: \
-            </title></head><body><h1>"+content+"</h1>";
+            </title></head><body><h1>"+content+"</h1><br><br>";
     response.setBody(page);
     headers = "HTTP/1.1 200 OK\r\n";
     headers += "Content-Type: text/html\r\n";
@@ -400,11 +386,8 @@ void PostRequestHandler::processRequest(const Request& request,
 // =============================================================================
 bool DeleteRequestHandler ::_canProcess(const Request& request) const
 {
-    Config& config = Config::getInstance();
-    const std::vector<Route>& routes = config.getRoutes();
-    std::vector<std::string> methods = routes.begin()->methods;
-    std::vector<std::string>::iterator it = std::find(methods.begin(), methods.end(), "DELETE");
-    return (it != methods.end() && request.getMethod() == "DELETE");
+    Route best_route = getBestRoute(request);
+    return (!best_route.url.empty() && request.getMethod() == "DELETE");
 }
 
 std::string _GetUserAgent(std::string userAgent)

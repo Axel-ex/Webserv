@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="./assets/css/style.css">
+	<link rel="stylesheet" href="./assets/css/navbar.css">
+	<link rel="stylesheet" href="./assets/css/banner.css">
+	<title>Logger Implementation</title>
+</head>
+
+<body>
+	<div class="banner">
+	</div>
+	<!-- Side Navigation Bar -->
+	<div id="mySidenav" class="sidenav">
+		<div style="padding-bottom: 50px;">
+			<a id="closebtn" href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+		</div>
+		<div class="pages">
+			<a href="index.html">Home</a>
+			<a href="server_architecture.html">Server Architecture</a>
+			<a href="http_protocol.html">Understanding HTTP</a>
+			<a href="socket.html">Socket Programming</a>
+			<a href="request_handling.html">Request Handling</a>
+			<a href="cgi_handler.html">CGI Implementation</a>
+			<a href="logging.html">Logging and Monitoring</a>
+		</div>
+	</div>
+
+	<!-- Open Side Nav Button -->
+	<span id="openNav" onclick="openNav()" ;>&#9776;</span>
+
+	<!-- Main Content -->
+	<div id="main">
+
+		<h1>Logger Implementation in C++: Handling Logs</h1><br><br>
+
+		<p>Logging is an essential part of any application, providing insights into the application's behavior and
+			aiding in debugging and monitoring. In this guide, we will walk through the implementation of a logger in a
+			C++ project. We will cover the following steps:</p>
+		<div class="center-table">
+
+			<table>
+				<thead>
+					<tr>
+						<th>Step</th>
+						<th>Description</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>Initializing the Logger</td>
+						<td>The logger is implemented as a singleton class to ensure that there is only one instance of
+							the
+							logger throughout the application. The logger is initialized using the
+							<code>getInstance()</code> method.
+						</td>
+					</tr>
+					<tr>
+						<td>Setting Log Levels</td>
+						<td>The logger supports different log levels: ERROR, WARNING, INFO, and DEBUG. The log level can
+							be
+							set using the <code>setLogLevel()</code> method.</td>
+					</tr>
+					<tr>
+						<td>Logging Messages</td>
+						<td>Messages can be logged using the <code>log()</code> method. The method takes the log level
+							and
+							the message as parameters and logs the message accordingly.</td>
+					</tr>
+					<tr>
+						<td>Formatting Log Output</td>
+						<td>The log messages are formatted with a timestamp and a log level indicator. The
+							<code>_printTimeStamp()</code> and <code>_formatField()</code> methods are used for
+							formatting
+							the log output.
+						</td>
+					</tr>
+					<tr>
+						<td>Logging Requests</td>
+						<td>The logger can also log HTTP requests using the <code>logRequest()</code> method. This
+							method
+							extracts relevant information from the request and logs it.</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<br>
+		<hr>
+		<br>
+
+		<h2>1. Initializing the Logger</h2>
+
+		<p>The logger is implemented as a singleton class to ensure that there is only one instance of the logger
+			throughout the application. The logger is initialized using the <code>getInstance()</code> method.</p>
+
+		<div class="illustration">
+			<pre class="prettyprint">Log& Log::getInstance()
+{
+    static Log instance;
+    return instance;
+}</pre>
+		</div>
+
+		<ul>
+			<li><strong>getInstance()</strong>: Returns the singleton instance of the logger.</li>
+		</ul>
+
+		<br>
+		<hr>
+		<br>
+
+		<h2>2. Setting Log Levels</h2>
+
+		<p>The logger supports different log levels: ERROR, WARNING, INFO, and DEBUG. The log level can be set using the
+			<code>setLogLevel()</code> method.
+		</p>
+
+		<div class="illustration">
+			<pre class="prettyprint">void Log::setLogLevel(e_log_level level)
+{
+    getInstance()._log_level = level;
+}</pre>
+		</div>
+
+		<ul>
+			<li><strong>setLogLevel()</strong>: Sets the log level for the logger.</li>
+		</ul>
+
+		<br>
+		<hr>
+		<br>
+
+		<h2>3. Logging Messages</h2>
+
+		<p>Messages can be logged using the <code>log()</code> method. The method takes the log level and the message as
+			parameters and logs the message accordingly.</p>
+
+		<div class="illustration">
+			<pre class="prettyprint">void Log::log(e_log_level level, const std::string& msg)
+{
+    switch (level)
+    {
+    case ERROR:
+        getInstance()._logError(msg);
+        break;
+    case WARNING:
+        getInstance()._logWarning(msg);
+        break;
+    case INFO:
+        getInstance()._logInfo(msg);
+        break;
+    case DEBUG:
+        getInstance()._logDebug(msg);
+        break;
+    }
+}</pre>
+		</div>
+
+		<ul>
+			<li><strong>log()</strong>: Logs a message at the specified log level.</li>
+		</ul>
+
+		<br>
+		<hr>
+		<br>
+
+		<h2>4. Formatting Log Output</h2>
+
+		<p>The log messages are formatted with a timestamp and a log level indicator. The <code>_printTimeStamp()</code>
+			and <code>_formatField()</code> methods are used for formatting the log output.</p>
+
+		<div class="illustration">
+			<pre class="prettyprint">void Log::_printTimeStamp(void)
+{
+    std::time_t time_sec = std::time(NULL);
+    std::tm* time_mark = std::localtime(&time_sec);
+    char buffer[20];
+    std::memset(buffer, 0, sizeof(buffer));
+    std::strftime(buffer, sizeof(buffer), "[%H:%M:%S]", time_mark);
+    std::cout << buffer;
+}
+
+std::string Log::_formatField(std::string field)
+{
+    for (int i = field.size(); i < OUTPUT_OFFSET; i++)
+        field += " ";
+    return field;
+}</pre>
+		</div>
+
+		<ul>
+			<li><strong>_printTimeStamp()</strong>: Prints the current timestamp.</li>
+			<li><strong>_formatField()</strong>: Formats the log level field.</li>
+		</ul>
+
+		<br>
+		<hr>
+		<br>
+
+		<h2>5. Logging Requests</h2>
+
+		<p>The logger can also log HTTP requests using the <code>logRequest()</code> method. This method extracts
+			relevant information from the request and logs it.</p>
+
+		<div class="illustration">
+			<pre class="prettyprint">void Log::logRequest(const Request& request)
+{
+    size_t host_pos = request.getHeaders().find("Host: ");
+    if (host_pos == std::string::npos)
+        return Log::log(WARNING, "bad request format, couldn't find the host");
+    host_pos += 6; // move past the "Host: "
+    size_t return_pos = request.getHeaders().find('\r', host_pos);
+    std::string host = request.getHeaders().substr(host_pos, return_pos - host_pos);
+
+    std::string method = "[" + request.getMethod() + "]";
+    std::cout << GREY;
+    _printTimeStamp();
+    std::cout << _formatField(method) << request.getResource() << " " << host;
+    std::cout << RESET << std::endl;
+}</pre>
+		</div>
+
+		<ul>
+			<li><strong>logRequest()</strong>: Logs an HTTP request.</li>
+		</ul>
+
+	</div>
+
+	<!-- JavaScript -->
+	<script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+	<script src="./assets/js/script.js"></script>
+</body>
+
+</html>
