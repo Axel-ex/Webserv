@@ -6,12 +6,13 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/16 11:05:20 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/03 13:41:38 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Parser.hpp"
 #include "../includes/Config.hpp"
+#include "../includes/Server.hpp"
 #include "../includes/utils.hpp"
 #include <cstddef>
 #include <cstdlib>
@@ -37,15 +38,15 @@ Parser ::Parser()
 
 Parser ::~Parser() {}
 
-void Parser ::parse(const std::string& config_file)
+void Parser ::parse(const std::string& config_file, Cluster& cluster)
 {
     std::string file_content;
 
     file_content = _readFile(config_file);
     _tokenize(file_content);
     // _debugTokenList();
-    _parseTokenList();
-    _loadErrors();
+    _parseTokenList(cluster);
+    _loadErrors(cluster);
 }
 
 std::string Parser ::_readFile(const std::string& path)
@@ -134,7 +135,7 @@ void Parser ::_setTokenType(Token& token)
     }
 }
 
-void Parser ::_parseTokenList(void)
+void Parser ::_parseTokenList(Cluster& cluster)
 {
     std::list<Token>::iterator it;
 
@@ -144,7 +145,7 @@ void Parser ::_parseTokenList(void)
     for (it = _token_list.begin(); it != _token_list.end(); it++)
     {
         if (it->type == SERVER)
-            _parseServerDirective(it);
+            _parseServerDirective(it, cluster);
         else
             throw SynthaxException(*it, "Out of context directive");
     }
@@ -199,8 +200,11 @@ void Parser ::_checkInvalidDirective(void) const
  *
  * @param it token list iterator
  */
-void Parser ::_parseServerDirective(std::list<Token>::iterator& it)
+void Parser ::_parseServerDirective(std::list<Token>::iterator& it,
+                                    Cluster& cluster)
 {
+    Config config;
+
     // While we dont reach the end of the block we parse the tokens. We
     // ignore any token that are not directives or location.
     for (; it->type != CLOSE_BRACKET; it++)
@@ -208,34 +212,36 @@ void Parser ::_parseServerDirective(std::list<Token>::iterator& it)
         if (it->type != DIRECTIVE && it->type != LOCATION)
             continue;
         else if (it->type == LOCATION)
-            _parseLocationDirective(++it);
+            _parseLocationDirective(++it, config);
         else if (it->content == "server_name")
-            Config::setServerName((++it)->content);
+            config.setServerName((++it)->content);
         else if (it->content == "error_page")
         {
             int error_code = std::atoi((++it)->content.c_str());
             std::string path_to_html = (++it)->content;
-            Config::setErrorPath(error_code, path_to_html);
+            config.setErrorPath(error_code, path_to_html);
         }
         else if (it->content == "listen")
         {
             while ((++it)->type != SEMICOLON)
             {
                 int port_nb = std::atoi((it)->content.c_str());
-                if (!_isValidPort(port_nb, Config::getPorts()))
+                if (!_isValidPort(port_nb, config.getPorts()))
                     throw SynthaxException(*it, "Invalid port number");
-                Config::setPort(port_nb);
+                config.setPort(port_nb);
             }
         }
         else if (it->content == "client_max_body_size")
         {
             it++;
             int body_size = std::atoi(it->content.c_str());
-            Config::setMaxBodySize(body_size);
+            config.setMaxBodySize(body_size);
         }
         else
             throw SynthaxException(*it, "Unrecognised directive");
     }
+
+    cluster.getServers().push_back(Server(config));
 }
 
 /**
@@ -243,18 +249,20 @@ void Parser ::_parseServerDirective(std::list<Token>::iterator& it)
  *
  * @param it token list iterator
  */
-void Parser::_parseLocationDirective(std::list<Token>::iterator& it) const
+void Parser::_parseLocationDirective(std::list<Token>::iterator& it,
+                                     Config& config) const
 {
     // Init the Route struct with empty values.
     std::vector<std::string> methods;
     std::vector<std::string> cgi_path;
     std::vector<std::string> cgi_extension;
 
-    if (_isDuplicatedLocation(it->content))
+    if (_isDuplicatedLocation(it->content, config.getRoutes()))
         throw SynthaxException(*it,
                                "Config contains duplicated location blocks");
-    Route route =
-        (Route){it->content, "", methods, "./uploads", "index.html", cgi_path, cgi_extension};
+    Route route = (Route){it->content,  "",       methods,      "./uploads",
+                          "index.html", cgi_path, cgi_extension};
+
     for (; it->type != CLOSE_BRACKET; it++)
     {
         if (it->type != DIRECTIVE)
@@ -296,7 +304,7 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it) const
         else
             throw SynthaxException(*it, "Unrecognised directive");
     }
-    Config::setRoutes(route);
+    config.setRoutes(route);
 }
 
 // =============================================================================
@@ -307,9 +315,9 @@ bool Parser::_isHttpMethod(const std::string& method) const
     return (method == "GET" || method == "POST" || method == "DELETE");
 }
 
-bool Parser::_isDuplicatedLocation(const std::string& url) const
+bool Parser::_isDuplicatedLocation(const std::string& url,
+                                   const std::vector<Route>& routes) const
 {
-    std::vector<Route> routes = Config::getRoutes();
     for (size_t i = 0; i < routes.size(); i++)
     {
         if (routes[i].url == url)
@@ -341,7 +349,7 @@ bool Parser::_isCgiExtension(const std::string& extension) const
 }
 
 /**
- * @brief check if port is a valid port or if it is not already in the list
+ * @brief check if port is a valid port or if it is not already in use by other servers.
  *
  * @param port_nb
  * @param ports
@@ -349,42 +357,54 @@ bool Parser::_isCgiExtension(const std::string& extension) const
  */
 bool Parser::_isValidPort(int port_nb, const std::vector<int>& ports) const
 {
+    static std::vector<int> already_in_use;
 
     if (port_nb < 0 || port_nb > 65535)
         return (false);
     for (size_t i = 0; i < ports.size(); i++)
         if (port_nb == ports[i])
             return (false);
+    for (size_t i = 0; i < already_in_use.size(); i++)
+        if (port_nb == already_in_use[i])
+            return false;
+    already_in_use.push_back(port_nb);
     return true;
 }
 
 /**
- * @brief load default error pages into the config.
+ * @brief load default error pages into the configs.
  */
-void Parser::_loadErrors(void) const
+void Parser::_loadErrors(Cluster& cluster) const
 {
-    std::map<int, std::string> error_path = Config::getErrorPath();
-    std::map<int, std::string>::iterator it_error_path;
+    std::vector<Server> servers = cluster.getServers();
 
-    for (it_error_path = error_path.begin(); it_error_path != error_path.end();
-         it_error_path++)
+    for (size_t i = 0; i < servers.size(); i++)
     {
-        std::string content = _readFile(it_error_path->second);
-        Config::setErrors(it_error_path->first, content);
-    }
+        std::map<int, std::string> error_path =
+            servers[i].getConfig().getErrorPath();
+        std::map<int, std::string>::iterator it_error_path;
 
-    // Then load the default if not provided
-    int tmp[] = {400, 404, 413, 500};
-    std::map<int, std::string> errors = Config::getDefaultErrors();
-    std::vector<int> error_codes(tmp, tmp + sizeof(tmp) / sizeof(int));
-    for (size_t i = 0; i < error_codes.size(); i++)
-    {
-        if (errors.find(error_codes[i]) != errors.end())
-            continue;
-        std::string path =
-            "./resources/errors/" + toString(error_codes[i]) + ".html";
-        std::string content = _readFile(path);
-        Config::setErrors(error_codes[i], content);
+        for (it_error_path = error_path.begin();
+             it_error_path != error_path.end(); it_error_path++)
+        {
+            std::string content = _readFile(it_error_path->second);
+            servers[i].getConfig().setErrors(it_error_path->first, content);
+        }
+
+        // Then load the default if not provided
+        int tmp[] = {400, 404, 413, 500};
+        std::map<int, std::string> errors =
+            servers[i].getConfig().getErrors();
+        std::vector<int> error_codes(tmp, tmp + sizeof(tmp) / sizeof(int));
+        for (size_t j = 0; j < error_codes.size(); j++)
+        {
+            if (errors.find(error_codes[j]) != errors.end())
+                continue;
+            std::string path =
+                "./resources/errors/" + toString(error_codes[j]) + ".html";
+            std::string content = _readFile(path);
+            servers[i].getConfig().setErrors(error_codes[j], content);
+        }
     }
 }
 

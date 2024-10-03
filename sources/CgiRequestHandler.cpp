@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/26 09:52:34 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/03 12:19:59 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ std::string CgiRequestHandler::getInterpreter(void) const
 	return (_scriptPath);
 }
 
-CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &location)
+CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, const Config &config) : _server_config(config)
 {
 
 	// ============ REQUEST INFORMATION ==============
@@ -42,7 +42,7 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &loca
 	_headers = request.getHeaders();
 	_body = request.getBody() + "\0";
 	_client_fd = fd;
-	_location = location;
+	_location = getBestRoute(request, config.getRoutes());
 	// ===============================================
 
 	_document_root = _location.root.substr(0, _location.root.find(_location.url));
@@ -88,9 +88,9 @@ CgiRequestHandler::~CgiRequestHandler()
 		free(_argv[1]);
 }
 
-bool CgiRequestHandler::_canProcess(const Request &request)
+bool CgiRequestHandler::_canProcess(const Request &request, const std::vector<Route> &routes)
 {
-	Route best_route = getBestRoute(request);
+	Route best_route = getBestRoute(request, routes);
 	if (best_route.url.empty() || best_route.cgi_extension.empty() || best_route.cgi_path.empty())
 		return (false);
 	return (isExtensionAllowed(request.getResource(), best_route.cgi_extension));
@@ -121,8 +121,8 @@ void CgiRequestHandler::initCgiEnv()
 	_env["PATH_TRANSLATED"] = _pathTranslated;
 	_env["REQUEST_URI"] = _resource;
 	_env["REQUEST_METHOD"] = _method;
-	_env["SERVER_NAME"] = Config::getServerName();
-	_env["SERVER_PORT"] = toString(Config::getPorts()[0]);
+	_env["SERVER_NAME"] = _server_config.getServerName();
+	_env["SERVER_PORT"] = toString(_server_config.getPorts()[0]);
 	_env["SERVER_PROTOCOL"] = _protocol;
 	_env["REDIRECT_STATUS"] = "200";
 	_env["SERVER_SOFTWARE"] = "Aether_42";
@@ -171,7 +171,7 @@ void CgiRequestHandler::processRequest()
 	pid_t pid;
 	if (open(_scriptPath.c_str(), F_OK) == -1)
 	{
-		sendHttpErrorResponse(_client_fd, errno);
+		sendHttpErrorResponse(_client_fd, errno, _server_config.getErrorPath());
 		return;
 	}
 	if (pipe(_pipe_in) < 0 || pipe(_pipe_out) < 0)
@@ -190,7 +190,7 @@ void CgiRequestHandler::processRequest()
 
 		if (execve(_argv[0], _argv, _ch_env) < 0)
 		{
-			sendHttpErrorResponse(_client_fd, errno);
+			sendHttpErrorResponse(_client_fd, errno, _server_config.getErrorPath());
 			throw CgiError("Execve() could not execute: " + _scriptPath + " -> errno: " + toString(errno));
 		}
 	}
@@ -206,7 +206,7 @@ void CgiRequestHandler::processRequest()
 				int bytesToWrite = std::min(BUFSIZ, bytesRemaining);
 				if (write(_pipe_in[1], _body.c_str() + bytesWritten, bytesToWrite) == -1)
 				{
-					sendHttpErrorResponse(_client_fd, 500);
+					sendHttpErrorResponse(_client_fd, 500, _server_config.getErrorPath());
 					close(_pipe_in[1]);
 					throw CgiError("write() failed.");
 				} 

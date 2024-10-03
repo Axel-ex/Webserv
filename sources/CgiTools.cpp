@@ -6,11 +6,12 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/21 15:24:44 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/25 15:10:49 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/03 13:32:58 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/CgiRequestHandler.hpp"
+#include <fstream>
 
 unsigned int convertHex(const std::string &nb)
 {
@@ -108,16 +109,15 @@ void sendErrorPage(int client_fd, std::string file_path, int status_code)
 	}
 }
 
-void sendHttpErrorResponse(int client_fd, int error_code)
+void sendHttpErrorResponse(int client_fd, int error_code, const std::map<int, std::string> &error_pages)
 {
 	std::string error_message;
 	int status_code = getStatusCode(error_code);
 	std::string reason_phrase = "Internal Server Error";
 
-	std::map<int, std::string> error_pages = Config::getErrorPath();
 	if (error_pages.find(status_code) != error_pages.end())
 	{
-		sendErrorPage(client_fd, error_pages[status_code], status_code);
+		sendErrorPage(client_fd, error_pages.find(status_code)->second, status_code);
 		return;
 	}
 

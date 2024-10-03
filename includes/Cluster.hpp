@@ -2,7 +2,7 @@
 #define INCLUDE_INCLUDES_CLUSTER_HPP_
 
 #include <vector>
-#include "Server.hpp"
+#include "../includes/Server.hpp"
 
 class Cluster {
 public:
@@ -11,6 +11,8 @@ public:
 
 	void init();
 	void start();
+
+	std::vector<Server> &getServers(void);
 
 private:
 	std::vector<Server> _servers;

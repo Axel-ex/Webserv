@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 15:00:56 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/05 12:46:15 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/03 11:48:27 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +14,11 @@
 #include "../includes/RequestHandlers.hpp"
 #include <string>
 
-Response ::Response(const Request& request)
+Response ::Response(const Request& request, Config& server_config)
+    : _server_config(server_config)
 {
     /* The request handling is design as a "chain of responsability" pattern*/
-	/* https://www.geeksforgeeks.org/chain-responsibility-design-pattern/ */
+    /* https://www.geeksforgeeks.org/chain-responsibility-design-pattern/ */
     /* Create handlers for each request type */
     // CgiRequestHandler cgi_handler;
     GetRequestHandler get_handler;
@@ -41,10 +42,13 @@ const std::string& Response::getBody(void) const { return (_body); }
 
 const std::string& Response::getHeaders(void) const { return (_headers); }
 
-const std::string Response::getResponseBuffer(void) const {
-	return (_headers + _body);
+const std::string Response::getResponseBuffer(void) const
+{
+    return (_headers + _body);
 }
 
 void Response ::setHeaders(const std::string& headers) { _headers = headers; }
 
 void Response ::setBody(const std::string& body) { _body = body; }
+
+const Config& Response::getServerConfig(void) const { return _server_config; }

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 09:06:15 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/03 13:17:39 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
+#include "Config.hpp"
+
 
 typedef struct pollfd t_pollfd;
 typedef struct sockaddr_in t_sockaddr_in;
@@ -35,11 +37,13 @@ class Server
     public:
         static void _sigchldHandler(int signum);
         void _checkTimeouts();
-        Server(std::string config_file);
+
+        Server(Config &config);
         ~Server();
 
         void init(void);
         void start(void);
+		Config &getConfig(void);
 
         class ServerError : public std::exception
         {
@@ -53,6 +57,8 @@ class Server
         };
 
     private:
+		Config _config;
+		//WARNING: why static?
         static std::vector<t_pollfd> _fds;
 
         void _acceptIncomingConnections(void);

@@ -6,14 +6,14 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 20:08:09 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 10:14:22 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/03 13:14:14 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Log.hpp"
-#include "../includes/Server.hpp"
 #include "../includes/utils.hpp"
 #include "../includes/Cluster.hpp"
+#include "../includes/Server.hpp"
 #include <csignal>
 #include <cstdlib>
 #include <cstring>

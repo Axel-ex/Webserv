@@ -6,19 +6,20 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/25 13:22:10 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/25 13:26:23 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/03 13:01:36 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 
 #include "../includes/utils.hpp"
+#include "../includes/Parser.hpp"
 
-std::string getMatch(std::vector<Route> &routes, std::string &resource, std::string method)
+std::string getMatch(const std::vector<Route> &routes, std::string &resource, std::string method)
 {
 	std::string match = "";
 	for (size_t i = 0; i < routes.size(); i++)
 	{
-		std::vector<std::string>::iterator it = routes[i].methods.begin();
+		std::vector<std::string>::const_iterator it = routes[i].methods.begin();
 		for (; it != routes[i].methods.end(); it++)
 		{
 			if (*it == method)
@@ -32,9 +33,8 @@ std::string getMatch(std::vector<Route> &routes, std::string &resource, std::str
 	return (match);
 }
 
-Route getBestRoute(const Request& request)
+Route getBestRoute(const Request& request, const std::vector<Route> &routes)
 {
-	std::vector<Route> routes = Config::getRoutes();
 	std::string resource = request.getResource();
 	std::string match = getMatch(routes, resource, request.getMethod());
 	Route emptyRoute;

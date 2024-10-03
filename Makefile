@@ -9,6 +9,7 @@ INCLUDE_DIR = includes
 
 
 SRCS = $(addprefix $(SRC_DIR)/, 	main.cpp 				\
+                                    Cluster.cpp				\
 									CgiRequestHandler.cpp 	\
 									CgiTools.cpp 	\
 									Config.cpp 				\
@@ -24,6 +25,7 @@ SRCS = $(addprefix $(SRC_DIR)/, 	main.cpp 				\
 
 
 HEADERS = $(addprefix $(INCLUDE_DIR)/,  CgiRequestHandler.hpp 	\
+                                        Cluster.hpp				\
 										Config.hpp 				\
 										Log.hpp 				\
 										Parser.hpp 				\
