@@ -1,21 +1,30 @@
 #ifndef INCLUDE_INCLUDES_CLUSTER_HPP_
 #define INCLUDE_INCLUDES_CLUSTER_HPP_
 
-#include <vector>
 #include "../includes/Server.hpp"
+#include <vector>
 
-class Cluster {
-public:
-	Cluster(std::string config_file);
-	~Cluster();
+typedef struct FdServerPair
+{
+        t_pollfd fd;
+        Server& server;
+} FdServerPair;
 
-	void init();
-	void start();
+class Cluster
+{
+    public:
+        Cluster(std::string config_file);
+        ~Cluster();
 
-	std::vector<Server> &getServers(void);
+        void init();
+        void start();
 
-private:
-	std::vector<Server> _servers;
+        std::vector<Server>& getServers(void);
+
+    private:
+        std::vector<Server> _servers;
+		std::vector<Server*> _server_ptr;
+        std::vector<t_pollfd> _poll_fds;
 };
 
-#endif  // INCLUDE_INCLUDES_CLUSTER_HPP_
+#endif // INCLUDE_INCLUDES_CLUSTER_HPP_

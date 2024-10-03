@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:08:45 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/18 11:55:01 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/03 18:02:00 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ class Log
         static void setLogLevel(e_log_level level);
         static void log(e_log_level level, const std::string& msg);
 
-		static void logRequest(const Request &request);
+		static void logRequest(const Request &request, const std::string &server_name);
 		static void clearScreen(void);
 
 

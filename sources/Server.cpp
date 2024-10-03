@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 14:55:40 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/03 18:12:30 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,8 +23,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <string>
 #include <iostream>
+#include <string>
+#include <vector>
 
 Server::Server(Config& config) : _config(config) {}
 
@@ -34,10 +35,15 @@ Server::~Server()
     {
         close(_fds[i].fd);
     }
-    Log::log(INFO, "Server shutting down");
+	std::string info_string = "Server " + _config.getServerName() + " shutting down";
+    Log::log(INFO, info_string);
 }
 
-void Server::init()
+std::vector<t_pollfd>& Server::getFds(void) { return _fds; }
+
+Config& Server::getConfig(void) { return _config; }
+
+std::vector<t_pollfd>& Server::init()
 {
     /* Imagine several ports are provided. we need to create several socket fds
      * for each port. We will then need to bind() and listen() each of them and
@@ -77,59 +83,30 @@ void Server::init()
         _fds.push_back(new_fd);
     }
 
-    std::string port_info = "server listening on ports:";
+    std::string port_info = "Server " + _config.getServerName() + " listening on ports:";
     for (size_t i = 0; i < _config.getPorts().size(); i++)
         port_info += " " + toString(_config.getPorts()[i]);
     Log::log(INFO, port_info);
+
+    return _fds;
 }
 
-void Server::start(void)
+void Server::acceptIncomingConnections(t_pollfd& poll_fd)
 {
-    while (!stopFlag)
-    {
-        int activity;
+    /* If we detect any events on the server socket, add an fd in the poll
+     * list for client connections*/
+    int newfd = accept(poll_fd.fd, NULL, NULL);
+    if (newfd < 0 && !stopFlag)
+        throw ServerError("Error accepting connection");
 
-        // Loop to handle EINTR (syscall interruptions while polling) error
-        do
-        {
-            // Check for any change in our file descriptors
-            activity = poll(_fds.data(), _fds.size(), 1000);
-        } while (activity < 0 && errno == EINTR);
-
-        if (activity < 0 && !stopFlag)
-        {
-            perror("poll");
-            throw ServerError("Error in poll");
-        }
-        _checkTimeouts();
-        _acceptIncomingConnections();
-        _serveClients();
-    }
+    t_pollfd new_pollfd;
+    std::memset(&new_pollfd, 0, sizeof(new_pollfd));
+    new_pollfd.fd = newfd;
+    new_pollfd.revents = POLLIN;
+    _fds.push_back(new_pollfd);
 }
 
-void Server::_acceptIncomingConnections(void)
-{
-    /* listen for event on the server sockets*/
-    for (size_t i = 0; i < _config.getPorts().size(); i++)
-    {
-        /* If we detect any events on the server socket, add an fd in the poll
-         * list for client connections*/
-        if ((_fds[i].revents & POLLIN))
-        {
-            int newfd = accept(_fds[i].fd, NULL, NULL);
-            if (newfd < 0 && !stopFlag)
-                throw ServerError("Error accepting connection");
 
-            t_pollfd new_pollfd;
-            std::memset(&new_pollfd, 0, sizeof(new_pollfd));
-            new_pollfd.fd = newfd;
-            new_pollfd.revents = POLLIN;
-            _fds.push_back(new_pollfd);
-        }
-    }
-}
-
-Config& Server::getConfig(void) { return _config; }
 
 ssize_t Server::_readFd(int fd_index, char* buffer, size_t buffer_size)
 {
@@ -139,7 +116,7 @@ ssize_t Server::_readFd(int fd_index, char* buffer, size_t buffer_size)
         close(_fds[fd_index].fd);
         _fds.erase(_fds.begin() + fd_index);
         Log::log(ERROR, "reading client request");
-		std::cout << "from server: " << _config.getServerName() << std::endl;
+        std::cout << "from server: " << _config.getServerName() << std::endl;
     }
     return (n);
 }
@@ -207,11 +184,13 @@ void Server::_checkTimeouts()
 //                 std::string response;
 //                 std::string ok = "HTTP/1.1 200 OK\r\n";
 //                 ssize_t bytesRead;
-//                 while ((bytesRead = read(it->second.cgi_fd, buffer, BUFSIZ)) >
+//                 while ((bytesRead = read(it->second.cgi_fd, buffer, BUFSIZ))
+//                 >
 //                        0)
 //                     response += std::string(buffer, bytesRead);
 //                 send(it->second.client_fd, ok.c_str(), ok.length(), 0);
-//                 send(it->second.client_fd, response.c_str(), response.length(),
+//                 send(it->second.client_fd, response.c_str(),
+//                 response.length(),
 //                      0);
 //             }
 //             else
@@ -229,12 +208,14 @@ void Server::_checkTimeouts()
 //             int signal = WTERMSIG(status);
 //             if (signal == SIGKILL)
 //                 Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) +
-//                                  toString(pid) + RESET + "] HAS BEEN KILLED."));
+//                                  toString(pid) + RESET + "] HAS BEEN
+//                                  KILLED."));
 //             else
 //             {
 //                 Log::log(ERROR, ("CGI PROCESS [" + toString(RED) +
 //                                  toString(pid) + RESET +
-//                                  "] RECEIVED THE SIGNAL: " + toString(signal)));
+//                                  "] RECEIVED THE SIGNAL: " +
+//                                  toString(signal)));
 //                 sendHttpErrorResponse(it->second.client_fd, 500,
 //                                       std::map<int, std::string>());
 //             }
@@ -246,7 +227,7 @@ void Server::_checkTimeouts()
 //     }
 // }
 
-void Server::_serveClients(void)
+void Server::serveClients(void)
 {
     /*listen for client events, skip the first fds that are for the server
      * sockets */
@@ -270,7 +251,7 @@ void Server::_serveClients(void)
                 std::memset(read_buffer, 0, sizeof(read_buffer));
                 ssize_t n = _readFd(i, read_buffer, sizeof(read_buffer));
 
-				//TODO: the continue statement should be replaced
+                // TODO: the continue statement should be replaced
                 if (n < 0)
                     continue;
                 request_buffer.appendBuffer(read_buffer, n);
@@ -283,8 +264,7 @@ void Server::_serveClients(void)
             }
 
             Request request(request_buffer.getBuffer());
-            Log::logRequest(request);
-            // Log::log(DEBUG, request_buffer.getBuffer());
+            Log::logRequest(request, _config.getServerName());
 
             if (CgiRequestHandler::_canProcess(request, _config.getRoutes()))
             {

@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:11:30 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/18 11:54:47 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/03 18:03:24 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,7 +88,7 @@ void Log::_logDebug(const std::string& msg) const
     std::cout << CYAN << _formatField(level) << RESET << msg << std::endl;
 }
 
-void Log ::logRequest(const Request& request)
+void Log ::logRequest(const Request& request, const std::string &server_name)
 {
     size_t host_pos = request.getHeaders().find("Host: ");
     if (host_pos == std::string::npos)
@@ -99,10 +99,11 @@ void Log ::logRequest(const Request& request)
         request.getHeaders().substr(host_pos, return_pos - host_pos);
 
     std::string method = "[" + request.getMethod() + "]";
+	std::string name = "[" + server_name + "]";
     std::cout << GREY;
     _printTimeStamp();
 
-    std::cout << _formatField(method) << request.getResource() << " " << host;
+    std::cout << name << _formatField(method) << request.getResource() << " " << host;
     std::cout << RESET << std::endl;
 }
 
