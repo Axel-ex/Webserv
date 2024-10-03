@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/27 14:26:57 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/03 09:06:15 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,13 +15,13 @@
 
 #include <exception>
 #include <netinet/in.h>
+#include <string>
 #include <strings.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
-#include <string>
 
 typedef struct pollfd t_pollfd;
 typedef struct sockaddr_in t_sockaddr_in;
@@ -33,7 +33,6 @@ typedef struct sockaddr t_sockaddr;
 class Server
 {
     public:
-    
         static void _sigchldHandler(int signum);
         void _checkTimeouts();
         Server(std::string config_file);
@@ -55,10 +54,10 @@ class Server
 
     private:
         static std::vector<t_pollfd> _fds;
-	
+
         void _acceptIncomingConnections(void);
         void _serveClients(void);
-		ssize_t _readFd(int fd, char *buffer, size_t buffer_size);
+        ssize_t _readFd(int fd, char* buffer, size_t buffer_size);
 };
 
 #endif // SERVER_HPP
