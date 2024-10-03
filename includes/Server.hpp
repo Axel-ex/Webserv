@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 13:17:39 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/03 14:54:27 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@ class Server
     private:
 		Config _config;
 		//WARNING: why static?
-        static std::vector<t_pollfd> _fds;
+        std::vector<t_pollfd> _fds;
 
         void _acceptIncomingConnections(void);
         void _serveClients(void);

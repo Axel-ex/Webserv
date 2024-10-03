@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 12:46:40 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/03 14:55:40 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,8 +24,7 @@
 #include <cstring>
 #include <ctime>
 #include <string>
-
-std::vector<t_pollfd> Server::_fds;
+#include <iostream>
 
 Server::Server(Config& config) : _config(config) {}
 
@@ -140,6 +139,7 @@ ssize_t Server::_readFd(int fd_index, char* buffer, size_t buffer_size)
         close(_fds[fd_index].fd);
         _fds.erase(_fds.begin() + fd_index);
         Log::log(ERROR, "reading client request");
+		std::cout << "from server: " << _config.getServerName() << std::endl;
     }
     return (n);
 }
@@ -177,74 +177,74 @@ void Server::_checkTimeouts()
 // ==========================================================================================
 // WARNING : Temporarly solve the issue of not beeing able to access the server
 // config in a sighandler by passing empty maps as arguments.
-void Server::_sigchldHandler(int signum)
-{
-    (void)signum;
-    int status;
-    pid_t pid;
-    while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
-    {
-        std::map<pid_t, t_client_process>::iterator it =
-            CgiRequestHandler::_open_processes.find(pid);
-        int fd_position = 0;
-        int client_fd = it->second.client_fd;
-        for (size_t i = 0; i < _fds.size(); i++)
-        {
-            if (_fds[i].fd == it->second.client_fd)
-            {
-                fd_position = i;
-                break;
-            }
-        }
-        if (WIFEXITED(status))
-        {
-            if (WEXITSTATUS(status) == 0)
-            {
-                Log::log(DEBUG,
-                         ("CGI PROCESS [" + toString(RED) + toString(pid) +
-                          RESET + "] HAS FINISHED ITS EXECUTION."));
-                char buffer[BUFSIZ];
-                std::string response;
-                std::string ok = "HTTP/1.1 200 OK\r\n";
-                ssize_t bytesRead;
-                while ((bytesRead = read(it->second.cgi_fd, buffer, BUFSIZ)) >
-                       0)
-                    response += std::string(buffer, bytesRead);
-                send(it->second.client_fd, ok.c_str(), ok.length(), 0);
-                send(it->second.client_fd, response.c_str(), response.length(),
-                     0);
-            }
-            else
-            {
-                Log::log(ERROR,
-                         ("CGI PROCESS [" + toString(RED) + toString(pid) +
-                          RESET + "] FINISHED WITH EXIT CODE: " +
-                          toString(WEXITSTATUS(status))));
-                sendHttpErrorResponse(it->second.client_fd, 500,
-                                      std::map<int, std::string>());
-            }
-        }
-        else if (WIFSIGNALED(status))
-        {
-            int signal = WTERMSIG(status);
-            if (signal == SIGKILL)
-                Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) +
-                                 toString(pid) + RESET + "] HAS BEEN KILLED."));
-            else
-            {
-                Log::log(ERROR, ("CGI PROCESS [" + toString(RED) +
-                                 toString(pid) + RESET +
-                                 "] RECEIVED THE SIGNAL: " + toString(signal)));
-                sendHttpErrorResponse(it->second.client_fd, 500,
-                                      std::map<int, std::string>());
-            }
-        }
-        close(client_fd);
-        close(it->second.cgi_fd);
-        _fds.erase(_fds.begin() + fd_position);
-        CgiRequestHandler::_open_processes.erase(it);
-    }
-}
+// void Server::_sigchldHandler(int signum)
+// {
+//     (void)signum;
+//     int status;
+//     pid_t pid;
+//     while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
+//     {
+//         std::map<pid_t, t_client_process>::iterator it =
+//             CgiRequestHandler::_open_processes.find(pid);
+//         int fd_position = 0;
+//         int client_fd = it->second.client_fd;
+//         for (size_t i = 0; i < _fds.size(); i++)
+//         {
+//             if (_fds[i].fd == it->second.client_fd)
+//             {
+//                 fd_position = i;
+//                 break;
+//             }
+//         }
+//         if (WIFEXITED(status))
+//         {
+//             if (WEXITSTATUS(status) == 0)
+//             {
+//                 Log::log(DEBUG,
+//                          ("CGI PROCESS [" + toString(RED) + toString(pid) +
+//                           RESET + "] HAS FINISHED ITS EXECUTION."));
+//                 char buffer[BUFSIZ];
+//                 std::string response;
+//                 std::string ok = "HTTP/1.1 200 OK\r\n";
+//                 ssize_t bytesRead;
+//                 while ((bytesRead = read(it->second.cgi_fd, buffer, BUFSIZ)) >
+//                        0)
+//                     response += std::string(buffer, bytesRead);
+//                 send(it->second.client_fd, ok.c_str(), ok.length(), 0);
+//                 send(it->second.client_fd, response.c_str(), response.length(),
+//                      0);
+//             }
+//             else
+//             {
+//                 Log::log(ERROR,
+//                          ("CGI PROCESS [" + toString(RED) + toString(pid) +
+//                           RESET + "] FINISHED WITH EXIT CODE: " +
+//                           toString(WEXITSTATUS(status))));
+//                 sendHttpErrorResponse(it->second.client_fd, 500,
+//                                       std::map<int, std::string>());
+//             }
+//         }
+//         else if (WIFSIGNALED(status))
+//         {
+//             int signal = WTERMSIG(status);
+//             if (signal == SIGKILL)
+//                 Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) +
+//                                  toString(pid) + RESET + "] HAS BEEN KILLED."));
+//             else
+//             {
+//                 Log::log(ERROR, ("CGI PROCESS [" + toString(RED) +
+//                                  toString(pid) + RESET +
+//                                  "] RECEIVED THE SIGNAL: " + toString(signal)));
+//                 sendHttpErrorResponse(it->second.client_fd, 500,
+//                                       std::map<int, std::string>());
+//             }
+//         }
+//         close(client_fd);
+//         close(it->second.cgi_fd);
+//         _fds.erase(_fds.begin() + fd_position);
+//         CgiRequestHandler::_open_processes.erase(it);
+//     }
+// }
 
 void Server::_serveClients(void)
 {
@@ -269,6 +269,8 @@ void Server::_serveClients(void)
 
                 std::memset(read_buffer, 0, sizeof(read_buffer));
                 ssize_t n = _readFd(i, read_buffer, sizeof(read_buffer));
+
+				//TODO: the continue statement should be replaced
                 if (n < 0)
                     continue;
                 request_buffer.appendBuffer(read_buffer, n);

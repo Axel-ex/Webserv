@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 20:08:09 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 13:14:14 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/03 14:55:56 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ int main(int argc, char **argv)
     std::signal(SIGINT, sigHandler);
 
 	//TODO: make it work with the cluster
-    std::signal(SIGCHLD, Server::_sigchldHandler);
+    // std::signal(SIGCHLD, Server::_sigchldHandler);
 
     std::string config_file;
     argc == 2 ? config_file = argv[1]
