@@ -4,12 +4,6 @@
 #include "../includes/Server.hpp"
 #include <vector>
 
-typedef struct FdServerPair
-{
-        t_pollfd fd;
-        Server& server;
-} FdServerPair;
-
 class Cluster
 {
     public:

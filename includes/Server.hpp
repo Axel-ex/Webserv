@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 17:57:28 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/04 09:45:04 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,13 +40,11 @@ class Server
         Server(Config& config);
         ~Server();
 
-        std::vector<t_pollfd>& init(void);
+        std::vector<t_pollfd> init(void);
         void acceptIncomingConnections(t_pollfd &fd);
         void serveClients(void);
 
         Config& getConfig(void);
-
-		std::vector<t_pollfd>& getFds(void);
 
         class ServerError : public std::exception
         {
@@ -61,7 +59,7 @@ class Server
 
     private:
         Config _config;
-        std::vector<t_pollfd> _fds;
+        std::vector<t_pollfd> _client_fds;
 
         ssize_t _readFd(int fd, char* buffer, size_t buffer_size);
 };

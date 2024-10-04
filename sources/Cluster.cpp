@@ -17,15 +17,15 @@ Cluster::~Cluster(void) {}
 
 void Cluster::init(void)
 {
-    std::vector<t_pollfd> server_fds;
+    std::vector<t_pollfd> poll_fds;
 
     // Store the fds to poll into the cluster object
     for (size_t i = 0; i < _servers.size(); i++)
     {
-        server_fds = _servers[i].init();
-        for (size_t j = 0; j < server_fds.size(); j++)
+        poll_fds = _servers[i].init();
+        for (size_t j = 0; j < poll_fds.size(); j++)
         {
-            _poll_fds.push_back(server_fds[j]);
+            _poll_fds.push_back(poll_fds[j]);
             _server_ptr.push_back(&_servers[i]);
         }
     }
@@ -40,7 +40,6 @@ void Cluster::start(void)
         // Loop to handle EINTR (syscall interruptions while polling) error
         do
         {
-            // Check for any change in our file descriptors
             activity = poll(_poll_fds.data(), _poll_fds.size(), 1000);
         } while (activity < 0 && errno == EINTR);
 
@@ -55,8 +54,8 @@ void Cluster::start(void)
         for (size_t i = 0; i < _poll_fds.size(); ++i)
             if (_poll_fds[i].revents & POLLIN)
                 _server_ptr[i]->acceptIncomingConnections(_poll_fds[i]);
-		
-		//Check timeout and serve_clients
+
+        // Check timeout and serve_clients
         for (size_t i = 0; i < _servers.size(); i++)
         {
             _servers[i]._checkTimeouts();

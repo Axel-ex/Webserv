@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 18:12:30 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/04 10:17:25 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,24 +31,24 @@ Server::Server(Config& config) : _config(config) {}
 
 Server::~Server()
 {
-    for (size_t i = 0; i < _fds.size(); i++)
+    for (size_t i = 0; i < _client_fds.size(); i++)
     {
-        close(_fds[i].fd);
+        close(_client_fds[i].fd);
     }
 	std::string info_string = "Server " + _config.getServerName() + " shutting down";
     Log::log(INFO, info_string);
 }
 
-std::vector<t_pollfd>& Server::getFds(void) { return _fds; }
-
 Config& Server::getConfig(void) { return _config; }
 
-std::vector<t_pollfd>& Server::init()
+std::vector<t_pollfd> Server::init()
 {
     /* Imagine several ports are provided. we need to create several socket fds
      * for each port. We will then need to bind() and listen() each of them and
      * store it in our _fds vector. Information for the config will come for the
      * Config singleton*/
+	
+	std::vector<t_pollfd> poll_fds;
 
     for (size_t i = 0; i < _config.getPorts().size(); i++)
     {
@@ -80,7 +80,7 @@ std::vector<t_pollfd>& Server::init()
         std::memset(&new_fd, 0, sizeof(new_fd));
         new_fd.fd = sockfd;
         new_fd.events = POLLIN;
-        _fds.push_back(new_fd);
+        poll_fds.push_back(new_fd);
     }
 
     std::string port_info = "Server " + _config.getServerName() + " listening on ports:";
@@ -88,7 +88,7 @@ std::vector<t_pollfd>& Server::init()
         port_info += " " + toString(_config.getPorts()[i]);
     Log::log(INFO, port_info);
 
-    return _fds;
+    return poll_fds;
 }
 
 void Server::acceptIncomingConnections(t_pollfd& poll_fd)
@@ -99,22 +99,22 @@ void Server::acceptIncomingConnections(t_pollfd& poll_fd)
     if (newfd < 0 && !stopFlag)
         throw ServerError("Error accepting connection");
 
-    t_pollfd new_pollfd;
-    std::memset(&new_pollfd, 0, sizeof(new_pollfd));
-    new_pollfd.fd = newfd;
-    new_pollfd.revents = POLLIN;
-    _fds.push_back(new_pollfd);
+    t_pollfd new_client_fd;
+    std::memset(&new_client_fd, 0, sizeof(new_client_fd));
+    new_client_fd.fd = newfd;
+    new_client_fd.revents = POLLIN;
+    _client_fds.push_back(new_client_fd);
 }
 
 
 
 ssize_t Server::_readFd(int fd_index, char* buffer, size_t buffer_size)
 {
-    ssize_t n = recv(_fds[fd_index].fd, buffer, buffer_size, 0);
+    ssize_t n = recv(_client_fds[fd_index].fd, buffer, buffer_size, 0);
     if (n < 0)
     {
-        close(_fds[fd_index].fd);
-        _fds.erase(_fds.begin() + fd_index);
+        close(_client_fds[fd_index].fd);
+        _client_fds.erase(_client_fds.begin() + fd_index);
         Log::log(ERROR, "reading client request");
         std::cout << "from server: " << _config.getServerName() << std::endl;
     }
@@ -208,8 +208,7 @@ void Server::_checkTimeouts()
 //             int signal = WTERMSIG(status);
 //             if (signal == SIGKILL)
 //                 Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) +
-//                                  toString(pid) + RESET + "] HAS BEEN
-//                                  KILLED."));
+//                                  toString(pid) + RESET + "] HAS BEEN KILLED."));
 //             else
 //             {
 //                 Log::log(ERROR, ("CGI PROCESS [" + toString(RED) +
@@ -231,9 +230,9 @@ void Server::serveClients(void)
 {
     /*listen for client events, skip the first fds that are for the server
      * sockets */
-    for (size_t i = _config.getPorts().size(); i < _fds.size(); ++i)
+    for (size_t i = 0; i < _client_fds.size(); ++i)
     {
-        if (_fds[i].revents & POLLIN)
+        if (_client_fds[i].revents & POLLIN)
         {
             char read_buffer[1024];
             RequestBuffer request_buffer;
@@ -258,8 +257,8 @@ void Server::serveClients(void)
             }
             if (request_buffer.getBuffer().empty())
             {
-                close(_fds[i].fd);
-                _fds.erase(_fds.begin() + i);
+                close(_client_fds[i].fd);
+                _client_fds.erase(_client_fds.begin() + i);
                 continue;
             }
 
@@ -268,16 +267,16 @@ void Server::serveClients(void)
 
             if (CgiRequestHandler::_canProcess(request, _config.getRoutes()))
             {
-                CgiRequestHandler cgi_obj(request, _fds[i].fd, _config);
+                CgiRequestHandler cgi_obj(request, _client_fds[i].fd, _config);
                 cgi_obj.processRequest();
             }
             else
             {
                 Response response(request, _config);
-                send(_fds[i].fd, response.getResponseBuffer().c_str(),
+                send(_client_fds[i].fd, response.getResponseBuffer().c_str(),
                      response.getResponseBuffer().size(), 0);
-                close(_fds[i].fd);
-                _fds.erase(_fds.begin() + i);
+                close(_client_fds[i].fd);
+                _client_fds.erase(_client_fds.begin() + i);
             }
         }
     }
