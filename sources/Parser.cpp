@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 13:41:38 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/05 09:40:01 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -376,7 +376,7 @@ bool Parser::_isValidPort(int port_nb, const std::vector<int>& ports) const
  */
 void Parser::_loadErrors(Cluster& cluster) const
 {
-    std::vector<Server> servers = cluster.getServers();
+    std::vector<Server> &servers = cluster.getServers();
 
     for (size_t i = 0; i < servers.size(); i++)
     {
