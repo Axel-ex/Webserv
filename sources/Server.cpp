@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/04 10:17:25 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/05 09:46:30 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,11 +43,6 @@ Config& Server::getConfig(void) { return _config; }
 
 std::vector<t_pollfd> Server::init()
 {
-    /* Imagine several ports are provided. we need to create several socket fds
-     * for each port. We will then need to bind() and listen() each of them and
-     * store it in our _fds vector. Information for the config will come for the
-     * Config singleton*/
-	
 	std::vector<t_pollfd> poll_fds;
 
     for (size_t i = 0; i < _config.getPorts().size(); i++)
@@ -55,10 +50,6 @@ std::vector<t_pollfd> Server::init()
         int sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0)
             throw ServerError("Fail creating socket");
-        /* OS define a TIME_WAIT to reuse socket to make sure that all TCP
-         * packets are send before reusing the port/socket for another purpose.
-         * setting this option enables us to launch our server again straight
-         * after closing it*/
         int optval = 1;
         setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
@@ -74,8 +65,7 @@ std::vector<t_pollfd> Server::init()
         if (listen(sockfd, MAX_CLIENT) < 0)
             throw ServerError("fail listening for conncetion");
 
-        /* socket fd is stored in the _fds to poll to detect incoming
-         * connection*/
+        /* Create the poll_fd and add it to the vector*/
         t_pollfd new_fd;
         std::memset(&new_fd, 0, sizeof(new_fd));
         new_fd.fd = sockfd;
@@ -228,8 +218,6 @@ void Server::_checkTimeouts()
 
 void Server::serveClients(void)
 {
-    /*listen for client events, skip the first fds that are for the server
-     * sockets */
     for (size_t i = 0; i < _client_fds.size(); ++i)
     {
         if (_client_fds[i].revents & POLLIN)
