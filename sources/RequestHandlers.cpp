@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/25 14:58:41 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/03 13:01:16 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include "../includes/Config.hpp"
 #include "../includes/Log.hpp"
 #include "../includes/utils.hpp"
+#include "../includes/Parser.hpp"
 #include <algorithm>
 #include <fstream>
 #include <ios>
@@ -52,7 +53,7 @@ void ARequestHandler ::handleRequest(const Request& request, Response& response)
 {
     if (request.getProtocol() != "HTTP/1.1")
         return _createErrorResponse(BAD_REQUEST, response);
-    if (_canProcess(request))
+    if (_canProcess(request, response.getServerConfig().getRoutes()))
         processRequest(request, response);
     else if (_next)
         _next->handleRequest(request, response);
@@ -79,11 +80,11 @@ void ARequestHandler::_createOkResponse(std::string resource,
 void ARequestHandler ::_createErrorResponse(int error_code,
                                             Response& response) const
 {
-    std::map<int, std::string>::iterator it;
+    std::map<int, std::string>::const_iterator it;
     std::string headers;
 
     // codes we want to handle have to exist
-    it = Config::getDefaultErrors().find(error_code);
+    it = response.getServerConfig().getErrors().find(error_code);
 
     response.setBody(it->second);
     headers =
@@ -112,9 +113,9 @@ std::string ARequestHandler::_getErrorReason(int error_code) const {
 // =============================================================================
 //                               GET
 // =============================================================================
-bool GetRequestHandler ::_canProcess(const Request& request) const
+bool GetRequestHandler ::_canProcess(const Request& request, const std::vector<Route> &routes) const
 {
-    Route best_route = getBestRoute(request);
+    Route best_route = getBestRoute(request, routes);
     return (!best_route.url.empty() && request.getMethod() == "GET");
 }
 
@@ -148,7 +149,7 @@ std::string    GetRequestHandler ::_get_file_content(std::string path, Response&
 void GetRequestHandler ::processRequest(const Request& request,
                                          Response& response) const
 {
-    Route best_route = getBestRoute(request);
+    Route best_route = getBestRoute(request, response.getServerConfig().getRoutes());
     std::string resource = request.getResource();
     std::string headers;
     std::string req_path;
@@ -190,9 +191,9 @@ void GetRequestHandler ::processRequest(const Request& request,
 // =============================================================================
 //                               POST
 // =============================================================================
-bool PostRequestHandler ::_canProcess(const Request& request) const
+bool PostRequestHandler ::_canProcess(const Request& request, const std::vector<Route> &routes) const
 {
-    Route best_route = getBestRoute(request);
+    Route best_route = getBestRoute(request, routes);
     return (!best_route.url.empty() && request.getMethod() == "POST");
 }
 
@@ -314,9 +315,8 @@ void PostRequestHandler::createResponse(std::string resource,
     response.setHeaders(headers);
 }
 
-bool PostRequestHandler::_bodySizeCheck(const Request& request) const
+bool PostRequestHandler::_bodySizeCheck(const Request& request, const Config &config) const
 {
-    Config& config = Config::getInstance();
     unsigned long max_body_size = config.getMaxBodySize();
 
     return (request.getBody().size() <= max_body_size);
@@ -326,10 +326,11 @@ void PostRequestHandler::processRequest(const Request& request,
                                          Response& response) const
 {
     std::string content_type = _getContentType(request.getHeaders());
-    Config& config = Config::getInstance();
+    Config config = response.getServerConfig();
+
     const std::vector<Route>& routes = config.getRoutes();
     std::string upload_store = routes.begin()->upload_store;
-    if (!_bodySizeCheck(request))
+    if (!_bodySizeCheck(request, config))
     {
         _createErrorResponse(PAYLOAD_LARGE, response);
         return (Log::log(WARNING, "Payload Too Large"));
@@ -384,9 +385,9 @@ void PostRequestHandler::processRequest(const Request& request,
 // =============================================================================
 //                               DELETE
 // =============================================================================
-bool DeleteRequestHandler ::_canProcess(const Request& request) const
+bool DeleteRequestHandler ::_canProcess(const Request& request, const std::vector<Route> &routes) const
 {
-    Route best_route = getBestRoute(request);
+    Route best_route = getBestRoute(request, routes);
     return (!best_route.url.empty() && request.getMethod() == "DELETE");
 }
 
@@ -406,7 +407,7 @@ std::string _GetUserAgent(std::string userAgent)
 std::string DeleteRequestHandler ::_getPath(const Request& request,
                                            Response& response) const
 {
-    Config& config = Config::getInstance();
+    Config config = response.getServerConfig();
     const std::vector<Route>& routes = config.getRoutes();
     std::string del_path;
 

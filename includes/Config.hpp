@@ -6,43 +6,42 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:13:18 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/05 10:03:05 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/03 13:21:06 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CONFIG_HPP_
 #define CONFIG_HPP_
 
-#include "../includes/Parser.hpp"
 #include <map>
 #include <string>
 #include <vector>
+#include "utils.hpp"
+
 
 class Config
 {
     public:
-        static Config& getInstance(void);
-		void clear();
+        Config(void);
         ~Config();
 
-        static std::vector<int>& getPorts(void);
-        static std::map<std::string, std::string>& getResources(void);
-        static std::map<int, std::string>& getDefaultErrors(void);
-		static std::map<int, std::string>& getErrorPath(void);
-        static std::string getServerName(void);
-        static std::vector<Route> getRoutes(void);
-        static int getMaxBodySize(void);
+        const std::vector<int>& getPorts(void) const;
+        const std::map<std::string, std::string>& getResources(void) const;
+        const std::map<int, std::string>& getErrors(void) const;
+        const std::map<int, std::string>& getErrorPath(void) const;
+        const std::string getServerName(void) const;
+        const std::vector<Route> getRoutes(void) const;
+        int getMaxBodySize(void) const;
 
-        static void setServerName(const std::string& server_name);
-        static void setPort(int port_nb);
-        static void setMaxBodySize(int max_body_size);
-        static void setRoutes(const Route& route);
-		static void setErrorPath(int error_code, const std::string &path);
-		static void setErrors(int error_code, const std::string& content);
+        void setServerName(const std::string& server_name);
+        void setPort(int port_nb);
+        void setMaxBodySize(int max_body_size);
+        void setRoutes(const Route& route);
+        void setErrorPath(int error_code, const std::string& path);
+        void setErrors(int error_code, const std::string& content);
+        void clear(void);
 
     private:
-        Config(void);
-
         std::string _server_name;
         std::vector<int> _ports;
         int _max_body_size;

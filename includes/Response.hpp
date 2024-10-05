@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 14:43:01 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/05 12:46:25 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/03 11:47:49 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #define RESPONSE_HPP_
 
 #include "../includes/Request.hpp"
+#include "../includes/Config.hpp"
 #include <string>
 
 //Error codes
@@ -25,7 +26,7 @@
 class Response
 {
     public:
-        Response(const Request& request);
+        Response(const Request& request, Config &server_config);
         ~Response();
 
         const std::string& getBody(void) const;
@@ -34,8 +35,11 @@ class Response
 
         void setHeaders(const std::string& headers);
         void setBody(const std::string& body);
+		
+		const Config &getServerConfig(void) const;
 
     private:
+		Config _server_config;
         std::string _headers;
         std::string _body;
 };

@@ -6,22 +6,23 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/27 14:26:57 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/04 09:45:04 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
+#include "Config.hpp"
 #include <exception>
 #include <netinet/in.h>
+#include <string>
 #include <strings.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
-#include <string>
 
 typedef struct pollfd t_pollfd;
 typedef struct sockaddr_in t_sockaddr_in;
@@ -33,14 +34,17 @@ typedef struct sockaddr t_sockaddr;
 class Server
 {
     public:
-    
         static void _sigchldHandler(int signum);
         void _checkTimeouts();
-        Server(std::string config_file);
+
+        Server(Config& config);
         ~Server();
 
-        void init(void);
-        void start(void);
+        std::vector<t_pollfd> init(void);
+        void acceptIncomingConnections(t_pollfd &fd);
+        void serveClients(void);
+
+        Config& getConfig(void);
 
         class ServerError : public std::exception
         {
@@ -54,11 +58,10 @@ class Server
         };
 
     private:
-        static std::vector<t_pollfd> _fds;
-	
-        void _acceptIncomingConnections(void);
-        void _serveClients(void);
-		ssize_t _readFd(int fd, char *buffer, size_t buffer_size);
+        Config _config;
+        std::vector<t_pollfd> _client_fds;
+
+        ssize_t _readFd(int fd, char* buffer, size_t buffer_size);
 };
 
 #endif // SERVER_HPP

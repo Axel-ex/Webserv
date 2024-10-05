@@ -6,13 +6,14 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 20:08:09 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/05 12:18:42 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/03 14:55:56 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Log.hpp"
-#include "../includes/Server.hpp"
 #include "../includes/utils.hpp"
+#include "../includes/Cluster.hpp"
+#include "../includes/Server.hpp"
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
@@ -22,7 +23,9 @@ int main(int argc, char **argv)
 {
     std::signal(SIGPIPE, SIG_IGN);
     std::signal(SIGINT, sigHandler);
-    std::signal(SIGCHLD, Server::_sigchldHandler);
+
+	//TODO: make it work with the cluster
+    // std::signal(SIGCHLD, Server::_sigchldHandler);
 
     std::string config_file;
     argc == 2 ? config_file = argv[1]
@@ -30,10 +33,10 @@ int main(int argc, char **argv)
 
     try
     {
-        Server server(config_file);
+		Cluster cluster(config_file);
 
-        server.init();
-        server.start();
+        cluster.init();
+        cluster.start();
     }
     catch (const std::exception &e)
     {

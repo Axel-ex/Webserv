@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/09/25 13:27:51 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/03 13:21:33 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,24 +15,46 @@
 
 #include <string>
 #include <sstream>
-#include <iostream>
-#include <map>
-#include <algorithm>
 #include <vector>
 #include <cstdlib>
-#include <map>
 #include <unistd.h>
-#include <string.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <ctime>
 #include <fcntl.h>
-#include <cstdio>
-#include <fstream>
 #include <sys/time.h>
-#include "Config.hpp"
 #include "Request.hpp"
+
+enum TokenType
+{
+    OPEN_BRACKET,
+    CLOSE_BRACKET,
+    SEMICOLON,
+    SERVER,
+    LOCATION,
+    DIRECTIVE,
+    ARGUMENT,
+    UNKNOWN,
+};
+
+struct Token
+{
+        TokenType type;
+        std::string content;
+        int line_nb;
+};
+
+typedef struct Route
+{
+        std::string url;
+        std::string root;
+        std::vector<std::string> methods;
+        std::string upload_store;
+        std::string index;
+        std::vector<std::string> cgi_path;
+        std::vector<std::string> cgi_extension;
+} Route;
 
 template <typename T>
 
@@ -47,7 +69,7 @@ extern bool stopFlag;
 void        sigHandler(int signum);
 void        sigHandler2(int signum);
 double	    getTime(void);
-std::string getMatch(std::vector<Route> &routes, std::string &resource, std::string method);
-Route       getBestRoute(const Request& request);
+std::string getMatch(const std::vector<Route> &routes, std::string &resource, std::string method);
+Route       getBestRoute(const Request& request, const std::vector<Route> &routes);
 
 #endif  // UTILS_HPP_

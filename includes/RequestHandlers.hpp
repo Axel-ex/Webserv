@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:41:40 by Axel              #+#    #+#             */
-/*   Updated: 2024/08/09 15:34:42 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/03 11:57:52 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ class ARequestHandler
         std::map<std::string, std::string> mimeTypes;
         void _createErrorResponse(int error_code, Response& response) const;
         void _createOkResponse(std::string resource, Response& response) const;
-        virtual bool _canProcess(const Request& request) const = 0;
+        virtual bool _canProcess(const Request& request, const std::vector<Route> &routes ) const = 0;
         virtual void processRequest(const Request& request,
                                     Response& response) const = 0;
         std::string _getErrorReason(int error_code) const;
@@ -48,7 +48,7 @@ class GetRequestHandler : public ARequestHandler
                                       Response& response) const;
 
     private:
-        bool _canProcess(const Request& request) const;
+        bool _canProcess(const Request& request, const std::vector<Route> &routes) const;
 };
 
 class PostRequestHandler : public ARequestHandler
@@ -57,9 +57,9 @@ class PostRequestHandler : public ARequestHandler
         void processRequest(const Request& request, Response& response) const;
 
     private:
-        bool _canProcess(const Request& request) const;
+        bool _canProcess(const Request& request, const std::vector<Route> &routes) const;
 
-        bool _bodySizeCheck(const Request& request) const;
+        bool _bodySizeCheck(const Request& request, const Config &config) const;
         std::string _getContentType(const std::string& headers) const;
         std::string _getBoundary(const std::string& headers) const;
         std::string _getFileContent(const std::string& body,
@@ -76,7 +76,7 @@ class DeleteRequestHandler : public ARequestHandler
         std::string _getPath(const Request& request, Response& response) const;
 
     private:
-        bool _canProcess(const Request& request) const;
+        bool _canProcess(const Request& request, const std::vector<Route> &routes) const;
 };
 
 

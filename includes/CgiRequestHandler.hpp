@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:34:18 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/25 15:11:11 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/03 13:30:31 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 #include "Server.hpp"
 #include "utils.hpp"
 #include <cerrno>
+#include "Parser.hpp"
 
 #define MAXPATHLEN 4096
 #define CGI_TIMEOUT 5
@@ -37,10 +38,10 @@ typedef struct _s_client_process
 class CgiRequestHandler
 {
 	public:
-		CgiRequestHandler(const Request &request, int fd, Route &location);
+		CgiRequestHandler(const Request &request, int fd,  const Config &config);
 		~CgiRequestHandler();
 
-		static bool _canProcess(const Request &request);
+		static bool _canProcess(const Request &request, const std::vector<Route> &routes);
 		static std::map<pid_t, t_client_process> _open_processes;
 
 		void processRequest();
@@ -58,7 +59,7 @@ class CgiRequestHandler
 
 	private:
 		// ============================ REQUEST INFORMATION ===========================
-
+		Config		_server_config;
 		std::string _method;
 		std::string _resource;
 		std::string _decoded_resource;
@@ -101,7 +102,7 @@ class CgiRequestHandler
 
 std::string getFileExtension(const std::string &url);
 bool isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions);
-void sendHttpErrorResponse(int client_fd, int error_code);
+void sendHttpErrorResponse(int client_fd, int error_code, const std::map<int, std::string> &errors);
 unsigned int convertHex(const std::string &nb);
 
 #endif // CGIREQUESTHANDLER_HPP
