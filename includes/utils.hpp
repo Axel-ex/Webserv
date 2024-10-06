@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/10/03 13:21:33 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/06 12:19:06 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,21 @@
 #include <fcntl.h>
 #include <sys/time.h>
 #include "Request.hpp"
+
+typedef enum ProcessStatus
+{
+    EXITED,
+    SIGNALED
+} t_exitType;
+
+
+typedef struct s_chldProcess
+{
+    pid_t pid;
+    int status;
+    t_exitType type;
+} t_chldProcess;
+
 
 enum TokenType
 {

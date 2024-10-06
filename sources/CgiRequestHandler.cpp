@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/10/06 12:09:24 by axel             ###   ########.fr       */
+/*   Updated: 2024/10/06 11:30:50 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,6 @@
 #include <cstdio>
 #include <algorithm>
 #include <cstring>
-
-// STRUCTURE TO BE USED FOR VERIFYING TIMED-OUT PROCESSES
-std::map<pid_t, t_client_process> CgiRequestHandler::_open_processes;
 
 std::string CgiRequestHandler::getInterpreter(void) const
 {
@@ -35,7 +32,7 @@ std::string CgiRequestHandler::getInterpreter(void) const
 	return (_scriptPath);
 }
 
-CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, const Config &config) : _server_config(config)
+CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, const Config &config, std::map<pid_t, t_client_process> *open_processes) : _server_config(config)
 {
 
 	// ============ REQUEST INFORMATION ==============
@@ -47,6 +44,8 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, const Confi
 	_client_fd = fd;
 	_location = getBestRoute(request, config.getRoutes());
 	// ===============================================
+
+	_open_processes = open_processes;
 
 	_document_root = _location.root.substr(0, _location.root.find(_location.url));
 	if (!_document_root.empty() && _document_root[0] == '.')
@@ -220,7 +219,7 @@ void CgiRequestHandler::processRequest()
 		close(_pipe_in[1]);
 
 		t_client_process c_process = {_method, getTime(), _client_fd, _pipe_out[0]};
-		CgiRequestHandler::_open_processes[pid] = c_process;
+		(*_open_processes)[pid] = c_process;
 	}
 }
 

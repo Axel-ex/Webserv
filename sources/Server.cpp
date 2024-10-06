@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/05 09:46:30 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/06 13:42:25 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -118,9 +118,8 @@ void Server::_checkTimeouts()
 {
     long now;
     long elapsed;
-    std::map<pid_t, t_client_process>::iterator it =
-        CgiRequestHandler::_open_processes.begin();
-    for (; it != CgiRequestHandler::_open_processes.end(); it++)
+    std::map<pid_t, t_client_process>::iterator it = _open_processes.begin();
+    for (; it != _open_processes.end(); it++)
     {
         now = getTime();
         elapsed = now - it->second.start_time;
@@ -135,6 +134,82 @@ void Server::_checkTimeouts()
             sendHttpErrorResponse(it->second.client_fd, ETIMEDOUT,
                                   _config.getErrors());
             kill(it->first, SIGKILL);
+        }
+    }
+}
+
+void    Server::finishCgiResponse(t_chldProcess child)
+{
+    t_client_process client = _open_processes[child.pid];
+    int fd_position = 0;
+    for (size_t i = 0; i < _client_fds.size(); i++)
+    {
+        if (_client_fds[i].fd == client.client_fd)
+        {
+            fd_position = i;
+            break;
+        }
+    }
+    if (child.type == EXITED)
+    {
+        if (WEXITSTATUS(child.status) == 0)
+        {
+            Log::log(DEBUG,
+                        ("CGI PROCESS [" + toString(RED) + toString(child.pid) +
+                        RESET + "] HAS FINISHED ITS EXECUTION."));
+            char buffer[BUFSIZ];
+            std::string response;
+            std::string ok = "HTTP/1.1 200 OK\r\n";
+            ssize_t bytesRead;
+            while ((bytesRead = read(client.cgi_fd, buffer, BUFSIZ)) > 0)
+                response += std::string(buffer, bytesRead);
+            send(client.client_fd, ok.c_str(), ok.length(), 0);
+            send(client.client_fd, response.c_str(),
+            response.length(),
+                    0);
+        }
+        else
+        {
+            Log::log(ERROR,
+                        ("CGI PROCESS [" + toString(RED) + toString(child.pid) +
+                        RESET + "] FINISHED WITH EXIT CODE: " +
+                        toString(WEXITSTATUS(child.status))));
+            sendHttpErrorResponse(client.client_fd, 500,
+                                    std::map<int, std::string>());
+        }
+    }
+    else
+    {
+        if (WTERMSIG(child.status) == SIGKILL)
+            Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) +
+                                toString(child.pid) + RESET + "] HAS BEEN KILLED."));
+        else
+        {
+            Log::log(ERROR, ("CGI PROCESS [" + toString(RED) +
+                                toString(child.pid) + RESET +
+                                "] RECEIVED THE SIGNAL: " +
+                                toString(WTERMSIG(child.status))));
+            sendHttpErrorResponse(client.client_fd, 500,
+                                    std::map<int, std::string>());
+        }
+    }
+    close(client.client_fd);
+    close (client.cgi_fd);
+    _open_processes.erase(child.pid);
+    _client_fds.erase(_client_fds.begin() + fd_position);
+}
+
+void    Server::checkFinishedProcesses(void)
+{
+    if (_open_processes.empty())
+        return ;
+    for (size_t i = 0; i < finished_pids.size(); i++)
+    {
+        if (_open_processes.find(finished_pids[i].pid) != _open_processes.end())
+        {
+            finishCgiResponse(finished_pids[i]);
+            finished_pids.erase(finished_pids.begin() + i);
+            return ;
         }
     }
 }
@@ -255,7 +330,7 @@ void Server::serveClients(void)
 
             if (CgiRequestHandler::_canProcess(request, _config.getRoutes()))
             {
-                CgiRequestHandler cgi_obj(request, _client_fds[i].fd, _config);
+                CgiRequestHandler cgi_obj(request, _client_fds[i].fd, _config, &_open_processes);
                 cgi_obj.processRequest();
             }
             else

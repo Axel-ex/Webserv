@@ -6,6 +6,8 @@
 #include <cerrno>
 #include <stdexcept>
 
+
+
 Cluster::Cluster(std::string config_file)
 {
     Parser parser;
@@ -61,6 +63,7 @@ void Cluster::start(void)
         for (size_t i = 0; i < _servers.size(); i++)
         {
             _servers[i]._checkTimeouts();
+            _servers[i].checkFinishedProcesses();
             _servers[i].serveClients();
         }
     }

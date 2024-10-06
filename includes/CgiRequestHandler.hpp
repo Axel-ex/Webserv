@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:34:18 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/10/03 13:30:31 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/06 11:57:39 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,22 +27,14 @@
 #define CGI_TIMEOUT 5
 
 typedef struct pollfd t_pollfd;
-typedef struct _s_client_process
-{
-	std::string method;
-	double start_time;
-	int client_fd;
-	int cgi_fd;
-} t_client_process;
 
 class CgiRequestHandler
 {
 	public:
-		CgiRequestHandler(const Request &request, int fd,  const Config &config);
+		CgiRequestHandler(const Request &request, int fd,  const Config &config, std::map<pid_t, t_client_process> *open_processes);
 		~CgiRequestHandler();
 
 		static bool _canProcess(const Request &request, const std::vector<Route> &routes);
-		static std::map<pid_t, t_client_process> _open_processes;
 
 		void processRequest();
 
@@ -67,7 +59,7 @@ class CgiRequestHandler
 		std::string _headers;
 		std::string _body;
 		// ============================================================================
-
+		std::map<pid_t, t_client_process> *_open_processes;
 		std::map<std::string, std::string> _env;
 		std::map<std::string, std::string> _request_headers;
 		std::string _scriptName;
