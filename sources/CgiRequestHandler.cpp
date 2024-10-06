@@ -6,11 +6,14 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/10/03 12:19:59 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/06 12:09:24 by axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/CgiRequestHandler.hpp"
+#include <cstdio>
+#include <algorithm>
+#include <cstring>
 
 // STRUCTURE TO BE USED FOR VERIFYING TIMED-OUT PROCESSES
 std::map<pid_t, t_client_process> CgiRequestHandler::_open_processes;

@@ -2,6 +2,8 @@
 #include "../includes/Log.hpp"
 #include "../includes/Parser.hpp"
 #include <cstddef>
+#include <stdio.h>
+#include <cerrno>
 #include <stdexcept>
 
 Cluster::Cluster(std::string config_file)
