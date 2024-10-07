@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 20:08:09 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/06 13:43:06 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/07 09:26:54 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,6 @@
 #include <exception>
 
 std::vector<t_chldProcess> finished_pids;
-
 
 void sigchldHandler(int signum)
 {

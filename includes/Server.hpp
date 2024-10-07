@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/06 12:28:45 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/07 11:10:56 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
+#include <deque>
 #include <cstdio>
 
 typedef struct pollfd t_pollfd;
@@ -46,7 +47,7 @@ class Server
 {
     public:
         static void _sigchldHandler(int signum);
-        void _checkTimeouts();
+        void checkTimeouts();
         void checkFinishedProcesses(void);
 
         Server(Config& config);
@@ -71,7 +72,7 @@ class Server
 
     private:
         Config _config;
-        std::vector<t_pollfd> _client_fds;
+        std::deque<t_pollfd> _client_fds;
         std::map<pid_t, t_client_process> _open_processes;
         ssize_t _readFd(int fd, char* buffer, size_t buffer_size);
         void    finishCgiResponse(t_chldProcess child);

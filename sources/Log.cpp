@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/18 10:11:30 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 18:03:24 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/07 08:39:17 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,7 +103,7 @@ void Log ::logRequest(const Request& request, const std::string &server_name)
     std::cout << GREY;
     _printTimeStamp();
 
-    std::cout << name << _formatField(method) << request.getResource() << " " << host;
+    std::cout << _formatField(method) << request.getResource() << " " << host;
     std::cout << RESET << std::endl;
 }
 
