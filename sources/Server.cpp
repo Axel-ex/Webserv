@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/07 13:46:56 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/07 14:12:04 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,15 +142,15 @@ void Server::checkTimeouts()
 void Server::finishCgiResponse(t_chldProcess child)
 {
     t_client_process client = _open_processes[child.pid];
-    int fd_position = 0;
-    for (size_t i = 0; i < _client_fds.size(); i++)
-    {
-        if (_client_fds[i].fd == client.client_fd)
-        {
-            fd_position = i;
-            break;
-        }
-    }
+    // int fd_position = 0;
+    // for (size_t i = 0; i < _client_fds.size(); i++)
+    // {
+    //     if (_client_fds[i].fd == client.client_fd)
+    //     {
+    //         fd_position = i;
+    //         break;
+    //     }
+    // }
     if (child.type == EXITED)
     {
         if (WEXITSTATUS(child.status) == 0)
@@ -193,10 +193,12 @@ void Server::finishCgiResponse(t_chldProcess child)
                                   std::map<int, std::string>());
         }
     }
-    close(client.client_fd);
-    close(client.cgi_fd);
+    // close(client.client_fd);
+    // close(client.cgi_fd);
+	_fds_to_close.push_back(client.client_fd);
+	_fds_to_close.push_back(client.cgi_fd);
     _open_processes.erase(child.pid);
-    _client_fds.erase(_client_fds.begin() + fd_position);
+    // _client_fds.erase(_client_fds.begin() + fd_position);
 }
 
 void Server::checkFinishedProcesses(void)
@@ -212,6 +214,7 @@ void Server::checkFinishedProcesses(void)
         else
             it++;
     }
+	closePendingFds();
 }
 
 void Server::serveClients(void)
@@ -262,9 +265,42 @@ void Server::serveClients(void)
                 Response response(request, _config);
                 send(_client_fds[i].fd, response.getResponseBuffer().c_str(),
                      response.getResponseBuffer().size(), 0);
-                close(_client_fds[i].fd);
-                _client_fds.erase(_client_fds.begin() + i);
+                // close(_client_fds[i].fd);
+                // _client_fds.erase(_client_fds.begin() + i);
+				_fds_to_close.push_back(_client_fds[i].fd);
             }
         }
+    }
+}
+
+struct MatchFd
+{
+        int fd_to_find;
+        MatchFd(int fd) : fd_to_find(fd) {}
+
+        bool operator()(const t_pollfd& pfd) const
+        {
+            return pfd.fd == fd_to_find;
+        }
+};
+
+void Server::closePendingFds(void)
+{
+    for (std::deque<int>::iterator it_fd = _fds_to_close.begin();
+         it_fd != _fds_to_close.end();)
+    {
+        // Find and close the FD in _client_fds
+        std::deque<t_pollfd>::iterator client_it =
+            std::find_if(_client_fds.begin(), _client_fds.end(),
+                         MatchFd(*it_fd) // Using the functor
+            );
+
+        if (client_it != _client_fds.end())
+        {
+            close(client_it->fd);
+            _client_fds.erase(client_it); // Erase after closing
+        } // Remove the FD from _fds_to_close
+		//
+        it_fd = _fds_to_close.erase(it_fd);
     }
 }
