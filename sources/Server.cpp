@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/07 11:09:46 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/07 13:46:56 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <deque>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -35,7 +36,8 @@ Server::~Server()
     {
         close(_client_fds[i].fd);
     }
-	std::string info_string = "Server " + _config.getServerName() + " shutting down";
+    std::string info_string =
+        "Server " + _config.getServerName() + " shutting down";
     Log::log(INFO, info_string);
 }
 
@@ -43,7 +45,7 @@ Config& Server::getConfig(void) { return _config; }
 
 std::vector<t_pollfd> Server::init()
 {
-	std::vector<t_pollfd> poll_fds;
+    std::vector<t_pollfd> poll_fds;
 
     for (size_t i = 0; i < _config.getPorts().size(); i++)
     {
@@ -73,7 +75,8 @@ std::vector<t_pollfd> Server::init()
         poll_fds.push_back(new_fd);
     }
 
-    std::string port_info = "Server " + _config.getServerName() + " listening on ports:";
+    std::string port_info =
+        "Server " + _config.getServerName() + " listening on ports:";
     for (size_t i = 0; i < _config.getPorts().size(); i++)
         port_info += " " + toString(_config.getPorts()[i]);
     Log::log(INFO, port_info);
@@ -95,8 +98,6 @@ void Server::acceptIncomingConnections(t_pollfd& poll_fd)
     new_client_fd.revents = POLLIN;
     _client_fds.push_back(new_client_fd);
 }
-
-
 
 ssize_t Server::_readFd(int fd_index, char* buffer, size_t buffer_size)
 {
@@ -138,7 +139,7 @@ void Server::checkTimeouts()
     }
 }
 
-void    Server::finishCgiResponse(t_chldProcess child)
+void Server::finishCgiResponse(t_chldProcess child)
 {
     t_client_process client = _open_processes[child.pid];
     int fd_position = 0;
@@ -155,8 +156,8 @@ void    Server::finishCgiResponse(t_chldProcess child)
         if (WEXITSTATUS(child.status) == 0)
         {
             Log::log(DEBUG,
-                        ("CGI PROCESS [" + toString(RED) + toString(child.pid) +
-                        RESET + "] HAS FINISHED ITS EXECUTION."));
+                     ("CGI PROCESS [" + toString(RED) + toString(child.pid) +
+                      RESET + "] HAS FINISHED ITS EXECUTION."));
             char buffer[BUFSIZ];
             std::string response;
             std::string ok = "HTTP/1.1 200 OK\r\n";
@@ -164,53 +165,52 @@ void    Server::finishCgiResponse(t_chldProcess child)
             while ((bytesRead = read(client.cgi_fd, buffer, BUFSIZ)) > 0)
                 response += std::string(buffer, bytesRead);
             send(client.client_fd, ok.c_str(), ok.length(), 0);
-            send(client.client_fd, response.c_str(),
-            response.length(),
-                    0);
+            send(client.client_fd, response.c_str(), response.length(), 0);
         }
         else
         {
             Log::log(ERROR,
-                        ("CGI PROCESS [" + toString(RED) + toString(child.pid) +
-                        RESET + "] FINISHED WITH EXIT CODE: " +
-                        toString(WEXITSTATUS(child.status))));
+                     ("CGI PROCESS [" + toString(RED) + toString(child.pid) +
+                      RESET + "] FINISHED WITH EXIT CODE: " +
+                      toString(WEXITSTATUS(child.status))));
             sendHttpErrorResponse(client.client_fd, 500,
-                                    std::map<int, std::string>());
+                                  std::map<int, std::string>());
         }
     }
     else
     {
         if (WTERMSIG(child.status) == SIGKILL)
-            Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) +
-                                toString(child.pid) + RESET + "] HAS BEEN KILLED."));
+            Log::log(DEBUG,
+                     ("CGI PROCESS [" + toString(RED) + toString(child.pid) +
+                      RESET + "] HAS BEEN KILLED."));
         else
         {
-            Log::log(ERROR, ("CGI PROCESS [" + toString(RED) +
-                                toString(child.pid) + RESET +
-                                "] RECEIVED THE SIGNAL: " +
-                                toString(WTERMSIG(child.status))));
+            Log::log(
+                ERROR,
+                ("CGI PROCESS [" + toString(RED) + toString(child.pid) + RESET +
+                 "] RECEIVED THE SIGNAL: " + toString(WTERMSIG(child.status))));
             sendHttpErrorResponse(client.client_fd, 500,
-                                    std::map<int, std::string>());
+                                  std::map<int, std::string>());
         }
     }
     close(client.client_fd);
-    close (client.cgi_fd);
+    close(client.cgi_fd);
     _open_processes.erase(child.pid);
     _client_fds.erase(_client_fds.begin() + fd_position);
 }
 
-void    Server::checkFinishedProcesses(void)
+void Server::checkFinishedProcesses(void)
 {
-    if (_open_processes.empty())
-        return ;
-    for (size_t i = 0; i < finished_pids.size(); i++)
+    std::deque<t_chldProcess>::iterator it = finished_pids.begin();
+    for (; it != finished_pids.end();)
     {
-        if (_open_processes.find(finished_pids[i].pid) != _open_processes.end())
+        if (_open_processes.find(it->pid) != _open_processes.end())
         {
-            finishCgiResponse(finished_pids[i]);
-            finished_pids.erase(finished_pids.begin() + i);
-            return ;
+            finishCgiResponse(*it);
+            it = finished_pids.erase(it);
         }
+        else
+            it++;
     }
 }
 
@@ -253,7 +253,8 @@ void Server::serveClients(void)
 
             if (CgiRequestHandler::_canProcess(request, _config.getRoutes()))
             {
-                CgiRequestHandler cgi_obj(request, _client_fds[i].fd, _config, &_open_processes);
+                CgiRequestHandler cgi_obj(request, _client_fds[i].fd, _config,
+                                          &_open_processes);
                 cgi_obj.processRequest();
             }
             else

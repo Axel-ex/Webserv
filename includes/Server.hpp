@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/07 11:10:56 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/07 13:43:02 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ typedef struct sockaddr t_sockaddr;
 #define MAX_CLIENT 500
 #define SERVER_TIMEOUT 4
 
-extern std::vector<t_chldProcess> finished_pids;
+extern std::deque<t_chldProcess> finished_pids;
 
 typedef struct _s_client_process
 {
