@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/07 14:12:04 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/07 14:27:28 by axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 Server::Server(Config& config) : _config(config) {}
 
@@ -194,9 +195,9 @@ void Server::finishCgiResponse(t_chldProcess child)
         }
     }
     // close(client.client_fd);
-    // close(client.cgi_fd);
 	_fds_to_close.push_back(client.client_fd);
-	_fds_to_close.push_back(client.cgi_fd);
+	// _fds_to_close.push_back(client.cgi_fd);
+    close(client.cgi_fd);
     _open_processes.erase(child.pid);
     // _client_fds.erase(_client_fds.begin() + fd_position);
 }
