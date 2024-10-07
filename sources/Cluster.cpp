@@ -44,7 +44,7 @@ void Cluster::start(void)
         // Loop to handle EINTR (syscall interruptions while polling) error
         do
         {
-            activity = poll(_poll_fds.data(), _poll_fds.size(), 1000);
+            activity = poll(_poll_fds.data(), _poll_fds.size(), 500);
         } while (activity < 0 && errno == EINTR);
 
         if (activity < 0 && !stopFlag)
