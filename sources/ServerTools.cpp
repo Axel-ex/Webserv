@@ -6,15 +6,14 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/25 13:22:10 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/10/03 13:01:36 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/08 11:41:53 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 
 #include "../includes/utils.hpp"
-#include "../includes/Parser.hpp"
 
-std::string getMatch(const std::vector<Route> &routes, std::string &resource, std::string method)
+std::string ServerTools::getMatch(const std::vector<Route> &routes, std::string &resource, std::string method)
 {
 	std::string match = "";
 	for (size_t i = 0; i < routes.size(); i++)
@@ -33,7 +32,7 @@ std::string getMatch(const std::vector<Route> &routes, std::string &resource, st
 	return (match);
 }
 
-Route getBestRoute(const Request& request, const std::vector<Route> &routes)
+Route ServerTools::getBestRoute(const Request& request, const std::vector<Route> &routes)
 {
 	std::string resource = request.getResource();
 	std::string match = getMatch(routes, resource, request.getMethod());
@@ -45,4 +44,13 @@ Route getBestRoute(const Request& request, const std::vector<Route> &routes)
 			return (routes[i]);
 	}
 	return (emptyRoute);
+}
+
+double	ServerTools::getTime(void)
+{
+	struct timeval	tv;
+
+	if (gettimeofday(&tv, NULL))
+		throw std::runtime_error("Function 'gettimeofday failed.\n");
+	return (tv.tv_sec + (tv.tv_usec / 1e6));
 }

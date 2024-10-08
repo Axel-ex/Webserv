@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/08 11:11:16 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/08 11:47:15 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,14 +16,14 @@
 #include "../includes/Parser.hpp"
 #include "../includes/utils.hpp"
 #include <cstdlib>
+#include <dirent.h>
 #include <fstream>
 #include <ios>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <sys/stat.h>
-#include <dirent.h>
-#include <sstream>
 
 // =============================================================================
 //                               ABSTRACT HANDLER
@@ -58,7 +58,7 @@ void ARequestHandler ::handleRequest(const Request& request, Response& response)
     else if (_next)
         _next->handleRequest(request, response);
     else
-        _createErrorResponse(BAD_REQUEST, response);
+        _createErrorResponse(METHOD_NOT_ALLOWED, response);
 }
 
 void ARequestHandler::setNextHandler(ARequestHandler* next) { _next = next; }
@@ -107,6 +107,12 @@ std::string ARequestHandler::_getErrorReason(int error_code) const
         return ("Bad Request");
     case INTERNAL_ERROR:
         return ("Internal Server Error");
+    case FORBIDDEN:
+        return ("Forbidden");
+    case METHOD_NOT_ALLOWED:
+        return ("Method not allowed");
+    case PAYLOAD_LARGE:
+        return ("Payload too large");
     }
 }
 
@@ -117,7 +123,7 @@ std::string ARequestHandler::_getErrorReason(int error_code) const
 bool GetRequestHandler ::_canProcess(const Request& request,
                                      const std::vector<Route>& routes) const
 {
-    Route best_route = getBestRoute(request, routes);
+    Route best_route = ServerTools::getBestRoute(request, routes);
     return (!best_route.url.empty() && request.getMethod() == "GET");
 }
 
@@ -153,7 +159,7 @@ void GetRequestHandler ::processRequest(const Request& request,
                                         Response& response) const
 {
     Route best_route =
-        getBestRoute(request, response.getServerConfig().getRoutes());
+        ServerTools::getBestRoute(request, response.getServerConfig().getRoutes());
     std::string resource = request.getResource();
     std::string headers;
     std::string req_path;
@@ -196,8 +202,11 @@ void GetRequestHandler ::processRequest(const Request& request,
     }
 }
 
-void GetRequestHandler::_createAutoIndexResponse(const std::string &true_path, const std::string &route_path, Response& response) const {
-    DIR *dir = opendir(true_path.c_str());
+void GetRequestHandler::_createAutoIndexResponse(const std::string& true_path,
+                                                 const std::string& route_path,
+                                                 Response& response) const
+{
+    DIR* dir = opendir(true_path.c_str());
     if (!dir)
     {
         _createErrorResponse(FORBIDDEN, response);
@@ -208,11 +217,12 @@ void GetRequestHandler::_createAutoIndexResponse(const std::string &true_path, c
     body << "<html><head><title>Index of " << route_path << "</title></head>";
     body << "<body><h1>Index of " << route_path << "</h1><ul>";
 
-    struct dirent *entry;
+    struct dirent* entry;
     while ((entry = readdir(dir)))
     {
         // Skip "." and ".." directories
-        if (std::string(entry->d_name) == "." || std::string(entry->d_name) == "..")
+        if (std::string(entry->d_name) == "." ||
+            std::string(entry->d_name) == "..")
             continue;
 
         // Build the relative path for each item (file or folder)
@@ -222,11 +232,13 @@ void GetRequestHandler::_createAutoIndexResponse(const std::string &true_path, c
         // Check if it's a directory (we want to append "/" for directories)
         struct stat item_stat;
         std::string full_item_path = true_path + "/" + item_name;
-        if (stat(full_item_path.c_str(), &item_stat) == 0 && S_ISDIR(item_stat.st_mode))
+        if (stat(full_item_path.c_str(), &item_stat) == 0 &&
+            S_ISDIR(item_stat.st_mode))
             item_name += "/";
 
         // Add the item to the HTML body
-        body << "<li><a href=\"" << item_path << "\">" << item_name << "</a></li>";
+        body << "<li><a href=\"" << item_path << "\">" << item_name
+             << "</a></li>";
     }
 
     body << "</ul></body></html>";
@@ -247,7 +259,7 @@ void GetRequestHandler::_createAutoIndexResponse(const std::string &true_path, c
 bool PostRequestHandler ::_canProcess(const Request& request,
                                       const std::vector<Route>& routes) const
 {
-    Route best_route = getBestRoute(request, routes);
+    Route best_route = ServerTools::getBestRoute(request, routes);
     return (!best_route.url.empty() && request.getMethod() == "POST");
 }
 
@@ -452,7 +464,7 @@ void PostRequestHandler::processRequest(const Request& request,
 bool DeleteRequestHandler ::_canProcess(const Request& request,
                                         const std::vector<Route>& routes) const
 {
-    Route best_route = getBestRoute(request, routes);
+    Route best_route = ServerTools::getBestRoute(request, routes);
     return (!best_route.url.empty() && request.getMethod() == "DELETE");
 }
 

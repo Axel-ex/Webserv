@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/21 15:24:44 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/10/03 13:32:58 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/08 11:41:57 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,11 +170,4 @@ void sendHttpErrorResponse(int client_fd, int error_code, const std::map<int, st
 	send(client_fd, response_body.c_str(), response_body.length(), 0);
 }
 
-double	getTime(void)
-{
-	struct timeval	tv;
 
-	if (gettimeofday(&tv, NULL))
-		throw std::runtime_error("Function 'gettimeofday failed.\n");
-	return (tv.tv_sec + (tv.tv_usec / 1e6));
-}

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/10/06 11:30:50 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/08 11:40:00 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, const Confi
 	_headers = request.getHeaders();
 	_body = request.getBody() + "\0";
 	_client_fd = fd;
-	_location = getBestRoute(request, config.getRoutes());
+	_location = ServerTools::getBestRoute(request, config.getRoutes());
 	// ===============================================
 
 	_open_processes = open_processes;
@@ -92,7 +92,7 @@ CgiRequestHandler::~CgiRequestHandler()
 
 bool CgiRequestHandler::_canProcess(const Request &request, const std::vector<Route> &routes)
 {
-	Route best_route = getBestRoute(request, routes);
+	Route best_route = ServerTools::getBestRoute(request, routes);
 	if (best_route.url.empty() || best_route.cgi_extension.empty() || best_route.cgi_path.empty())
 		return (false);
 	return (isExtensionAllowed(request.getResource(), best_route.cgi_extension));
@@ -218,7 +218,7 @@ void CgiRequestHandler::processRequest()
 		}
 		close(_pipe_in[1]);
 
-		t_client_process c_process = {_method, getTime(), _client_fd, _pipe_out[0]};
+		t_client_process c_process = {_method, ServerTools::getTime(), _client_fd, _pipe_out[0]};
 		(*_open_processes)[pid] = c_process;
 	}
 }

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 20:08:09 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/07 13:42:36 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/08 12:44:33 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,9 +60,7 @@ int main(int argc, char **argv)
     }
     catch (const std::exception &e)
     {
-        std::string err("exception: ");
-        err.append(e.what(), std::strlen(e.what()));
-        Log::log(ERROR, err);
+        Log::log(ERROR, e.what());
     }
     return (EXIT_SUCCESS);
 }

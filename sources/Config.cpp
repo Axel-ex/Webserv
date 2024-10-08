@@ -6,15 +6,16 @@
 /*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:17:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/08 10:03:26 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/08 12:38:46 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Config.hpp"
+#include <climits>
 #include <ostream>
 #include <utility>
 
-Config ::Config(void) {}
+Config ::Config(void) : _max_body_size(INT_MAX) {}
 
 Config ::~Config(void) {}
 

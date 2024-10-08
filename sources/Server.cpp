@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/07 15:59:53 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/08 12:28:22 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,7 @@ std::vector<t_pollfd> Server::init()
             throw ServerError("Fail binding the socket");
 
         if (listen(sockfd, MAX_CLIENT) < 0)
-            throw ServerError("fail listening for conncetion");
+            throw ServerError("fail listening for connection");
 
         /* Create the poll_fd and add it to the vector*/
         t_pollfd new_fd;
@@ -123,7 +123,7 @@ void Server::checkTimeouts()
     std::map<pid_t, t_client_process>::iterator it = _open_processes.begin();
     for (; it != _open_processes.end(); it++)
     {
-        now = getTime();
+        now = ServerTools::getTime();
         elapsed = now - it->second.start_time;
         Log::log(WARNING, ("Process [" + toString(RED) + toString(it->first) +
                            toString(RESET) + "]" +
