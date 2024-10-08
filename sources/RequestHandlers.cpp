@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/08 11:47:15 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/08 13:09:41 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -174,7 +174,7 @@ void GetRequestHandler ::processRequest(const Request& request,
     if (stat((req_path).c_str(), &info) != 0)
     {
         _createErrorResponse(NOT_FOUND, response);
-        return (Log::log(WARNING, "No such path"));
+        return (Log::log(WARNING, "No such path or directory"));
     }
     if (S_ISREG(info.st_mode))
     {
@@ -197,7 +197,7 @@ void GetRequestHandler ::processRequest(const Request& request,
         else
         {
             _createErrorResponse(FORBIDDEN, response);
-            return (Log::log(WARNING, "Not a file"));
+            return (Log::log(WARNING, "Is a directory"));
         }
     }
 }
