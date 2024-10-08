@@ -12,8 +12,8 @@ Cluster::Cluster(std::string config_file)
 {
     Parser parser;
 
-    parser.parse(config_file, *this);
     Log::setLogLevel(DEBUG);
+    parser.parse(config_file, *this);
     Log::clearScreen();
 }
 

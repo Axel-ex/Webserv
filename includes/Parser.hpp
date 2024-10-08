@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/16 10:11:15 by achabrer          #+#    #+#             */
-/*   Updated: 2024/10/03 13:20:39 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/08 09:25:48 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,6 +70,7 @@ class Parser
 
         // Debug
         void _debugTokenList(void) const;
+		void _debugConfigs(Cluster &cluster) const;
         static std::string _tokenTypeToString(TokenType type);
 };
 

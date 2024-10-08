@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/04 16:37:04 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/08 10:57:26 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,9 +44,9 @@ void Parser ::parse(const std::string& config_file, Cluster& cluster)
 
     file_content = _readFile(config_file);
     _tokenize(file_content);
-    // _debugTokenList();
     _parseTokenList(cluster);
     _loadErrors(cluster);
+	_debugConfigs(cluster);
 }
 
 std::string Parser ::_readFile(const std::string& path)
@@ -260,8 +260,8 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it,
     if (_isDuplicatedLocation(it->content, config.getRoutes()))
         throw SynthaxException(*it,
                                "Config contains duplicated location blocks");
-    Route route = (Route){it->content,  "",       methods,      "./uploads",
-                          "index.html", cgi_path, cgi_extension};
+    Route route = (Route){it->content,  "",       methods,       "./uploads",
+                          "", cgi_path, cgi_extension, false};
 
     for (; it->type != CLOSE_BRACKET; it++)
     {
@@ -273,6 +273,8 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it,
             route.index = (++it)->content;
         else if (it->content == "upload_store")
             route.upload_store = (++it)->content;
+        else if (it->content == "autoindex")
+            route.autoindex = (++it)->content == "on" ? true : false;
         else if (it->content == "cgi_path")
         {
             while ((++it)->type == ARGUMENT)
@@ -349,7 +351,8 @@ bool Parser::_isCgiExtension(const std::string& extension) const
 }
 
 /**
- * @brief check if port is a valid port or if it is not already in use by other servers.
+ * @brief check if port is a valid port or if it is not already in use by other
+ * servers.
  *
  * @param port_nb
  * @param ports
@@ -376,7 +379,7 @@ bool Parser::_isValidPort(int port_nb, const std::vector<int>& ports) const
  */
 void Parser::_loadErrors(Cluster& cluster) const
 {
-    std::vector<Server> &servers = cluster.getServers();
+    std::vector<Server>& servers = cluster.getServers();
 
     for (size_t i = 0; i < servers.size(); i++)
     {
@@ -393,8 +396,7 @@ void Parser::_loadErrors(Cluster& cluster) const
 
         // Then load the default if not provided
         int tmp[] = {400, 404, 413, 500};
-        std::map<int, std::string> errors =
-            servers[i].getConfig().getErrors();
+        std::map<int, std::string> errors = servers[i].getConfig().getErrors();
         std::vector<int> error_codes(tmp, tmp + sizeof(tmp) / sizeof(int));
         for (size_t j = 0; j < error_codes.size(); j++)
         {
@@ -424,6 +426,14 @@ void Parser ::_debugTokenList(void) const
         std::cout << " | " << it->content << std::endl;
     }
     std::cout << std::endl;
+}
+
+void Parser::_debugConfigs(Cluster &cluster) const
+{
+	std::vector<Server> servers = cluster.getServers();
+
+	for (size_t i = 0; i < servers.size(); i++)
+	  std::cout << servers[i].getConfig() << std::endl;
 }
 
 /**

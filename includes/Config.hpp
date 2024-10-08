@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:13:18 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 13:21:06 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/08 10:03:22 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #define CONFIG_HPP_
 
 #include <map>
+#include <ostream>
 #include <string>
 #include <vector>
 #include "utils.hpp"
@@ -51,5 +52,8 @@ class Config
         std::map<int, std::string> _errors;
         std::map<int, std::string> _error_path;
 };
+
+std::ostream &operator<<(std::ostream &ifs, const Config &config);
+std::ostream &operator<<(std::ostream &ifs, const Route &route);
 
 #endif

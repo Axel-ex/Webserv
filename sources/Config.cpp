@@ -6,11 +6,12 @@
 /*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:17:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 12:28:31 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/08 10:03:26 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Config.hpp"
+#include <ostream>
 #include <utility>
 
 Config ::Config(void) {}
@@ -76,4 +77,84 @@ void Config ::clear(void)
     _routes.clear();
     _errors.clear();
     _max_body_size = 100;
+}
+
+
+std::ostream &operator<<(std::ostream &ifs, const Config &config)
+{
+    ifs << "Server Name: " << config.getServerName() << "\n";
+
+    ifs << "Ports: ";
+    const std::vector<int>& ports = config.getPorts();
+    for (size_t i = 0; i < ports.size(); ++i) {
+        ifs << ports[i];
+        if (i != ports.size() - 1) {
+            ifs << ", ";
+        }
+    }
+    ifs << "\n";
+
+    ifs << "Max Body Size: " << config.getMaxBodySize() << "\n";
+
+    ifs << "Routes:\n";
+    const std::vector<Route>& routes = config.getRoutes();
+    for (size_t i = 0; i < routes.size(); ++i) {
+        ifs << "  Route " << i + 1 << ": " << routes[i] << "\n";
+    }
+
+    ifs << "Error Paths:\n";
+    const std::map<int, std::string>& errorPaths = config.getErrorPath();
+    for (std::map<int, std::string>::const_iterator it = errorPaths.begin(); it != errorPaths.end(); ++it) {
+        ifs << "  Error Code: " << it->first << " - Path: " << it->second << "\n";
+    }
+
+    ifs << "Resources:\n";
+    const std::map<std::string, std::string>& resources = config.getResources();
+    for (std::map<std::string, std::string>::const_iterator it = resources.begin(); it != resources.end(); ++it) {
+        ifs << "  " << it->first << ": " << it->second << "\n";
+    }
+
+    return ifs; 
+}
+
+std::ostream &operator<<(std::ostream &ifs, const Route &route)
+{
+    ifs << "URL: " << route.url << "\n";
+
+    ifs << "Root: " << route.root << "\n";
+
+    ifs << "Allowed Methods: ";
+    for (size_t i = 0; i < route.methods.size(); ++i) {
+        ifs << route.methods[i];
+        if (i != route.methods.size() - 1) {
+            ifs << ", ";
+        }
+    }
+    ifs << "\n";
+
+    ifs << "Upload Store: " << route.upload_store << "\n";
+
+    ifs << "Index: " << route.index << "\n";
+
+    ifs << "CGI Paths: ";
+    for (size_t i = 0; i < route.cgi_path.size(); ++i) {
+        ifs << route.cgi_path[i];
+        if (i != route.cgi_path.size() - 1) {
+            ifs << ", ";
+        }
+    }
+    ifs << "\n";
+
+    ifs << "CGI Extensions: ";
+    for (size_t i = 0; i < route.cgi_extension.size(); ++i) {
+        ifs << route.cgi_extension[i];
+        if (i != route.cgi_extension.size() - 1) {
+            ifs << ", ";
+        }
+    }
+    ifs << "\n";
+
+    ifs << "Autoindex: " << (route.autoindex ? "Enabled" : "Disabled") << "\n";
+
+    return ifs;
 }

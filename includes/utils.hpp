@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/10/06 12:19:06 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/08 08:51:35 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,6 +69,7 @@ typedef struct Route
         std::string index;
         std::vector<std::string> cgi_path;
         std::vector<std::string> cgi_extension;
+		bool autoindex;
 } Route;
 
 template <typename T>

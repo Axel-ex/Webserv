@@ -6,28 +6,30 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 13:01:16 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/08 11:11:16 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/RequestHandlers.hpp"
 #include "../includes/Config.hpp"
 #include "../includes/Log.hpp"
-#include "../includes/utils.hpp"
 #include "../includes/Parser.hpp"
-#include <algorithm>
+#include "../includes/utils.hpp"
+#include <cstdlib>
 #include <fstream>
 #include <ios>
 #include <iostream>
 #include <map>
 #include <string>
 #include <sys/stat.h>
-#include <cstdlib>
+#include <dirent.h>
+#include <sstream>
 
 // =============================================================================
 //                               ABSTRACT HANDLER
 // =============================================================================
-void ARequestHandler::initializeMimeTypes() {
+void ARequestHandler::initializeMimeTypes()
+{
     mimeTypes[".ico"] = "image/x-icon";
     mimeTypes[".html"] = "text/html";
     mimeTypes[".htm"] = "text/html";
@@ -43,9 +45,7 @@ void ARequestHandler::initializeMimeTypes() {
     // Add more MIME types as needed
 }
 
-ARequestHandler ::ARequestHandler(void) : _next(NULL) {
-    initializeMimeTypes();
-}
+ARequestHandler ::ARequestHandler(void) : _next(NULL) { initializeMimeTypes(); }
 
 ARequestHandler ::~ARequestHandler(void) {}
 
@@ -87,52 +87,55 @@ void ARequestHandler ::_createErrorResponse(int error_code,
     it = response.getServerConfig().getErrors().find(error_code);
 
     response.setBody(it->second);
-    headers =
-        "HTTP/1.1 " + toString(error_code) + " " + _getErrorReason(error_code) + "\r\n";
+    headers = "HTTP/1.1 " + toString(error_code) + " " +
+              _getErrorReason(error_code) + "\r\n";
     headers += "Content-Type: text/html\r\n";
-    headers +=
-        "Content-Length: " + toString(it->second.length()) + "\r\n\r\n";
+    headers += "Content-Length: " + toString(it->second.length()) + "\r\n\r\n";
     response.setHeaders(headers);
 }
 
-std::string ARequestHandler::_getErrorReason(int error_code) const {
+std::string ARequestHandler::_getErrorReason(int error_code) const
+{
 
-	switch (error_code) {
-		default:
-			return ("Page Not Found");
-		case NOT_FOUND:
-			return ("Page Not Found");
-		case BAD_REQUEST:
-			return ("Bad Request");
-		case INTERNAL_ERROR:
-			return ("Internal Server Error");
-	}
+    switch (error_code)
+    {
+    default:
+        return ("Page Not Found");
+    case NOT_FOUND:
+        return ("Page Not Found");
+    case BAD_REQUEST:
+        return ("Bad Request");
+    case INTERNAL_ERROR:
+        return ("Internal Server Error");
+    }
 }
 
 /* CONCRETE IMPLEMENTATION OF THE HANDLERS */
 // =============================================================================
 //                               GET
 // =============================================================================
-bool GetRequestHandler ::_canProcess(const Request& request, const std::vector<Route> &routes) const
+bool GetRequestHandler ::_canProcess(const Request& request,
+                                     const std::vector<Route>& routes) const
 {
     Route best_route = getBestRoute(request, routes);
     return (!best_route.url.empty() && request.getMethod() == "GET");
 }
 
-std::string    GetRequestHandler ::_get_file_content(std::string path, Response& response) const
+std::string GetRequestHandler ::_get_file_content(std::string path,
+                                                  Response& response) const
 {
     std::stringstream buffer;
     std::ifstream file(path.c_str());
     std::string cont_type;
 
-    if (!file.is_open()) 
+    if (!file.is_open())
         return ("");
     buffer << file.rdbuf();
     response.setBody(buffer.str());
     file.close();
-    
+
     std::string::size_type idx = path.rfind('.');
-    if (idx != std::string::npos) 
+    if (idx != std::string::npos)
     {
         std::string extension = path.substr(idx);
         if (mimeTypes.find(extension) != mimeTypes.end())
@@ -147,17 +150,18 @@ std::string    GetRequestHandler ::_get_file_content(std::string path, Response&
 }
 
 void GetRequestHandler ::processRequest(const Request& request,
-                                         Response& response) const
+                                        Response& response) const
 {
-    Route best_route = getBestRoute(request, response.getServerConfig().getRoutes());
+    Route best_route =
+        getBestRoute(request, response.getServerConfig().getRoutes());
     std::string resource = request.getResource();
     std::string headers;
     std::string req_path;
     std::string cont_type;
     struct stat info;
-    
+
     if (resource.empty() || resource == "/")
-        req_path = best_route.root +  "/" + best_route.index;
+        req_path = best_route.root + "/" + best_route.index;
     else
         req_path = best_route.root + resource;
 
@@ -175,23 +179,73 @@ void GetRequestHandler ::processRequest(const Request& request,
             return (Log::log(WARNING, "couldn't get path"));
         }
         headers = "HTTP/1.1 200 OK\r\n";
-        headers += "Content-Type: " + cont_type +"\r\n";
-        headers +=
-            "Content-Length: " + toString(response.getBody().length()) +
-            "\r\n\r\n";
+        headers += "Content-Type: " + cont_type + "\r\n";
+        headers += "Content-Length: " + toString(response.getBody().length()) +
+                   "\r\n\r\n";
         response.setHeaders(headers);
     }
     else
     {
-        _createErrorResponse(NOT_FOUND, response);
-        return (Log::log(WARNING, "Not a file"));
+        if (best_route.autoindex)
+            _createAutoIndexResponse(req_path, resource, response);
+        else
+        {
+            _createErrorResponse(FORBIDDEN, response);
+            return (Log::log(WARNING, "Not a file"));
+        }
     }
+}
+
+void GetRequestHandler::_createAutoIndexResponse(const std::string &true_path, const std::string &route_path, Response& response) const {
+    DIR *dir = opendir(true_path.c_str());
+    if (!dir)
+    {
+        _createErrorResponse(FORBIDDEN, response);
+        return Log::log(ERROR, "Could not open directory");
+    }
+
+    std::stringstream body;
+    body << "<html><head><title>Index of " << route_path << "</title></head>";
+    body << "<body><h1>Index of " << route_path << "</h1><ul>";
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)))
+    {
+        // Skip "." and ".." directories
+        if (std::string(entry->d_name) == "." || std::string(entry->d_name) == "..")
+            continue;
+
+        // Build the relative path for each item (file or folder)
+        std::string item_name = entry->d_name;
+        std::string item_path = route_path + "/" + item_name;
+
+        // Check if it's a directory (we want to append "/" for directories)
+        struct stat item_stat;
+        std::string full_item_path = true_path + "/" + item_name;
+        if (stat(full_item_path.c_str(), &item_stat) == 0 && S_ISDIR(item_stat.st_mode))
+            item_name += "/";
+
+        // Add the item to the HTML body
+        body << "<li><a href=\"" << item_path << "\">" << item_name << "</a></li>";
+    }
+
+    body << "</ul></body></html>";
+    closedir(dir);
+
+    std::string html_content = body.str();
+    response.setBody(html_content);
+
+    std::string headers = "HTTP/1.1 200 OK\r\n";
+    headers += "Content-Type: text/html\r\n";
+    headers += "Content-Length: " + toString(html_content.size()) + "\r\n\r\n";
+    response.setHeaders(headers);
 }
 
 // =============================================================================
 //                               POST
 // =============================================================================
-bool PostRequestHandler ::_canProcess(const Request& request, const std::vector<Route> &routes) const
+bool PostRequestHandler ::_canProcess(const Request& request,
+                                      const std::vector<Route>& routes) const
 {
     Route best_route = getBestRoute(request, routes);
     return (!best_route.url.empty() && request.getMethod() == "POST");
@@ -210,7 +264,8 @@ std::string PostRequestHandler ::_getBoundary(const std::string& headers) const
     return (boundary);
 }
 
-std::string PostRequestHandler ::_getContentType(const std::string& headers) const
+std::string
+PostRequestHandler ::_getContentType(const std::string& headers) const
 {
     std::string content_type_key = "Content-Type: ";
     size_t content_type_pos = headers.find(content_type_key);
@@ -218,16 +273,18 @@ std::string PostRequestHandler ::_getContentType(const std::string& headers) con
         return ("");
     content_type_pos += content_type_key.size();
     size_t content_type_end_pos;
-    if (headers.find("\r\n", content_type_pos) < headers.find(";", content_type_pos))
+    if (headers.find("\r\n", content_type_pos) <
+        headers.find(";", content_type_pos))
         content_type_end_pos = headers.find("\r\n", content_type_pos);
-    else 
+    else
         content_type_end_pos = headers.find(";", content_type_pos);
-    std::string content_type =
-        headers.substr(content_type_pos, content_type_end_pos - content_type_pos);
+    std::string content_type = headers.substr(
+        content_type_pos, content_type_end_pos - content_type_pos);
     return (content_type);
 }
 
-std::string PostRequestHandler ::_getFileContent(const std::string& body,
+std::string
+PostRequestHandler ::_getFileContent(const std::string& body,
                                      const std::string& boundary) const
 {
     size_t start = body.find(boundary);
@@ -277,21 +334,22 @@ void PostRequestHandler ::_createDir(std::string dir_name) const
 }
 
 void PostRequestHandler::createResponse(std::string resource,
-                                       Response& response) const
+                                        Response& response) const
 {
     std::string headers;
     std::string page;
     std::string decoded;
     std::string content;
-    
-    for (size_t i = 0; i < resource.length(); ++i) 
+
+    for (size_t i = 0; i < resource.length(); ++i)
     {
         if (resource[i] == '+')
             decoded += ' ';
-        else if (resource[i] == '%' && i + 2 < resource.length()) 
+        else if (resource[i] == '%' && i + 2 < resource.length())
         {
             std::string hexValue = resource.substr(i + 1, 2);
-            char decodedChar = static_cast<char>(std::strtol(hexValue.c_str(), NULL, 16));
+            char decodedChar =
+                static_cast<char>(std::strtol(hexValue.c_str(), NULL, 16));
             decoded += decodedChar;
             i += 2; // Skip the next two characters
         }
@@ -305,17 +363,18 @@ void PostRequestHandler::createResponse(std::string resource,
         decoded = decoded.substr(decoded.find("& ") + 2);
     }
     page = "<!DOCTYPE html><html><head><title>Passed: \
-            </title></head><body><h1>"+content+"</h1><br><br>";
+            </title></head><body><h1>" +
+           content + "</h1><br><br>";
     response.setBody(page);
     headers = "HTTP/1.1 200 OK\r\n";
     headers += "Content-Type: text/html\r\n";
     headers +=
-        "Content-Length: " + toString(response.getBody().length()) +
-        "\r\n\r\n";
+        "Content-Length: " + toString(response.getBody().length()) + "\r\n\r\n";
     response.setHeaders(headers);
 }
 
-bool PostRequestHandler::_bodySizeCheck(const Request& request, const Config &config) const
+bool PostRequestHandler::_bodySizeCheck(const Request& request,
+                                        const Config& config) const
 {
     unsigned long max_body_size = config.getMaxBodySize();
 
@@ -323,7 +382,7 @@ bool PostRequestHandler::_bodySizeCheck(const Request& request, const Config &co
 }
 
 void PostRequestHandler::processRequest(const Request& request,
-                                         Response& response) const
+                                        Response& response) const
 {
     std::string content_type = _getContentType(request.getHeaders());
     Config config = response.getServerConfig();
@@ -350,31 +409,36 @@ void PostRequestHandler::processRequest(const Request& request,
     }
 
     std::string file_content;
-    if (content_type == "multipart/form-data" || content_type == "application/json" \
-        || content_type == "application/octet-stream")
+    if (content_type == "multipart/form-data" ||
+        content_type == "application/json" ||
+        content_type == "application/octet-stream")
         file_content = _getFileContent(request.getBody(), boundary);
-    else //if (content_type == "application/x-www-form-urlencoded" || content_type = "text/plain")
+    else // if (content_type == "application/x-www-form-urlencoded" ||
+         // content_type = "text/plain")
         file_content = request.getBody();
     std::string file_name = _getFileName(request.getBody());
-    if (file_content.empty() || (file_name.empty() && content_type == "multipart/form-data"))
+    if (file_content.empty() ||
+        (file_name.empty() && content_type == "multipart/form-data"))
     {
         _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "couldn't process the file"));
     }
 
-    if (content_type == "multipart/form-data" || content_type == "application/json" \
-        || content_type == "application/octet-stream")
+    if (content_type == "multipart/form-data" ||
+        content_type == "application/json" ||
+        content_type == "application/octet-stream")
     {
         // Write the file content to the file
         _createDir(upload_store);
         std::string dir = upload_store + "/" + file_name;
         std::ofstream ofs(dir.c_str(),
-                        std::ios_base::out | std::ios_base::trunc);
+                          std::ios_base::out | std::ios_base::trunc);
         if (!ofs)
             return (Log::log(WARNING, "Couldn't write to file"));
         ofs << file_content;
         if (!ofs)
-            return (Log::log(WARNING, "Failed to write contente to file: " + file_name));
+            return (Log::log(WARNING,
+                             "Failed to write contente to file: " + file_name));
         ofs.close();
         _createOkResponse(file_name + " Posted", response);
     }
@@ -385,7 +449,8 @@ void PostRequestHandler::processRequest(const Request& request,
 // =============================================================================
 //                               DELETE
 // =============================================================================
-bool DeleteRequestHandler ::_canProcess(const Request& request, const std::vector<Route> &routes) const
+bool DeleteRequestHandler ::_canProcess(const Request& request,
+                                        const std::vector<Route>& routes) const
 {
     Route best_route = getBestRoute(request, routes);
     return (!best_route.url.empty() && request.getMethod() == "DELETE");
@@ -395,8 +460,8 @@ std::string _GetUserAgent(std::string userAgent)
 {
     size_t pos = userAgent.find("User-Agent:");
     std::string agent;
-    
-    if (pos != std::string::npos) 
+
+    if (pos != std::string::npos)
     {
         agent = userAgent.substr(pos + 12, userAgent.find("/", pos) - pos - 12);
         return (agent);
@@ -405,13 +470,14 @@ std::string _GetUserAgent(std::string userAgent)
 }
 
 std::string DeleteRequestHandler ::_getPath(const Request& request,
-                                           Response& response) const
+                                            Response& response) const
 {
     Config config = response.getServerConfig();
     const std::vector<Route>& routes = config.getRoutes();
     std::string del_path;
 
-    del_path = request.getResource();//.substr(0, request.getResource().find("/"));
+    del_path =
+        request.getResource(); //.substr(0, request.getResource().find("/"));
     if (routes.empty())
     {
         _createErrorResponse(BAD_REQUEST, response);
@@ -429,15 +495,15 @@ std::string DeleteRequestHandler ::_getPath(const Request& request,
 }
 
 void DeleteRequestHandler ::processRequest(const Request& request,
-                                            Response& response) const
+                                           Response& response) const
 {
     struct stat info;
     std::string path;
     std::string user_agent;
 
     user_agent = _GetUserAgent(request.getHeaders());
-    if (user_agent != "Chrome" && user_agent != "Firefox" && user_agent != "Safari"
-        && user_agent != "Edge" && user_agent != "Opera")
+    if (user_agent != "Chrome" && user_agent != "Firefox" &&
+        user_agent != "Safari" && user_agent != "Edge" && user_agent != "Opera")
     {
         _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "Invalid delete request"));
@@ -453,7 +519,7 @@ void DeleteRequestHandler ::processRequest(const Request& request,
         _createErrorResponse(BAD_REQUEST, response);
         return (Log::log(WARNING, "No such path"));
     }
-    else 
+    else
     {
         if (S_ISREG(info.st_mode))
         {
@@ -463,7 +529,7 @@ void DeleteRequestHandler ::processRequest(const Request& request,
                 _createErrorResponse(BAD_REQUEST, response);
                 return (Log::log(WARNING, "Failed to delete file"));
             }
-        }   
+        }
         else if (S_ISDIR(info.st_mode))
         {
             if (remove(path.c_str()) != 0)
