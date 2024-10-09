@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:34:18 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/10/06 11:57:39 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/09 15:13:00 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,10 +91,4 @@ class CgiRequestHandler
 		std::string 						getQueryString(void);
 		std::map<std::string, std::string>	parseHttpHeader(void) const;
 };
-
-std::string getFileExtension(const std::string &url);
-bool isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions);
-void sendHttpErrorResponse(int client_fd, int error_code, const std::map<int, std::string> &errors);
-unsigned int convertHex(const std::string &nb);
-
 #endif // CGIREQUESTHANDLER_HPP

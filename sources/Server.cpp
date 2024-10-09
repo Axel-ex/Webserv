@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/08 12:28:22 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/09 15:18:42 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,7 +133,7 @@ void Server::checkTimeouts()
             Log::log(DEBUG,
                      ("CGI PROCESS [" + toString(RED) + toString(it->first) +
                       RESET + "]: Exceeded the time limit."));
-            sendHttpErrorResponse(it->second.client_fd, ETIMEDOUT,
+			CgiTools::sendHttpErrorResponse(it->second.client_fd, ETIMEDOUT,
                                   _config.getErrors());
             kill(it->first, SIGKILL);
         }
@@ -174,7 +174,7 @@ void Server::finishCgiResponse(t_chldProcess child)
                      ("CGI PROCESS [" + toString(RED) + toString(child.pid) +
                       RESET + "] FINISHED WITH EXIT CODE: " +
                       toString(WEXITSTATUS(child.status))));
-            sendHttpErrorResponse(client.client_fd, 500,
+			CgiTools::sendHttpErrorResponse(client.client_fd, 500,
                                   std::map<int, std::string>());
         }
     }
@@ -190,7 +190,7 @@ void Server::finishCgiResponse(t_chldProcess child)
                 ERROR,
                 ("CGI PROCESS [" + toString(RED) + toString(child.pid) + RESET +
                  "] RECEIVED THE SIGNAL: " + toString(WTERMSIG(child.status))));
-            sendHttpErrorResponse(client.client_fd, 500,
+			CgiTools::sendHttpErrorResponse(client.client_fd, 500,
                                   std::map<int, std::string>());
         }
     }

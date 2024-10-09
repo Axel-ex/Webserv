@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/10/08 11:43:58 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/09 15:08:40 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
+#include <map>
 
 typedef enum ProcessStatus
 {
@@ -90,6 +91,16 @@ namespace ServerTools
 	std::string getMatch(const std::vector<Route>& routes, std::string& resource,
 						std::string method);
 	Route getBestRoute(const Request& request, const std::vector<Route>& routes);
+}
+
+namespace CgiTools
+{
+	std::string getFileExtension(const std::string &url);
+	bool isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions);
+	void sendHttpErrorResponse(int client_fd, int error_code, const std::map<int, std::string> &errors);
+	unsigned int convertHex(const std::string &nb);
+	void sendErrorPage(int client_fd, std::string file_path, int status_code);
+	int getStatusCode(int error_code);
 }
 
 #endif // UTILS_HPP_

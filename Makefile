@@ -11,7 +11,6 @@ INCLUDE_DIR = includes
 SRCS = $(addprefix $(SRC_DIR)/, 	main.cpp 				\
                                     Cluster.cpp				\
 									CgiRequestHandler.cpp 	\
-									CgiTools.cpp 	\
 									Config.cpp 				\
 									Log.cpp 				\
 									Parser.cpp 				\
@@ -20,7 +19,7 @@ SRCS = $(addprefix $(SRC_DIR)/, 	main.cpp 				\
 									RequestHandlers.cpp 	\
 									Response.cpp 			\
 									Server.cpp 				\
-									ServerTools.cpp 		\
+									Tools.cpp 		\
 									signal.cpp )
 
 

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/09 14:46:31 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/09 14:49:18 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -373,7 +373,7 @@ void Parser::_checkDuplicatedPorts(Cluster& cluster) const
         }
     }
 
-    // Remove empty servers
+    // Remove servers without ports
     std::vector<Server>::iterator it_servers = servers.begin();
     for (; it_servers != servers.end();)
     {

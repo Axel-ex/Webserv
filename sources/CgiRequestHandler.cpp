@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/10/08 11:40:00 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/09 15:17:38 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,7 +52,7 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, const Confi
 		_document_root.erase(0, 1);
 
 	decode(); // --> decode hexadecimal values in the requested URI
-	_extension = getFileExtension(_decoded_resource);
+	_extension = CgiTools::getFileExtension(_decoded_resource);
 	_scriptName = getScriptName();
 	_scriptPath = getScriptPath();
 	_interpreter = getInterpreter();
@@ -95,7 +95,7 @@ bool CgiRequestHandler::_canProcess(const Request &request, const std::vector<Ro
 	Route best_route = ServerTools::getBestRoute(request, routes);
 	if (best_route.url.empty() || best_route.cgi_extension.empty() || best_route.cgi_path.empty())
 		return (false);
-	return (isExtensionAllowed(request.getResource(), best_route.cgi_extension));
+	return (CgiTools::isExtensionAllowed(request.getResource(), best_route.cgi_extension));
 }
 
 std::string CgiRequestHandler::getRootPath(void) const
@@ -173,7 +173,7 @@ void CgiRequestHandler::processRequest()
 	pid_t pid;
 	if (open(_scriptPath.c_str(), F_OK) == -1)
 	{
-		sendHttpErrorResponse(_client_fd, errno, _server_config.getErrorPath());
+		CgiTools::sendHttpErrorResponse(_client_fd, errno, _server_config.getErrorPath());
 		return;
 	}
 	if (pipe(_pipe_in) < 0 || pipe(_pipe_out) < 0)
@@ -192,7 +192,7 @@ void CgiRequestHandler::processRequest()
 
 		if (execve(_argv[0], _argv, _ch_env) < 0)
 		{
-			sendHttpErrorResponse(_client_fd, errno, _server_config.getErrorPath());
+			CgiTools::sendHttpErrorResponse(_client_fd, errno, _server_config.getErrorPath());
 			throw CgiError("Execve() could not execute: " + _scriptPath + " -> errno: " + toString(errno));
 		}
 	}
@@ -208,7 +208,7 @@ void CgiRequestHandler::processRequest()
 				int bytesToWrite = std::min(BUFSIZ, bytesRemaining);
 				if (write(_pipe_in[1], _body.c_str() + bytesWritten, bytesToWrite) == -1)
 				{
-					sendHttpErrorResponse(_client_fd, 500, _server_config.getErrorPath());
+					CgiTools::sendHttpErrorResponse(_client_fd, 500, _server_config.getErrorPath());
 					close(_pipe_in[1]);
 					throw CgiError("write() failed.");
 				} 
@@ -333,7 +333,7 @@ std::string CgiRequestHandler::decode()
 	{
 		if (_decoded_resource.length() < token + 2)
 			break;
-		char decimal = convertHex(_decoded_resource.substr(token + 1, 2));
+		char decimal = CgiTools::convertHex(_decoded_resource.substr(token + 1, 2));
 		_decoded_resource.replace(token, 3, toString(decimal));
 		token = _decoded_resource.find("%");
 	}

@@ -13,6 +13,7 @@ set(src_dir sources/)
 set(inc_dir includes/)
 
 set(srcs 
+	${src_dir}Cluster.cpp
 	${src_dir}Server.cpp
 	${src_dir}Parser.cpp
 	${src_dir}Log.cpp
@@ -23,12 +24,15 @@ set(srcs
 	${src_dir}CgiRequestHandler.cpp
 	${src_dir}Response.cpp
 	${src_dir}signal.cpp
+	${src_dir}ServerTools.cpp
+	${src_dir}CgiTools.cpp
 	${src_dir}main.cpp)
 
 set(headers
 	${inc_dir}utils.hpp
 	${inc_dir}Parser.hpp
 	${inc_dir}Server.hpp
+	${inc_dir}Cluster.hpp
 	${inc_dir}Log.hpp
 	${inc_dir}Config.hpp
 	${inc_dir}Request.hpp
