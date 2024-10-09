@@ -6,8 +6,6 @@
 #include <cerrno>
 #include <stdexcept>
 
-
-
 Cluster::Cluster(std::string config_file)
 {
     Parser parser;
