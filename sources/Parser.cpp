@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/08 12:49:09 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/09 14:46:31 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,7 @@ void Parser ::parse(const std::string& config_file, Cluster& cluster)
     _tokenize(file_content);
     _parseTokenList(cluster);
     _loadErrors(cluster);
+    _checkDuplicatedPorts(cluster);
 }
 
 std::string Parser ::_readFile(const std::string& path)
@@ -349,6 +350,40 @@ void Parser::_loadErrors(Cluster& cluster) const
     }
 }
 
+void Parser::_checkDuplicatedPorts(Cluster& cluster) const
+{
+    std::vector<int> already_in_use;
+    std::vector<Server>& servers = cluster.getServers();
+
+    // Remove duplicated ports among servers
+    for (size_t i = 0; i < servers.size(); i++)
+    {
+        std::vector<int>& ports = servers[i].getConfig().getPorts();
+        std::vector<int>::const_iterator it_port = ports.begin();
+        for (; it_port != ports.end();)
+        {
+            if (std::find(already_in_use.begin(), already_in_use.end(),
+                          *it_port) != already_in_use.end())
+                it_port = ports.erase(it_port);
+            else
+            {
+                already_in_use.push_back(*it_port);
+                it_port++;
+            }
+        }
+    }
+
+    // Remove empty servers
+    std::vector<Server>::iterator it_servers = servers.begin();
+    for (; it_servers != servers.end();)
+    {
+        if (it_servers->getConfig().getPorts().empty())
+            it_servers = servers.erase(it_servers);
+        else
+            it_servers++;
+    }
+}
+
 // =============================================================================
 //                               Helper
 // =============================================================================
@@ -400,17 +435,11 @@ bool Parser::_isCgiExtension(const std::string& extension) const
  */
 bool Parser::_isValidPort(int port_nb, const std::vector<int>& ports) const
 {
-    static std::vector<int> already_in_use;
-
     if (port_nb < 0 || port_nb > 65535)
         return (false);
     for (size_t i = 0; i < ports.size(); i++)
         if (port_nb == ports[i])
             return (false);
-    for (size_t i = 0; i < already_in_use.size(); i++)
-        if (port_nb == already_in_use[i])
-            return false;
-    already_in_use.push_back(port_nb);
     return true;
 }
 // =============================================================================

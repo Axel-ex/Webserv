@@ -6,7 +6,7 @@
 /*   By: tmoutinh <tmoutinh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 23:17:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/08 12:38:46 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/09 14:33:42 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ Config ::~Config(void) {}
 // _/=\_/=\_/=\_/=\_/=\_/=\_/=\_/ GETTERS \_/=\_/=\_/=\_/=\_/=\_/=\_/=\_
 const std::string Config::getServerName(void) const { return (_server_name); }
 
-const std::vector<int>& Config::getPorts(void) const { return (_ports); }
+std::vector<int>& Config::getPorts(void) { return (_ports); }
 
 const std::map<std::string, std::string>& Config::getResources(void) const
 {
@@ -81,81 +81,81 @@ void Config ::clear(void)
 }
 
 
-std::ostream &operator<<(std::ostream &ifs, const Config &config)
+std::ostream &operator<<(std::ostream &ofs,  Config &config)
 {
-    ifs << "Server Name: " << config.getServerName() << "\n";
+    ofs << "Server Name: " << config.getServerName() << "\n";
 
-    ifs << "Ports: ";
-    const std::vector<int>& ports = config.getPorts();
+    ofs << "Ports: ";
+    std::vector<int>& ports = config.getPorts();
     for (size_t i = 0; i < ports.size(); ++i) {
-        ifs << ports[i];
+        ofs << ports[i];
         if (i != ports.size() - 1) {
-            ifs << ", ";
+            ofs << ", ";
         }
     }
-    ifs << "\n";
+    ofs << "\n";
 
-    ifs << "Max Body Size: " << config.getMaxBodySize() << "\n";
+    ofs << "Max Body Size: " << config.getMaxBodySize() << "\n";
 
-    ifs << "Routes:\n";
+    ofs << "Routes:\n";
     const std::vector<Route>& routes = config.getRoutes();
     for (size_t i = 0; i < routes.size(); ++i) {
-        ifs << "  Route " << i + 1 << ": " << routes[i] << "\n";
+        ofs << "  Route " << i + 1 << ": " << routes[i] << "\n";
     }
 
-    ifs << "Error Paths:\n";
+    ofs << "Error Paths:\n";
     const std::map<int, std::string>& errorPaths = config.getErrorPath();
     for (std::map<int, std::string>::const_iterator it = errorPaths.begin(); it != errorPaths.end(); ++it) {
-        ifs << "  Error Code: " << it->first << " - Path: " << it->second << "\n";
+        ofs << "  Error Code: " << it->first << " - Path: " << it->second << "\n";
     }
 
-    ifs << "Resources:\n";
+    ofs << "Resources:\n";
     const std::map<std::string, std::string>& resources = config.getResources();
     for (std::map<std::string, std::string>::const_iterator it = resources.begin(); it != resources.end(); ++it) {
-        ifs << "  " << it->first << ": " << it->second << "\n";
+        ofs << "  " << it->first << ": " << it->second << "\n";
     }
 
-    return ifs; 
+    return ofs; 
 }
 
-std::ostream &operator<<(std::ostream &ifs, const Route &route)
+std::ostream &operator<<(std::ostream &ofs, const Route &route)
 {
-    ifs << "URL: " << route.url << "\n";
+    ofs << "URL: " << route.url << "\n";
 
-    ifs << "Root: " << route.root << "\n";
+    ofs << "Root: " << route.root << "\n";
 
-    ifs << "Allowed Methods: ";
+    ofs << "Allowed Methods: ";
     for (size_t i = 0; i < route.methods.size(); ++i) {
-        ifs << route.methods[i];
+        ofs << route.methods[i];
         if (i != route.methods.size() - 1) {
-            ifs << ", ";
+            ofs << ", ";
         }
     }
-    ifs << "\n";
+    ofs << "\n";
 
-    ifs << "Upload Store: " << route.upload_store << "\n";
+    ofs << "Upload Store: " << route.upload_store << "\n";
 
-    ifs << "Index: " << route.index << "\n";
+    ofs << "Index: " << route.index << "\n";
 
-    ifs << "CGI Paths: ";
+    ofs << "CGI Paths: ";
     for (size_t i = 0; i < route.cgi_path.size(); ++i) {
-        ifs << route.cgi_path[i];
+        ofs << route.cgi_path[i];
         if (i != route.cgi_path.size() - 1) {
-            ifs << ", ";
+            ofs << ", ";
         }
     }
-    ifs << "\n";
+    ofs << "\n";
 
-    ifs << "CGI Extensions: ";
+    ofs << "CGI Extensions: ";
     for (size_t i = 0; i < route.cgi_extension.size(); ++i) {
-        ifs << route.cgi_extension[i];
+        ofs << route.cgi_extension[i];
         if (i != route.cgi_extension.size() - 1) {
-            ifs << ", ";
+            ofs << ", ";
         }
     }
-    ifs << "\n";
+    ofs << "\n";
 
-    ifs << "Autoindex: " << (route.autoindex ? "Enabled" : "Disabled") << "\n";
+    ofs << "Autoindex: " << (route.autoindex ? "Enabled" : "Disabled") << "\n";
 
-    return ifs;
+    return ofs;
 }
