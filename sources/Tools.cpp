@@ -1,19 +1,63 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   CgiTools.cpp                                       :+:      :+:    :+:   */
+/*   ServerTools.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/09/21 15:24:44 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/10/03 13:32:58 by Axel             ###   ########.fr       */
+/*   Created: 2024/09/25 13:22:10 by ebmarque          #+#    #+#             */
+/*   Updated: 2024/10/09 15:19:54 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/CgiRequestHandler.hpp"
+
+#include "../includes/utils.hpp"
+#include "../includes/Log.hpp"
 #include <fstream>
 
-unsigned int convertHex(const std::string &nb)
+std::string ServerTools::getMatch(const std::vector<Route> &routes, std::string &resource, std::string method)
+{
+	std::string match = "";
+	for (size_t i = 0; i < routes.size(); i++)
+	{
+		std::vector<std::string>::const_iterator it = routes[i].methods.begin();
+		for (; it != routes[i].methods.end(); it++)
+		{
+			if (*it == method)
+				break;
+		}
+		if (it == routes[i].methods.end())
+			continue;
+		if (resource.find(routes[i].url) == 0 && routes[i].url.size() > match.size())
+			match = routes[i].url;
+	}
+	return (match);
+}
+
+Route ServerTools::getBestRoute(const Request& request, const std::vector<Route> &routes)
+{
+	std::string resource = request.getResource();
+	std::string match = getMatch(routes, resource, request.getMethod());
+	Route emptyRoute;
+
+	for (size_t i = 0; i < routes.size(); i++)
+	{
+		if (routes[i].url == match)
+			return (routes[i]);
+	}
+	return (emptyRoute);
+}
+
+double	ServerTools::getTime(void)
+{
+	struct timeval	tv;
+
+	if (gettimeofday(&tv, NULL))
+		throw std::runtime_error("Function 'gettimeofday failed.\n");
+	return (tv.tv_sec + (tv.tv_usec / 1e6));
+}
+
+unsigned int CgiTools::convertHex(const std::string &nb)
 {
 	unsigned int x;
 	std::stringstream ss;
@@ -22,7 +66,7 @@ unsigned int convertHex(const std::string &nb)
 	return (x);
 }
 
-std::string getFileExtension(const std::string &url)
+std::string CgiTools::getFileExtension(const std::string &url)
 {
 	size_t queryPos = url.find('?');
 
@@ -39,9 +83,9 @@ std::string getFileExtension(const std::string &url)
 	return (path);
 }
 
-bool isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions)
+bool CgiTools::isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions)
 {
-	std::string extension = getFileExtension(url);
+	std::string extension = CgiTools::getFileExtension(url);
 	for (size_t i = 0; i < cgi_extensions.size(); ++i)
 	{
 		if (extension == cgi_extensions[i])
@@ -50,7 +94,7 @@ bool isExtensionAllowed(const std::string &url, const std::vector<std::string> &
 	return (false);
 }
 
-int getStatusCode(int error_code)
+int CgiTools::getStatusCode(int error_code)
 {
 	switch (error_code)
 	{
@@ -85,7 +129,7 @@ int getStatusCode(int error_code)
 	return (500);
 }
 
-void sendErrorPage(int client_fd, std::string file_path, int status_code)
+void CgiTools::sendErrorPage(int client_fd, std::string file_path, int status_code)
 {
 	Log::log(DEBUG, "Using error page: " + toString(RED) + file_path + toString(RESET));
 	std::ifstream file(file_path.c_str());
@@ -109,15 +153,15 @@ void sendErrorPage(int client_fd, std::string file_path, int status_code)
 	}
 }
 
-void sendHttpErrorResponse(int client_fd, int error_code, const std::map<int, std::string> &error_pages)
+void CgiTools::sendHttpErrorResponse(int client_fd, int error_code, const std::map<int, std::string> &error_pages)
 {
 	std::string error_message;
-	int status_code = getStatusCode(error_code);
+	int status_code = CgiTools::getStatusCode(error_code);
 	std::string reason_phrase = "Internal Server Error";
 
 	if (error_pages.find(status_code) != error_pages.end())
 	{
-		sendErrorPage(client_fd, error_pages.find(status_code)->second, status_code);
+		CgiTools::sendErrorPage(client_fd, error_pages.find(status_code)->second, status_code);
 		return;
 	}
 
@@ -168,13 +212,4 @@ void sendHttpErrorResponse(int client_fd, int error_code, const std::map<int, st
 
 	send(client_fd, response_headers.c_str(), response_headers.length(), 0);
 	send(client_fd, response_body.c_str(), response_body.length(), 0);
-}
-
-double	getTime(void)
-{
-	struct timeval	tv;
-
-	if (gettimeofday(&tv, NULL))
-		throw std::runtime_error("Function 'gettimeofday failed.\n");
-	return (tv.tv_sec + (tv.tv_usec / 1e6));
 }

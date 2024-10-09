@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/10/06 12:09:24 by axel             ###   ########.fr       */
+/*   Updated: 2024/10/09 15:17:38 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,6 @@
 #include <cstdio>
 #include <algorithm>
 #include <cstring>
-
-// STRUCTURE TO BE USED FOR VERIFYING TIMED-OUT PROCESSES
-std::map<pid_t, t_client_process> CgiRequestHandler::_open_processes;
 
 std::string CgiRequestHandler::getInterpreter(void) const
 {
@@ -35,7 +32,7 @@ std::string CgiRequestHandler::getInterpreter(void) const
 	return (_scriptPath);
 }
 
-CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, const Config &config) : _server_config(config)
+CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, const Config &config, std::map<pid_t, t_client_process> *open_processes) : _server_config(config)
 {
 
 	// ============ REQUEST INFORMATION ==============
@@ -45,15 +42,17 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, const Confi
 	_headers = request.getHeaders();
 	_body = request.getBody() + "\0";
 	_client_fd = fd;
-	_location = getBestRoute(request, config.getRoutes());
+	_location = ServerTools::getBestRoute(request, config.getRoutes());
 	// ===============================================
+
+	_open_processes = open_processes;
 
 	_document_root = _location.root.substr(0, _location.root.find(_location.url));
 	if (!_document_root.empty() && _document_root[0] == '.')
 		_document_root.erase(0, 1);
 
 	decode(); // --> decode hexadecimal values in the requested URI
-	_extension = getFileExtension(_decoded_resource);
+	_extension = CgiTools::getFileExtension(_decoded_resource);
 	_scriptName = getScriptName();
 	_scriptPath = getScriptPath();
 	_interpreter = getInterpreter();
@@ -93,10 +92,10 @@ CgiRequestHandler::~CgiRequestHandler()
 
 bool CgiRequestHandler::_canProcess(const Request &request, const std::vector<Route> &routes)
 {
-	Route best_route = getBestRoute(request, routes);
+	Route best_route = ServerTools::getBestRoute(request, routes);
 	if (best_route.url.empty() || best_route.cgi_extension.empty() || best_route.cgi_path.empty())
 		return (false);
-	return (isExtensionAllowed(request.getResource(), best_route.cgi_extension));
+	return (CgiTools::isExtensionAllowed(request.getResource(), best_route.cgi_extension));
 }
 
 std::string CgiRequestHandler::getRootPath(void) const
@@ -174,7 +173,7 @@ void CgiRequestHandler::processRequest()
 	pid_t pid;
 	if (open(_scriptPath.c_str(), F_OK) == -1)
 	{
-		sendHttpErrorResponse(_client_fd, errno, _server_config.getErrorPath());
+		CgiTools::sendHttpErrorResponse(_client_fd, errno, _server_config.getErrorPath());
 		return;
 	}
 	if (pipe(_pipe_in) < 0 || pipe(_pipe_out) < 0)
@@ -193,7 +192,7 @@ void CgiRequestHandler::processRequest()
 
 		if (execve(_argv[0], _argv, _ch_env) < 0)
 		{
-			sendHttpErrorResponse(_client_fd, errno, _server_config.getErrorPath());
+			CgiTools::sendHttpErrorResponse(_client_fd, errno, _server_config.getErrorPath());
 			throw CgiError("Execve() could not execute: " + _scriptPath + " -> errno: " + toString(errno));
 		}
 	}
@@ -209,7 +208,7 @@ void CgiRequestHandler::processRequest()
 				int bytesToWrite = std::min(BUFSIZ, bytesRemaining);
 				if (write(_pipe_in[1], _body.c_str() + bytesWritten, bytesToWrite) == -1)
 				{
-					sendHttpErrorResponse(_client_fd, 500, _server_config.getErrorPath());
+					CgiTools::sendHttpErrorResponse(_client_fd, 500, _server_config.getErrorPath());
 					close(_pipe_in[1]);
 					throw CgiError("write() failed.");
 				} 
@@ -219,8 +218,8 @@ void CgiRequestHandler::processRequest()
 		}
 		close(_pipe_in[1]);
 
-		t_client_process c_process = {_method, getTime(), _client_fd, _pipe_out[0]};
-		CgiRequestHandler::_open_processes[pid] = c_process;
+		t_client_process c_process = {_method, ServerTools::getTime(), _client_fd, _pipe_out[0]};
+		(*_open_processes)[pid] = c_process;
 	}
 }
 
@@ -334,7 +333,7 @@ std::string CgiRequestHandler::decode()
 	{
 		if (_decoded_resource.length() < token + 2)
 			break;
-		char decimal = convertHex(_decoded_resource.substr(token + 1, 2));
+		char decimal = CgiTools::convertHex(_decoded_resource.substr(token + 1, 2));
 		_decoded_resource.replace(token, 3, toString(decimal));
 		token = _decoded_resource.find("%");
 	}

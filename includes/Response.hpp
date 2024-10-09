@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 14:43:01 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 11:47:49 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/08 11:24:47 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,9 @@
 
 //Error codes
 #define BAD_REQUEST 400
+#define FORBIDDEN 403
 #define NOT_FOUND 404
+#define METHOD_NOT_ALLOWED 405
 #define INTERNAL_ERROR 500
 #define PAYLOAD_LARGE 413
 

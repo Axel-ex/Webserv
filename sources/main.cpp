@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 20:08:09 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/03 14:55:56 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/08 12:44:33 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,13 +19,33 @@
 #include <cstring>
 #include <exception>
 
+std::deque<t_chldProcess> finished_pids;
+
+void sigchldHandler(int signum)
+{
+    (void)signum;
+    pid_t pid;
+    int status;
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
+    {
+        t_chldProcess child;
+        child.pid = pid;
+        if (WIFEXITED(status))
+            child.type = EXITED;
+        else if (WIFSIGNALED(status))
+            child.type = SIGNALED;
+        child.status = status;
+        finished_pids.push_back(child);
+    }
+}
+
 int main(int argc, char **argv)
 {
     std::signal(SIGPIPE, SIG_IGN);
     std::signal(SIGINT, sigHandler);
+    std::signal(SIGCHLD, sigchldHandler);
 
 	//TODO: make it work with the cluster
-    // std::signal(SIGCHLD, Server::_sigchldHandler);
 
     std::string config_file;
     argc == 2 ? config_file = argv[1]
@@ -40,9 +60,7 @@ int main(int argc, char **argv)
     }
     catch (const std::exception &e)
     {
-        std::string err("exception: ");
-        err.append(e.what(), std::strlen(e.what()));
-        Log::log(ERROR, err);
+        Log::log(ERROR, e.what());
     }
     return (EXIT_SUCCESS);
 }

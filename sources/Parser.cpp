@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/04 16:37:04 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/09 14:49:18 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,9 +44,9 @@ void Parser ::parse(const std::string& config_file, Cluster& cluster)
 
     file_content = _readFile(config_file);
     _tokenize(file_content);
-    // _debugTokenList();
     _parseTokenList(cluster);
     _loadErrors(cluster);
+    _checkDuplicatedPorts(cluster);
 }
 
 std::string Parser ::_readFile(const std::string& path)
@@ -240,6 +240,11 @@ void Parser ::_parseServerDirective(std::list<Token>::iterator& it,
         else
             throw SynthaxException(*it, "Unrecognised directive");
     }
+    if (config.getServerName().empty())
+        throw std::runtime_error("missing Server name");
+    if (config.getPorts().empty())
+        throw std::runtime_error("missing ports for server " +
+                                 config.getServerName());
 
     cluster.getServers().push_back(Server(config));
 }
@@ -260,8 +265,8 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it,
     if (_isDuplicatedLocation(it->content, config.getRoutes()))
         throw SynthaxException(*it,
                                "Config contains duplicated location blocks");
-    Route route = (Route){it->content,  "",       methods,      "./uploads",
-                          "index.html", cgi_path, cgi_extension};
+    Route route = (Route){it->content, "",       methods,       "./uploads",
+                          "",          cgi_path, cgi_extension, false};
 
     for (; it->type != CLOSE_BRACKET; it++)
     {
@@ -273,6 +278,8 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it,
             route.index = (++it)->content;
         else if (it->content == "upload_store")
             route.upload_store = (++it)->content;
+        else if (it->content == "autoindex")
+            route.autoindex = (++it)->content == "on" ? true : false;
         else if (it->content == "cgi_path")
         {
             while ((++it)->type == ARGUMENT)
@@ -305,6 +312,76 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it,
             throw SynthaxException(*it, "Unrecognised directive");
     }
     config.setRoutes(route);
+}
+
+/**
+ * @brief load default error pages into the configs.
+ */
+void Parser::_loadErrors(Cluster& cluster) const
+{
+    std::vector<Server>& servers = cluster.getServers();
+
+    for (size_t i = 0; i < servers.size(); i++)
+    {
+        std::map<int, std::string> error_path =
+            servers[i].getConfig().getErrorPath();
+        std::map<int, std::string>::iterator it_error_path;
+
+        for (it_error_path = error_path.begin();
+             it_error_path != error_path.end(); it_error_path++)
+        {
+            std::string content = _readFile(it_error_path->second);
+            servers[i].getConfig().setErrors(it_error_path->first, content);
+        }
+
+        // Then load the default if not provided
+        int tmp[] = {400, 404, 405, 413, 500};
+        std::map<int, std::string> errors = servers[i].getConfig().getErrors();
+        std::vector<int> error_codes(tmp, tmp + sizeof(tmp) / sizeof(int));
+        for (size_t j = 0; j < error_codes.size(); j++)
+        {
+            if (errors.find(error_codes[j]) != errors.end())
+                continue;
+            std::string path =
+                "./resources/errors/" + toString(error_codes[j]) + ".html";
+            std::string content = _readFile(path);
+            servers[i].getConfig().setErrors(error_codes[j], content);
+        }
+    }
+}
+
+void Parser::_checkDuplicatedPorts(Cluster& cluster) const
+{
+    std::vector<int> already_in_use;
+    std::vector<Server>& servers = cluster.getServers();
+
+    // Remove duplicated ports among servers
+    for (size_t i = 0; i < servers.size(); i++)
+    {
+        std::vector<int>& ports = servers[i].getConfig().getPorts();
+        std::vector<int>::const_iterator it_port = ports.begin();
+        for (; it_port != ports.end();)
+        {
+            if (std::find(already_in_use.begin(), already_in_use.end(),
+                          *it_port) != already_in_use.end())
+                it_port = ports.erase(it_port);
+            else
+            {
+                already_in_use.push_back(*it_port);
+                it_port++;
+            }
+        }
+    }
+
+    // Remove servers without ports
+    std::vector<Server>::iterator it_servers = servers.begin();
+    for (; it_servers != servers.end();)
+    {
+        if (it_servers->getConfig().getPorts().empty())
+            it_servers = servers.erase(it_servers);
+        else
+            it_servers++;
+    }
 }
 
 // =============================================================================
@@ -349,7 +426,8 @@ bool Parser::_isCgiExtension(const std::string& extension) const
 }
 
 /**
- * @brief check if port is a valid port or if it is not already in use by other servers.
+ * @brief check if port is a valid port or if it is not already in use by other
+ * servers.
  *
  * @param port_nb
  * @param ports
@@ -357,57 +435,13 @@ bool Parser::_isCgiExtension(const std::string& extension) const
  */
 bool Parser::_isValidPort(int port_nb, const std::vector<int>& ports) const
 {
-    static std::vector<int> already_in_use;
-
     if (port_nb < 0 || port_nb > 65535)
         return (false);
     for (size_t i = 0; i < ports.size(); i++)
         if (port_nb == ports[i])
             return (false);
-    for (size_t i = 0; i < already_in_use.size(); i++)
-        if (port_nb == already_in_use[i])
-            return false;
-    already_in_use.push_back(port_nb);
     return true;
 }
-
-/**
- * @brief load default error pages into the configs.
- */
-void Parser::_loadErrors(Cluster& cluster) const
-{
-    std::vector<Server> &servers = cluster.getServers();
-
-    for (size_t i = 0; i < servers.size(); i++)
-    {
-        std::map<int, std::string> error_path =
-            servers[i].getConfig().getErrorPath();
-        std::map<int, std::string>::iterator it_error_path;
-
-        for (it_error_path = error_path.begin();
-             it_error_path != error_path.end(); it_error_path++)
-        {
-            std::string content = _readFile(it_error_path->second);
-            servers[i].getConfig().setErrors(it_error_path->first, content);
-        }
-
-        // Then load the default if not provided
-        int tmp[] = {400, 404, 413, 500};
-        std::map<int, std::string> errors =
-            servers[i].getConfig().getErrors();
-        std::vector<int> error_codes(tmp, tmp + sizeof(tmp) / sizeof(int));
-        for (size_t j = 0; j < error_codes.size(); j++)
-        {
-            if (errors.find(error_codes[j]) != errors.end())
-                continue;
-            std::string path =
-                "./resources/errors/" + toString(error_codes[j]) + ".html";
-            std::string content = _readFile(path);
-            servers[i].getConfig().setErrors(error_codes[j], content);
-        }
-    }
-}
-
 // =============================================================================
 //                               Debug
 // =============================================================================
@@ -424,6 +458,14 @@ void Parser ::_debugTokenList(void) const
         std::cout << " | " << it->content << std::endl;
     }
     std::cout << std::endl;
+}
+
+void Parser::_debugConfigs(Cluster& cluster) const
+{
+    std::vector<Server> servers = cluster.getServers();
+
+    for (size_t i = 0; i < servers.size(); i++)
+        std::cout << servers[i].getConfig() << std::endl;
 }
 
 /**

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/05 09:46:30 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/09 15:18:42 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,9 +23,11 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <deque>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 Server::Server(Config& config) : _config(config) {}
 
@@ -35,7 +37,8 @@ Server::~Server()
     {
         close(_client_fds[i].fd);
     }
-	std::string info_string = "Server " + _config.getServerName() + " shutting down";
+    std::string info_string =
+        "Server " + _config.getServerName() + " shutting down";
     Log::log(INFO, info_string);
 }
 
@@ -43,7 +46,7 @@ Config& Server::getConfig(void) { return _config; }
 
 std::vector<t_pollfd> Server::init()
 {
-	std::vector<t_pollfd> poll_fds;
+    std::vector<t_pollfd> poll_fds;
 
     for (size_t i = 0; i < _config.getPorts().size(); i++)
     {
@@ -63,7 +66,7 @@ std::vector<t_pollfd> Server::init()
             throw ServerError("Fail binding the socket");
 
         if (listen(sockfd, MAX_CLIENT) < 0)
-            throw ServerError("fail listening for conncetion");
+            throw ServerError("fail listening for connection");
 
         /* Create the poll_fd and add it to the vector*/
         t_pollfd new_fd;
@@ -73,7 +76,8 @@ std::vector<t_pollfd> Server::init()
         poll_fds.push_back(new_fd);
     }
 
-    std::string port_info = "Server " + _config.getServerName() + " listening on ports:";
+    std::string port_info =
+        "Server " + _config.getServerName() + " listening on ports:";
     for (size_t i = 0; i < _config.getPorts().size(); i++)
         port_info += " " + toString(_config.getPorts()[i]);
     Log::log(INFO, port_info);
@@ -96,8 +100,6 @@ void Server::acceptIncomingConnections(t_pollfd& poll_fd)
     _client_fds.push_back(new_client_fd);
 }
 
-
-
 ssize_t Server::_readFd(int fd_index, char* buffer, size_t buffer_size)
 {
     ssize_t n = recv(_client_fds[fd_index].fd, buffer, buffer_size, 0);
@@ -114,15 +116,14 @@ ssize_t Server::_readFd(int fd_index, char* buffer, size_t buffer_size)
 // ==========================================================================================
 // 									LOOK FOR TIMED-OUT PROCESSES
 // ==========================================================================================
-void Server::_checkTimeouts()
+void Server::checkTimeouts()
 {
     long now;
     long elapsed;
-    std::map<pid_t, t_client_process>::iterator it =
-        CgiRequestHandler::_open_processes.begin();
-    for (; it != CgiRequestHandler::_open_processes.end(); it++)
+    std::map<pid_t, t_client_process>::iterator it = _open_processes.begin();
+    for (; it != _open_processes.end(); it++)
     {
-        now = getTime();
+        now = ServerTools::getTime();
         elapsed = now - it->second.start_time;
         Log::log(WARNING, ("Process [" + toString(RED) + toString(it->first) +
                            toString(RESET) + "]" +
@@ -132,89 +133,89 @@ void Server::_checkTimeouts()
             Log::log(DEBUG,
                      ("CGI PROCESS [" + toString(RED) + toString(it->first) +
                       RESET + "]: Exceeded the time limit."));
-            sendHttpErrorResponse(it->second.client_fd, ETIMEDOUT,
+			CgiTools::sendHttpErrorResponse(it->second.client_fd, ETIMEDOUT,
                                   _config.getErrors());
             kill(it->first, SIGKILL);
         }
     }
 }
 
-// ==========================================================================================
-// 						SIGNAL HANDLER FOR FINISHED/INTERRUPTED PROCESSES
-// ==========================================================================================
-// WARNING : Temporarly solve the issue of not beeing able to access the server
-// config in a sighandler by passing empty maps as arguments.
-// void Server::_sigchldHandler(int signum)
-// {
-//     (void)signum;
-//     int status;
-//     pid_t pid;
-//     while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
-//     {
-//         std::map<pid_t, t_client_process>::iterator it =
-//             CgiRequestHandler::_open_processes.find(pid);
-//         int fd_position = 0;
-//         int client_fd = it->second.client_fd;
-//         for (size_t i = 0; i < _fds.size(); i++)
-//         {
-//             if (_fds[i].fd == it->second.client_fd)
-//             {
-//                 fd_position = i;
-//                 break;
-//             }
-//         }
-//         if (WIFEXITED(status))
-//         {
-//             if (WEXITSTATUS(status) == 0)
-//             {
-//                 Log::log(DEBUG,
-//                          ("CGI PROCESS [" + toString(RED) + toString(pid) +
-//                           RESET + "] HAS FINISHED ITS EXECUTION."));
-//                 char buffer[BUFSIZ];
-//                 std::string response;
-//                 std::string ok = "HTTP/1.1 200 OK\r\n";
-//                 ssize_t bytesRead;
-//                 while ((bytesRead = read(it->second.cgi_fd, buffer, BUFSIZ))
-//                 >
-//                        0)
-//                     response += std::string(buffer, bytesRead);
-//                 send(it->second.client_fd, ok.c_str(), ok.length(), 0);
-//                 send(it->second.client_fd, response.c_str(),
-//                 response.length(),
-//                      0);
-//             }
-//             else
-//             {
-//                 Log::log(ERROR,
-//                          ("CGI PROCESS [" + toString(RED) + toString(pid) +
-//                           RESET + "] FINISHED WITH EXIT CODE: " +
-//                           toString(WEXITSTATUS(status))));
-//                 sendHttpErrorResponse(it->second.client_fd, 500,
-//                                       std::map<int, std::string>());
-//             }
-//         }
-//         else if (WIFSIGNALED(status))
-//         {
-//             int signal = WTERMSIG(status);
-//             if (signal == SIGKILL)
-//                 Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) +
-//                                  toString(pid) + RESET + "] HAS BEEN KILLED."));
-//             else
-//             {
-//                 Log::log(ERROR, ("CGI PROCESS [" + toString(RED) +
-//                                  toString(pid) + RESET +
-//                                  "] RECEIVED THE SIGNAL: " +
-//                                  toString(signal)));
-//                 sendHttpErrorResponse(it->second.client_fd, 500,
-//                                       std::map<int, std::string>());
-//             }
-//         }
-//         close(client_fd);
-//         close(it->second.cgi_fd);
-//         _fds.erase(_fds.begin() + fd_position);
-//         CgiRequestHandler::_open_processes.erase(it);
-//     }
-// }
+void Server::finishCgiResponse(t_chldProcess child)
+{
+    t_client_process client = _open_processes[child.pid];
+    // int fd_position = 0;
+    // for (size_t i = 0; i < _client_fds.size(); i++)
+    // {
+    //     if (_client_fds[i].fd == client.client_fd)
+    //     {
+    //         fd_position = i;
+    //         break;
+    //     }
+    // }
+    if (child.type == EXITED)
+    {
+        if (WEXITSTATUS(child.status) == 0)
+        {
+            Log::log(DEBUG,
+                     ("CGI PROCESS [" + toString(RED) + toString(child.pid) +
+                      RESET + "] HAS FINISHED ITS EXECUTION."));
+            char buffer[BUFSIZ];
+            std::string response;
+            std::string ok = "HTTP/1.1 200 OK\r\n";
+            ssize_t bytesRead;
+            while ((bytesRead = read(client.cgi_fd, buffer, BUFSIZ)) > 0)
+                response += std::string(buffer, bytesRead);
+            send(client.client_fd, ok.c_str(), ok.length(), 0);
+            send(client.client_fd, response.c_str(), response.length(), 0);
+        }
+        else
+        {
+            Log::log(ERROR,
+                     ("CGI PROCESS [" + toString(RED) + toString(child.pid) +
+                      RESET + "] FINISHED WITH EXIT CODE: " +
+                      toString(WEXITSTATUS(child.status))));
+			CgiTools::sendHttpErrorResponse(client.client_fd, 500,
+                                  std::map<int, std::string>());
+        }
+    }
+    else
+    {
+        if (WTERMSIG(child.status) == SIGKILL)
+            Log::log(DEBUG,
+                     ("CGI PROCESS [" + toString(RED) + toString(child.pid) +
+                      RESET + "] HAS BEEN KILLED."));
+        else
+        {
+            Log::log(
+                ERROR,
+                ("CGI PROCESS [" + toString(RED) + toString(child.pid) + RESET +
+                 "] RECEIVED THE SIGNAL: " + toString(WTERMSIG(child.status))));
+			CgiTools::sendHttpErrorResponse(client.client_fd, 500,
+                                  std::map<int, std::string>());
+        }
+    }
+    // close(client.client_fd);
+	_fds_to_close.push_back(client.client_fd);
+    close(client.cgi_fd);
+    _open_processes.erase(child.pid);
+    // _client_fds.erase(_client_fds.begin() + fd_position);
+}
+
+void Server::checkFinishedProcesses(void)
+{
+    std::deque<t_chldProcess>::iterator it = finished_pids.begin();
+    for (; it != finished_pids.end();)
+    {
+        if (_open_processes.find(it->pid) != _open_processes.end())
+        {
+            finishCgiResponse(*it);
+            it = finished_pids.erase(it);
+        }
+        else
+            it++;
+    }
+	closePendingFds();
+}
 
 void Server::serveClients(void)
 {
@@ -255,7 +256,8 @@ void Server::serveClients(void)
 
             if (CgiRequestHandler::_canProcess(request, _config.getRoutes()))
             {
-                CgiRequestHandler cgi_obj(request, _client_fds[i].fd, _config);
+                CgiRequestHandler cgi_obj(request, _client_fds[i].fd, _config,
+                                          &_open_processes);
                 cgi_obj.processRequest();
             }
             else
@@ -263,9 +265,42 @@ void Server::serveClients(void)
                 Response response(request, _config);
                 send(_client_fds[i].fd, response.getResponseBuffer().c_str(),
                      response.getResponseBuffer().size(), 0);
-                close(_client_fds[i].fd);
-                _client_fds.erase(_client_fds.begin() + i);
+                // close(_client_fds[i].fd);
+                // _client_fds.erase(_client_fds.begin() + i);
+				_fds_to_close.push_back(_client_fds[i].fd);
             }
         }
+    }
+}
+
+struct MatchFd
+{
+        int fd_to_find;
+        MatchFd(int fd) : fd_to_find(fd) {}
+
+        bool operator()(const t_pollfd& pfd) const
+        {
+            return pfd.fd == fd_to_find;
+        }
+};
+
+void Server::closePendingFds(void)
+{
+    for (std::deque<int>::iterator it_fd = _fds_to_close.begin();
+         it_fd != _fds_to_close.end();)
+    {
+        // Find and close the FD in _client_fds
+        std::deque<t_pollfd>::iterator client_it =
+            std::find_if(_client_fds.begin(), _client_fds.end(),
+                         MatchFd(*it_fd) // Using the functor
+            );
+
+        if (client_it != _client_fds.end())
+        {
+            close(client_it->fd);
+            _client_fds.erase(client_it); // Erase after closing
+        } // Remove the FD from _fds_to_close
+		//
+        it_fd = _fds_to_close.erase(it_fd);
     }
 }

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/16 10:11:15 by achabrer          #+#    #+#             */
-/*   Updated: 2024/10/03 13:20:39 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/09 12:59:28 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,7 @@ class Parser
         void _parseLocationDirective(std::list<Token>::iterator& it,
                                      Config& config) const;
         void _loadErrors(Cluster& cluster) const;
+		void _checkDuplicatedPorts(Cluster &cluster) const;
 
         // Helper
         void _matchBrackets(void) const;
@@ -70,6 +71,7 @@ class Parser
 
         // Debug
         void _debugTokenList(void) const;
+		void _debugConfigs(Cluster &cluster) const;
         static std::string _tokenTypeToString(TokenType type);
 };
 

@@ -6,25 +6,39 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/10/03 13:21:33 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/09 15:08:40 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef UTILS_HPP_
 #define UTILS_HPP_
 
-#include <string>
-#include <sstream>
-#include <vector>
+#include "Request.hpp"
 #include <cstdlib>
-#include <unistd.h>
-#include <sys/poll.h>
-#include <sys/socket.h>
-#include <sys/wait.h>
 #include <ctime>
 #include <fcntl.h>
+#include <sstream>
+#include <string>
+#include <sys/poll.h>
+#include <sys/socket.h>
 #include <sys/time.h>
-#include "Request.hpp"
+#include <sys/wait.h>
+#include <unistd.h>
+#include <vector>
+#include <map>
+
+typedef enum ProcessStatus
+{
+    EXITED,
+    SIGNALED
+} t_exitType;
+
+typedef struct s_chldProcess
+{
+        pid_t pid;
+        int status;
+        t_exitType type;
+} t_chldProcess;
 
 enum TokenType
 {
@@ -54,6 +68,7 @@ typedef struct Route
         std::string index;
         std::vector<std::string> cgi_path;
         std::vector<std::string> cgi_extension;
+        bool autoindex;
 } Route;
 
 template <typename T>
@@ -66,10 +81,26 @@ std::string toString(T val)
 }
 
 extern bool stopFlag;
-void        sigHandler(int signum);
-void        sigHandler2(int signum);
-double	    getTime(void);
-std::string getMatch(const std::vector<Route> &routes, std::string &resource, std::string method);
-Route       getBestRoute(const Request& request, const std::vector<Route> &routes);
 
-#endif  // UTILS_HPP_
+void sigHandler(int signum);
+void sigHandler2(int signum);
+
+namespace ServerTools
+{
+	double getTime(void);
+	std::string getMatch(const std::vector<Route>& routes, std::string& resource,
+						std::string method);
+	Route getBestRoute(const Request& request, const std::vector<Route>& routes);
+}
+
+namespace CgiTools
+{
+	std::string getFileExtension(const std::string &url);
+	bool isExtensionAllowed(const std::string &url, const std::vector<std::string> &cgi_extensions);
+	void sendHttpErrorResponse(int client_fd, int error_code, const std::map<int, std::string> &errors);
+	unsigned int convertHex(const std::string &nb);
+	void sendErrorPage(int client_fd, std::string file_path, int status_code);
+	int getStatusCode(int error_code);
+}
+
+#endif // UTILS_HPP_

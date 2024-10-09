@@ -10,8 +10,8 @@ Cluster::Cluster(std::string config_file)
 {
     Parser parser;
 
-    parser.parse(config_file, *this);
     Log::setLogLevel(DEBUG);
+    parser.parse(config_file, *this);
     Log::clearScreen();
 }
 
@@ -42,7 +42,7 @@ void Cluster::start(void)
         // Loop to handle EINTR (syscall interruptions while polling) error
         do
         {
-            activity = poll(_poll_fds.data(), _poll_fds.size(), 1000);
+            activity = poll(_poll_fds.data(), _poll_fds.size(), 500);
         } while (activity < 0 && errno == EINTR);
 
         if (activity < 0 && !stopFlag)
@@ -60,7 +60,8 @@ void Cluster::start(void)
         // Check timeout and serve_clients
         for (size_t i = 0; i < _servers.size(); i++)
         {
-            _servers[i]._checkTimeouts();
+            _servers[i].checkTimeouts();
+            _servers[i].checkFinishedProcesses();
             _servers[i].serveClients();
         }
     }
