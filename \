@@ -17,7 +17,7 @@ Cluster::Cluster(std::string config_file)
 
 Cluster::~Cluster(void) {}
 
-void Cluster::_createSocketFds(void)
+void Cluster::_createAdresses(void)
 {
     std::vector<int> already_in_use_ports;
 
@@ -59,7 +59,6 @@ void Cluster::init(void)
 {
     std::vector<t_pollfd> poll_fds;
 
-	_createSocketFds();
     // Store the fds to poll into the cluster object
     for (size_t i = 0; i < _servers.size(); i++)
     {

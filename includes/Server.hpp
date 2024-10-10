@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/07 14:05:09 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/10 14:37:02 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,7 +53,7 @@ class Server
         Server(Config& config);
         ~Server();
 
-        std::vector<t_pollfd> init(void);
+        std::vector<t_pollfd> init(std::map<int, int> &socket_fds);
         void acceptIncomingConnections(t_pollfd &fd);
         void serveClients(void);
 		void closePendingFds(void);

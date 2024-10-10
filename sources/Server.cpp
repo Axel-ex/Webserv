@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/10 12:09:00 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/10 14:38:52 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,29 +44,14 @@ Server::~Server()
 
 Config& Server::getConfig(void) { return _config; }
 
-std::vector<t_pollfd> Server::init()
+std::vector<t_pollfd> Server::init(std::map<int, int> &socket_fds)
 {
     std::vector<t_pollfd> poll_fds;
+	std::vector<int> ports = _config.getPorts();
 
-    for (size_t i = 0; i < _config.getPorts().size(); i++)
+    for (size_t i = 0; i < ports.size(); i++)
     {
-        int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-        if (sockfd < 0)
-            throw ServerError("Fail creating socket");
-        int optval = 1;
-        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-
-        t_sockaddr_in address;
-        std::memset(&address, 0, sizeof(address));
-        address.sin_family = AF_INET;
-        address.sin_addr.s_addr = INADDR_ANY;
-        address.sin_port = htons(_config.getPorts()[i]);
-
-        if (bind(sockfd, (t_sockaddr*)&address, sizeof(address)) < 0)
-            throw ServerError("Fail binding the socket");
-
-        if (listen(sockfd, MAX_CLIENT) < 0)
-            throw ServerError("fail listening for connection");
+		int sockfd = socket_fds[ports[i]];
 
         /* Create the poll_fd and add it to the vector*/
         t_pollfd new_fd;
