@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/08 13:09:41 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/10 11:09:29 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -158,8 +158,11 @@ std::string GetRequestHandler ::_get_file_content(std::string path,
 void GetRequestHandler ::processRequest(const Request& request,
                                         Response& response) const
 {
-    Route best_route =
-        ServerTools::getBestRoute(request, response.getServerConfig().getRoutes());
+    Route best_route = ServerTools::getBestRoute(
+        request, response.getServerConfig().getRoutes());
+    if (!best_route.redirect_url.second.empty())
+        return (_createRedirectResponse(response, best_route));
+
     std::string resource = request.getResource();
     std::string headers;
     std::string req_path;
@@ -251,6 +254,15 @@ void GetRequestHandler::_createAutoIndexResponse(const std::string& true_path,
     headers += "Content-Type: text/html\r\n";
     headers += "Content-Length: " + toString(html_content.size()) + "\r\n\r\n";
     response.setHeaders(headers);
+}
+
+void GetRequestHandler::_createRedirectResponse(Response& response,
+                                                Route& route) const
+{
+    std::string header =
+        "HTTP/1.1 " + toString(route.redirect_url.first) + " Redirect\r\n";
+	header +=  "Location: " + route.redirect_url.second + "\r\n\r\n";
+	response.setHeaders(header);
 }
 
 // =============================================================================

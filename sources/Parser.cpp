@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/09 14:49:18 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/10 11:48:30 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include "../includes/Config.hpp"
 #include "../includes/Server.hpp"
 #include "../includes/utils.hpp"
+#include "../includes/Log.hpp"
 #include <cstddef>
 #include <cstdlib>
 #include <fstream>
@@ -265,8 +266,10 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it,
     if (_isDuplicatedLocation(it->content, config.getRoutes()))
         throw SynthaxException(*it,
                                "Config contains duplicated location blocks");
-    Route route = (Route){it->content, "",       methods,       "./uploads",
-                          "",          cgi_path, cgi_extension, false};
+    Route route =
+        (Route){it->content, "",       methods,       "./uploads",
+                "",          cgi_path, cgi_extension, std::make_pair(0, ""),
+                false};
 
     for (; it->type != CLOSE_BRACKET; it++)
     {
@@ -280,6 +283,14 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it,
             route.upload_store = (++it)->content;
         else if (it->content == "autoindex")
             route.autoindex = (++it)->content == "on" ? true : false;
+        else if (it->content == "redirect")
+        {
+            int code = std::atoi((++it)->content.c_str());
+			if (code != 301 && code != 302 && code != 307 && code != 308 )
+				throw SynthaxException(*it, "Invalid redirect code");
+			route.redirect_url = std::make_pair(code, (++it)->content);
+		
+        }
         else if (it->content == "cgi_path")
         {
             while ((++it)->type == ARGUMENT)
@@ -462,10 +473,15 @@ void Parser ::_debugTokenList(void) const
 
 void Parser::_debugConfigs(Cluster& cluster) const
 {
-    std::vector<Server> servers = cluster.getServers();
+    std::vector<Server> &servers = cluster.getServers();
 
     for (size_t i = 0; i < servers.size(); i++)
+	{
+        std::cout << CYAN <<  "CONFIG " << i << RESET << std::endl;
         std::cout << servers[i].getConfig() << std::endl;
+        std::cout << "\n\n" << std::endl;
+
+	}
 }
 
 /**

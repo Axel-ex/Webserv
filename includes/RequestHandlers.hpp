@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:41:40 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/08 10:39:24 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/10 11:03:59 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,6 +52,7 @@ class GetRequestHandler : public ARequestHandler
         std::string _get_file_content(std::string path,
                                       Response& response) const;
 		void _createAutoIndexResponse( const std::string &true_path, const std::string &route_path, Response &response) const;
+		void _createRedirectResponse(Response &response, Route &route) const;
 };
 
 class PostRequestHandler : public ARequestHandler

@@ -1,10 +1,10 @@
 #include "../includes/Cluster.hpp"
 #include "../includes/Log.hpp"
 #include "../includes/Parser.hpp"
-#include <cstddef>
-#include <stdio.h>
 #include <cerrno>
+#include <cstddef>
 #include <stdexcept>
+#include <stdio.h>
 
 Cluster::Cluster(std::string config_file)
 {
@@ -12,7 +12,7 @@ Cluster::Cluster(std::string config_file)
 
     Log::setLogLevel(DEBUG);
     parser.parse(config_file, *this);
-    Log::clearScreen();
+	Log::clearScreen();
 }
 
 Cluster::~Cluster(void) {}
