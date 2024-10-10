@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/10 11:48:30 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/10 11:59:02 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -346,7 +346,7 @@ void Parser::_loadErrors(Cluster& cluster) const
         }
 
         // Then load the default if not provided
-        int tmp[] = {400, 404, 405, 413, 500};
+        int tmp[] = {400, 403, 404, 405, 413, 500, 504};
         std::map<int, std::string> errors = servers[i].getConfig().getErrors();
         std::vector<int> error_codes(tmp, tmp + sizeof(tmp) / sizeof(int));
         for (size_t j = 0; j < error_codes.size(); j++)

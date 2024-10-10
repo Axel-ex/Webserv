@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/10/10 10:46:48 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/10 12:10:53 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,8 @@
 #include <unistd.h>
 #include <vector>
 #include <map>
+
+typedef struct pollfd t_pollfd;
 
 typedef enum ProcessStatus
 {
@@ -88,6 +90,16 @@ void sigHandler2(int signum);
 
 namespace ServerTools
 {
+	struct MatchFd
+	{
+			int fd_to_find;
+			MatchFd(int fd) : fd_to_find(fd) {}
+
+			bool operator()(const t_pollfd& pfd) const
+			{
+				return pfd.fd == fd_to_find;
+			}
+	};
 	double getTime(void);
 	std::string getMatch(const std::vector<Route>& routes, std::string& resource,
 						std::string method);

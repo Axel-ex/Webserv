@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/09 15:18:42 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/10 12:09:00 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -273,26 +273,15 @@ void Server::serveClients(void)
     }
 }
 
-struct MatchFd
-{
-        int fd_to_find;
-        MatchFd(int fd) : fd_to_find(fd) {}
-
-        bool operator()(const t_pollfd& pfd) const
-        {
-            return pfd.fd == fd_to_find;
-        }
-};
-
 void Server::closePendingFds(void)
 {
     for (std::deque<int>::iterator it_fd = _fds_to_close.begin();
          it_fd != _fds_to_close.end();)
     {
-        // Find and close the FD in _client_fds
+        // Find and close the FD in _client_fds using the functor
         std::deque<t_pollfd>::iterator client_it =
             std::find_if(_client_fds.begin(), _client_fds.end(),
-                         MatchFd(*it_fd) // Using the functor
+                         ServerTools::MatchFd(*it_fd)
             );
 
         if (client_it != _client_fds.end())
