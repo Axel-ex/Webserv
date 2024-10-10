@@ -23,12 +23,16 @@ void Cluster::_createSocketFds(void)
 
     for (size_t i = 0; i < _servers.size(); i++)
     {
-		 std::vector<int> server_ports = _servers[i].getConfig().getPorts();
+        std::vector<int> server_ports = _servers[i].getConfig().getPorts();
         for (size_t j = 0; j < server_ports.size(); j++)
         {
-			//TODO: check if the port is already in use
-			if (std::find(already_in_use_ports.begin(), already_in_use_ports.end(), server_ports[j] ) != already_in_use_ports.end())
-				continue;
+            // TODO: check if the port is already in use. We will later match
+            // the sockfd with the server ports and create pollfds for servers
+            // that might share the same port
+            if (std::find(already_in_use_ports.begin(),
+                          already_in_use_ports.end(),
+                          server_ports[j]) != already_in_use_ports.end())
+                continue;
 
             int sockfd = socket(AF_INET, SOCK_STREAM, 0);
             if (sockfd < 0)
@@ -49,8 +53,8 @@ void Cluster::_createSocketFds(void)
             if (listen(sockfd, MAX_CLIENT) < 0)
                 throw std::runtime_error("fail listening for connection");
 
-			already_in_use_ports.push_back(server_ports[j]);
-			_socket_fds[server_ports[j]] = sockfd;
+            already_in_use_ports.push_back(server_ports[j]);
+            _socket_fds[server_ports[j]] = sockfd;
         }
     }
 }
@@ -59,7 +63,7 @@ void Cluster::init(void)
 {
     std::vector<t_pollfd> poll_fds;
 
-	_createSocketFds();
+    _createSocketFds();
     // Store the fds to poll into the cluster object
     for (size_t i = 0; i < _servers.size(); i++)
     {

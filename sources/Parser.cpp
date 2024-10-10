@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/10 11:59:02 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/10 14:53:13 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,7 +47,6 @@ void Parser ::parse(const std::string& config_file, Cluster& cluster)
     _tokenize(file_content);
     _parseTokenList(cluster);
     _loadErrors(cluster);
-    _checkDuplicatedPorts(cluster);
 }
 
 std::string Parser ::_readFile(const std::string& path)
@@ -358,40 +357,6 @@ void Parser::_loadErrors(Cluster& cluster) const
             std::string content = _readFile(path);
             servers[i].getConfig().setErrors(error_codes[j], content);
         }
-    }
-}
-
-void Parser::_checkDuplicatedPorts(Cluster& cluster) const
-{
-    std::vector<int> already_in_use;
-    std::vector<Server>& servers = cluster.getServers();
-
-    // Remove duplicated ports among servers
-    for (size_t i = 0; i < servers.size(); i++)
-    {
-        std::vector<int>& ports = servers[i].getConfig().getPorts();
-        std::vector<int>::const_iterator it_port = ports.begin();
-        for (; it_port != ports.end();)
-        {
-            if (std::find(already_in_use.begin(), already_in_use.end(),
-                          *it_port) != already_in_use.end())
-                it_port = ports.erase(it_port);
-            else
-            {
-                already_in_use.push_back(*it_port);
-                it_port++;
-            }
-        }
-    }
-
-    // Remove servers without ports
-    std::vector<Server>::iterator it_servers = servers.begin();
-    for (; it_servers != servers.end();)
-    {
-        if (it_servers->getConfig().getPorts().empty())
-            it_servers = servers.erase(it_servers);
-        else
-            it_servers++;
     }
 }
 
