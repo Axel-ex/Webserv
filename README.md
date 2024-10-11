@@ -32,7 +32,9 @@ it will create the executables in the build folder. our executable can be execut
 
 - **Logging:** A singleton `Log` class manages console output with various verbosity levels. It supports hierarchical log levels such as `ERROR`, `WARNING`, `INFO`, and `DEBUG`. Log entries include timestamps and are color-coded based on severity.
 
-- **Configuration Management:** The `Config` singleton class parses the configuration file and stores settings such as ports, resource paths, and error pages. This class provides easy access to configuration details throughout the server.
+- **Parsing:** The `Parser` class parses the configuration file by tokenizing its content and performing synthax check on the tokens. It then stores settings such as ports, resource paths, and error pages among others in Config objects to then create the servers.
+
+- **Cluster:** The `Cluster` class stores the servers and the file descriptor to poll. Upon receiving an event, it will match the right instance of the a Server object and call the `acceptIncomingConnection()` to create a new file descriptor for client server communication. 
 
 - **Server Class:** The `Server` class encapsulates the core logic, from initialization (socket creation, binding) to client handling (accepting connections, serving requests). It integrates all components, ensuring smooth server operation.
 
