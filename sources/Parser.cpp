@@ -6,15 +6,15 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/10 11:59:02 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 14:32:14 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Parser.hpp"
 #include "../includes/Config.hpp"
+#include "../includes/Log.hpp"
 #include "../includes/Server.hpp"
 #include "../includes/utils.hpp"
-#include "../includes/Log.hpp"
 #include <cstddef>
 #include <cstdlib>
 #include <fstream>
@@ -47,7 +47,7 @@ void Parser ::parse(const std::string& config_file, Cluster& cluster)
     _tokenize(file_content);
     _parseTokenList(cluster);
     _loadErrors(cluster);
-    _checkDuplicatedPorts(cluster);
+    _findVirtualServers(cluster);
 }
 
 std::string Parser ::_readFile(const std::string& path)
@@ -197,7 +197,8 @@ void Parser ::_checkInvalidDirective(void) const
 }
 
 /**
- * @brief parse server block
+ * @brief parse server block and create Server instance from the parsed
+ * information
  *
  * @param it token list iterator
  */
@@ -251,7 +252,8 @@ void Parser ::_parseServerDirective(std::list<Token>::iterator& it,
 }
 
 /**
- * @brief parse location block
+ * @brief parse location block and create route for the config passed as
+ * parameter
  *
  * @param it token list iterator
  */
@@ -286,10 +288,9 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it,
         else if (it->content == "redirect")
         {
             int code = std::atoi((++it)->content.c_str());
-			if (code != 301 && code != 302 && code != 307 && code != 308 )
-				throw SynthaxException(*it, "Invalid redirect code");
-			route.redirect_url = std::make_pair(code, (++it)->content);
-		
+            if (code != 301 && code != 302 && code != 307 && code != 308)
+                throw SynthaxException(*it, "Invalid redirect code");
+            route.redirect_url = std::make_pair(code, (++it)->content);
         }
         else if (it->content == "cgi_path")
         {
@@ -326,7 +327,9 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it,
 }
 
 /**
- * @brief load default error pages into the configs.
+ * @brief load default error pages into the configs. Error page are first loaded
+ * from the paths specified in the config file, and the missing error are loaded
+ * from a default location.
  */
 void Parser::_loadErrors(Cluster& cluster) const
 {
@@ -361,35 +364,40 @@ void Parser::_loadErrors(Cluster& cluster) const
     }
 }
 
-void Parser::_checkDuplicatedPorts(Cluster& cluster) const
+/**
+ * @brief find servers which should run on ports already used by other server,
+ * and store them in a separate vector of our cluster
+ *
+ * @param cluster
+ */
+void Parser::_findVirtualServers(Cluster& cluster) const
 {
     std::vector<int> already_in_use;
     std::vector<Server>& servers = cluster.getServers();
 
-    // Remove duplicated ports among servers
-    for (size_t i = 0; i < servers.size(); i++)
-    {
-        std::vector<int>& ports = servers[i].getConfig().getPorts();
-        std::vector<int>::const_iterator it_port = ports.begin();
-        for (; it_port != ports.end();)
-        {
-            if (std::find(already_in_use.begin(), already_in_use.end(),
-                          *it_port) != already_in_use.end())
-                it_port = ports.erase(it_port);
-            else
-            {
-                already_in_use.push_back(*it_port);
-                it_port++;
-            }
-        }
-    }
-
     // Remove servers without ports
     std::vector<Server>::iterator it_servers = servers.begin();
+    bool erased = false;
     for (; it_servers != servers.end();)
     {
-        if (it_servers->getConfig().getPorts().empty())
-            it_servers = servers.erase(it_servers);
+        std::vector<int> ports = it_servers->getConfig().getPorts();
+        for (size_t i = 0; i < ports.size(); i++)
+        {
+            // if a server is running on a port already in use, we make it a
+            // "twin server"
+            if (std::find(already_in_use.begin(), already_in_use.end(),
+                          ports[i]) != already_in_use.end())
+            {
+                cluster.addVirtualServer(*it_servers);
+                it_servers = servers.erase(it_servers);
+                erased = true;
+                break;
+            }
+            else
+                already_in_use.push_back(ports[i]);
+        }
+        if (erased)
+            continue;
         else
             it_servers++;
     }
@@ -473,15 +481,14 @@ void Parser ::_debugTokenList(void) const
 
 void Parser::_debugConfigs(Cluster& cluster) const
 {
-    std::vector<Server> &servers = cluster.getServers();
+    std::vector<Server>& servers = cluster.getServers();
 
     for (size_t i = 0; i < servers.size(); i++)
-	{
-        std::cout << CYAN <<  "CONFIG " << i << RESET << std::endl;
+    {
+        std::cout << CYAN << "CONFIG " << i << RESET << std::endl;
         std::cout << servers[i].getConfig() << std::endl;
         std::cout << "\n\n" << std::endl;
-
-	}
+    }
 }
 
 /**
