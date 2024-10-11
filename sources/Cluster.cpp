@@ -12,7 +12,7 @@ Cluster::Cluster(std::string config_file)
 
     Log::setLogLevel(DEBUG);
     parser.parse(config_file, *this);
-	Log::clearScreen();
+    Log::clearScreen();
 }
 
 Cluster::~Cluster(void) {}
@@ -31,6 +31,9 @@ void Cluster::init(void)
             _server_ptr.push_back(&_servers[i]);
         }
     }
+	_bindTwinServers();
+    for (size_t i = 0; i < _twin_servers.size(); i++)
+        _twin_servers[i].announce();
 }
 
 void Cluster::start(void)
@@ -68,3 +71,29 @@ void Cluster::start(void)
 }
 
 std::vector<Server>& Cluster::getServers(void) { return _servers; }
+
+void Cluster::addTwinServer(Server& server) { _twin_servers.push_back(server); }
+
+
+void Cluster::_bindTwinServers(void)
+{
+    for (std::vector<Server>::iterator it_twin_servers = _twin_servers.begin();
+         it_twin_servers != _twin_servers.end();
+         ++it_twin_servers)
+    {
+        std::vector<int> twin_ports = it_twin_servers->getConfig().getPorts();
+        for (size_t i = 0; i < twin_ports.size(); ++i)
+        {
+            int port = twin_ports[i];
+
+            // Look for a server that shares the port
+            std::vector<Server>::iterator it_server = std::find_if(
+                _servers.begin(), _servers.end(), ServerTools::MatchPort(port));
+
+            // bind it with the appropriate Server instance
+            if (it_server != _servers.end())
+				it_server->addTwinServer(&(*it_twin_servers));
+        }
+    }
+}
+

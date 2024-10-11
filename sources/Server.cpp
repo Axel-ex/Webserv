@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/10 12:09:00 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 11:01:24 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include "../includes/Request.hpp"
 #include "../includes/Response.hpp"
 #include "../includes/utils.hpp"
+#include <algorithm>
 #include <cerrno>
 #include <csignal>
 #include <cstddef>
@@ -27,7 +28,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <algorithm>
 
 Server::Server(Config& config) : _config(config) {}
 
@@ -75,14 +75,18 @@ std::vector<t_pollfd> Server::init()
         new_fd.events = POLLIN;
         poll_fds.push_back(new_fd);
     }
+	announce();
 
+    return poll_fds;
+}
+
+void Server::announce(void)
+{
     std::string port_info =
         "Server " + _config.getServerName() + " listening on ports:";
     for (size_t i = 0; i < _config.getPorts().size(); i++)
         port_info += " " + toString(_config.getPorts()[i]);
     Log::log(INFO, port_info);
-
-    return poll_fds;
 }
 
 void Server::acceptIncomingConnections(t_pollfd& poll_fd)
@@ -133,8 +137,8 @@ void Server::checkTimeouts()
             Log::log(DEBUG,
                      ("CGI PROCESS [" + toString(RED) + toString(it->first) +
                       RESET + "]: Exceeded the time limit."));
-			CgiTools::sendHttpErrorResponse(it->second.client_fd, ETIMEDOUT,
-                                  _config.getErrors());
+            CgiTools::sendHttpErrorResponse(it->second.client_fd, ETIMEDOUT,
+                                            _config.getErrors());
             kill(it->first, SIGKILL);
         }
     }
@@ -174,8 +178,8 @@ void Server::finishCgiResponse(t_chldProcess child)
                      ("CGI PROCESS [" + toString(RED) + toString(child.pid) +
                       RESET + "] FINISHED WITH EXIT CODE: " +
                       toString(WEXITSTATUS(child.status))));
-			CgiTools::sendHttpErrorResponse(client.client_fd, 500,
-                                  std::map<int, std::string>());
+            CgiTools::sendHttpErrorResponse(client.client_fd, 500,
+                                            std::map<int, std::string>());
         }
     }
     else
@@ -190,12 +194,12 @@ void Server::finishCgiResponse(t_chldProcess child)
                 ERROR,
                 ("CGI PROCESS [" + toString(RED) + toString(child.pid) + RESET +
                  "] RECEIVED THE SIGNAL: " + toString(WTERMSIG(child.status))));
-			CgiTools::sendHttpErrorResponse(client.client_fd, 500,
-                                  std::map<int, std::string>());
+            CgiTools::sendHttpErrorResponse(client.client_fd, 500,
+                                            std::map<int, std::string>());
         }
     }
     // close(client.client_fd);
-	_fds_to_close.push_back(client.client_fd);
+    _fds_to_close.push_back(client.client_fd);
     close(client.cgi_fd);
     _open_processes.erase(child.pid);
     // _client_fds.erase(_client_fds.begin() + fd_position);
@@ -214,7 +218,7 @@ void Server::checkFinishedProcesses(void)
         else
             it++;
     }
-	closePendingFds();
+    closePendingFds();
 }
 
 void Server::serveClients(void)
@@ -267,7 +271,7 @@ void Server::serveClients(void)
                      response.getResponseBuffer().size(), 0);
                 // close(_client_fds[i].fd);
                 // _client_fds.erase(_client_fds.begin() + i);
-				_fds_to_close.push_back(_client_fds[i].fd);
+                _fds_to_close.push_back(_client_fds[i].fd);
             }
         }
     }
@@ -281,15 +285,16 @@ void Server::closePendingFds(void)
         // Find and close the FD in _client_fds using the functor
         std::deque<t_pollfd>::iterator client_it =
             std::find_if(_client_fds.begin(), _client_fds.end(),
-                         ServerTools::MatchFd(*it_fd)
-            );
+                         ServerTools::MatchFd(*it_fd));
 
         if (client_it != _client_fds.end())
         {
             close(client_it->fd);
             _client_fds.erase(client_it); // Erase after closing
         } // Remove the FD from _fds_to_close
-		//
+        //
         it_fd = _fds_to_close.erase(it_fd);
     }
 }
+
+void Server::addTwinServer(Server *server) {_twin_servers.push_back(server);}
