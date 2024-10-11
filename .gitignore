@@ -8,5 +8,5 @@ uploads/
 .vscode/
 objects/
 webserv
-exemples/
 googletest/
+test/
