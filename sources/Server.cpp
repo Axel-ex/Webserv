@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/11 16:12:39 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 18:27:26 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,8 +109,6 @@ ssize_t Server::_readFd(int fd_index, char* buffer, size_t buffer_size)
     ssize_t n = recv(_client_fds[fd_index].fd, buffer, buffer_size, 0);
     if (n < 0)
     {
-        close(_client_fds[fd_index].fd);
-        _client_fds.erase(_client_fds.begin() + fd_index);
         Log::log(ERROR, "reading client request");
         std::cout << "from server: " << _config.getServerName() << std::endl;
     }
@@ -232,12 +230,16 @@ void Server::serveClients(void)
 
                 std::memset(read_buffer, 0, sizeof(read_buffer));
                 ssize_t n = _readFd(i, read_buffer, sizeof(read_buffer));
+				if (n < 0)
+				{
+					request_buffer.getBuffer().clear();
+					break;
+				}
                 request_buffer.appendBuffer(read_buffer, n);
             }
             if (request_buffer.getBuffer().empty())
             {
-                close(_client_fds[i].fd);
-                _client_fds.erase(_client_fds.begin() + i);
+				_fds_to_close.push_back(_client_fds[i].fd);
                 continue;
             }
 
