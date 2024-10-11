@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/11 14:37:04 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 16:12:39 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,17 +75,19 @@ std::vector<t_pollfd> Server::init()
         new_fd.events = POLLIN;
         poll_fds.push_back(new_fd);
     }
-    announce();
+    announce(false);
 
     return poll_fds;
 }
 
-void Server::announce(void)
+void Server::announce(bool virtual_server)
 {
     std::string port_info =
         "Server " + _config.getServerName() + " listening on ports:";
     for (size_t i = 0; i < _config.getPorts().size(); i++)
         port_info += " " + toString(_config.getPorts()[i]);
+    if (virtual_server)
+		port_info += " (virtual)";
     Log::log(INFO, port_info);
 }
 
@@ -282,7 +284,8 @@ void Server::sendResponse(Request& request, int fd_index)
 const Config& Server::_matchHostConfig(Request& request)
 {
     std::string hostname = request.getHost();
-    std::vector<Server*>::iterator it_virtual_servers = _virtual_servers.begin();
+    std::vector<Server*>::iterator it_virtual_servers =
+        _virtual_servers.begin();
 
     for (; it_virtual_servers != _virtual_servers.end(); it_virtual_servers++)
     {
@@ -312,4 +315,7 @@ void Server::closePendingFds(void)
     }
 }
 
-void Server::addVirtualServer(Server* server) { _virtual_servers.push_back(server); }
+void Server::addVirtualServer(Server* server)
+{
+    _virtual_servers.push_back(server);
+}

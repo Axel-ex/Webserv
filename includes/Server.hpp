@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/11 14:35:23 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 16:10:53 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,7 @@ class Server
         ~Server();
 
         std::vector<t_pollfd> init(void);
-        void announce(void);
+        void announce(bool virtual_server);
         void acceptIncomingConnections(t_pollfd& fd);
         void serveClients(void);
         void sendResponse(Request& request, int fd_index);

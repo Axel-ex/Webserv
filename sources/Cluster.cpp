@@ -38,7 +38,7 @@ void Cluster::init(void)
     }
     _bindVirtualServers();
     for (size_t i = 0; i < _virtual_servers.size(); i++)
-        _virtual_servers[i].announce();
+        _virtual_servers[i].announce(true);
 }
 
 /**

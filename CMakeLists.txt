@@ -24,8 +24,7 @@ set(srcs
 	${src_dir}CgiRequestHandler.cpp
 	${src_dir}Response.cpp
 	${src_dir}signal.cpp
-	${src_dir}ServerTools.cpp
-	${src_dir}CgiTools.cpp
+	${src_dir}Tools.cpp
 	${src_dir}main.cpp)
 
 set(headers
@@ -40,15 +39,15 @@ set(headers
 	${inc_dir}CgiRequestHandler.hpp
 	${inc_dir}Response.hpp)
 
-#we will perform some testing
-enable_testing()
-
-#go to the directory and look for Cmakelists
-add_subdirectory(googletest)
-
-add_library(${This}_lib STATIC ${srcs} ${headers})
-
-#go to the directory and look for Cmakelists
-add_subdirectory(test)
+# #we will perform some testing
+# enable_testing()
+#
+# #go to the directory and look for Cmakelists
+# add_subdirectory(googletest)
+#
+# add_library(${This}_lib STATIC ${srcs} ${headers})
+#
+# #go to the directory and look for Cmakelists
+# add_subdirectory(test)
 
 add_executable(${This} ${srcs})
