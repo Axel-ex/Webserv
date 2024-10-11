@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/11 14:32:14 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 15:54:36 by axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 Parser ::Parser()
 {
@@ -370,36 +371,41 @@ void Parser::_loadErrors(Cluster& cluster) const
  *
  * @param cluster
  */
+
 void Parser::_findVirtualServers(Cluster& cluster) const
 {
     std::vector<int> already_in_use;
     std::vector<Server>& servers = cluster.getServers();
 
-    // Remove servers without ports
     std::vector<Server>::iterator it_servers = servers.begin();
-    bool erased = false;
-    for (; it_servers != servers.end();)
+    
+    while (it_servers != servers.end())
     {
         std::vector<int> ports = it_servers->getConfig().getPorts();
+        bool is_virtual_server = false;
+
         for (size_t i = 0; i < ports.size(); i++)
         {
-            // if a server is running on a port already in use, we make it a
-            // "twin server"
+            // If a server is running on a port already in use, we make it a
+            // "virtual server"
             if (std::find(already_in_use.begin(), already_in_use.end(),
-                          ports[i]) != already_in_use.end())
+                          (ports[i])) != already_in_use.end())
             {
                 cluster.addVirtualServer(*it_servers);
-                it_servers = servers.erase(it_servers);
-                erased = true;
-                break;
+                it_servers = servers.erase(it_servers); // Erase and update iterator
+                is_virtual_server = true;
+                break; // Exit the loop if the server is virtual
             }
-            else
-                already_in_use.push_back(ports[i]);
         }
-        if (erased)
-            continue;
-        else
-            it_servers++;
+
+        // If the server wasn't erased, we add its ports and move to the next one
+        if (!is_virtual_server)
+        {
+            for (size_t i = 0; i < ports.size(); i++)
+                already_in_use.push_back(ports[i]);
+
+            ++it_servers;
+        }
     }
 }
 

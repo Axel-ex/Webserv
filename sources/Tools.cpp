@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/25 13:22:10 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/10/11 10:53:44 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 15:54:54 by axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include "../includes/utils.hpp"
 #include "../includes/Server.hpp"
 #include <fstream>
+#include <algorithm>
 
 std::string ServerTools::getMatch(const std::vector<Route>& routes,
                                   std::string& resource, std::string method)

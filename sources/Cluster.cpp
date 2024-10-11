@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <stdio.h>
+#include <algorithm>
 
 Cluster::Cluster(std::string config_file)
 {
