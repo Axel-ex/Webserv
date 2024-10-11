@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/11 11:00:53 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 12:12:39 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,10 +57,11 @@ class Server
         void announce(void);
         void acceptIncomingConnections(t_pollfd& fd);
         void serveClients(void);
+        void sendResponse(Request& request, int fd_index);
         void closePendingFds(void);
 
         Config& getConfig(void);
-		void addTwinServer(Server *server);
+        void addTwinServer(Server* server);
 
         class ServerError : public std::exception
         {
@@ -81,7 +82,8 @@ class Server
 
         std::map<pid_t, t_client_process> _open_processes;
         ssize_t _readFd(int fd, char* buffer, size_t buffer_size);
-        void finishCgiResponse(t_chldProcess child);
+		const Config &_matchHostConfig(Request &request);
+        void _finishCgiResponse(t_chldProcess child);
 };
 
 #endif // SERVER_HPP

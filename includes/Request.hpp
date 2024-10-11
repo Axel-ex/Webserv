@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/13 14:28:23 by Axel              #+#    #+#             */
-/*   Updated: 2024/07/19 14:40:02 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 11:44:07 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,10 +32,12 @@ class Request
         const std::string& getProtocol(void) const;
         const std::string& getHeaders(void) const;
         const std::string& getBody(void) const;
+		const std::string& getHost(void) const;
 
     private:
         std::string _method;   // GET POST DELETE
         std::string _resource; // / (root) /whatever
+		std::string _host;
         std::string _protocol;
         std::string _headers;
         std::string _body;

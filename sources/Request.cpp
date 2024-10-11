@@ -6,7 +6,7 @@
 /*   By: Axel <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/14 09:28:18 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/09 15:22:05 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 11:54:26 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,11 +42,21 @@ Request::Request(std::string buffer)
     std::stringstream body_stream;
     body_stream << stream.rdbuf();
     _body = body_stream.str();
+	
+	//extract host name for the headers
+    size_t host_pos = _headers.find("Host: ");
+    if (host_pos == std::string::npos)
+        _host = "";
+    host_pos += 6; // move past the "Host: "
+    size_t return_pos = _headers.find('\r', host_pos);
+    _host = _headers.substr(host_pos, return_pos - host_pos);
 }
 
 Request ::~Request(void) {}
 
 const std::string& Request ::getMethod(void) const { return (_method); }
+
+const std::string& Request::getHost(void) const {return (_host);}
 
 const std::string& Request ::getResource(void) const { return (_resource); }
 

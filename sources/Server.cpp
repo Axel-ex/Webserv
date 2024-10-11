@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/11 11:01:24 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 12:39:58 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,7 @@ std::vector<t_pollfd> Server::init()
         new_fd.events = POLLIN;
         poll_fds.push_back(new_fd);
     }
-	announce();
+    announce();
 
     return poll_fds;
 }
@@ -91,8 +91,6 @@ void Server::announce(void)
 
 void Server::acceptIncomingConnections(t_pollfd& poll_fd)
 {
-    /* If we detect any events on the server socket, add an fd in the poll
-     * list for client connections*/
     int newfd = accept(poll_fd.fd, NULL, NULL);
     if (newfd < 0 && !stopFlag)
         throw ServerError("Error accepting connection");
@@ -144,18 +142,10 @@ void Server::checkTimeouts()
     }
 }
 
-void Server::finishCgiResponse(t_chldProcess child)
+void Server::_finishCgiResponse(t_chldProcess child)
 {
     t_client_process client = _open_processes[child.pid];
-    // int fd_position = 0;
-    // for (size_t i = 0; i < _client_fds.size(); i++)
-    // {
-    //     if (_client_fds[i].fd == client.client_fd)
-    //     {
-    //         fd_position = i;
-    //         break;
-    //     }
-    // }
+
     if (child.type == EXITED)
     {
         if (WEXITSTATUS(child.status) == 0)
@@ -198,11 +188,9 @@ void Server::finishCgiResponse(t_chldProcess child)
                                             std::map<int, std::string>());
         }
     }
-    // close(client.client_fd);
     _fds_to_close.push_back(client.client_fd);
     close(client.cgi_fd);
     _open_processes.erase(child.pid);
-    // _client_fds.erase(_client_fds.begin() + fd_position);
 }
 
 void Server::checkFinishedProcesses(void)
@@ -212,7 +200,7 @@ void Server::checkFinishedProcesses(void)
     {
         if (_open_processes.find(it->pid) != _open_processes.end())
         {
-            finishCgiResponse(*it);
+            _finishCgiResponse(*it);
             it = finished_pids.erase(it);
         }
         else
@@ -242,8 +230,6 @@ void Server::serveClients(void)
 
                 std::memset(read_buffer, 0, sizeof(read_buffer));
                 ssize_t n = _readFd(i, read_buffer, sizeof(read_buffer));
-
-                // TODO: the continue statement should be replaced
                 if (n < 0)
                     continue;
                 request_buffer.appendBuffer(read_buffer, n);
@@ -256,25 +242,50 @@ void Server::serveClients(void)
             }
 
             Request request(request_buffer.getBuffer());
-            Log::logRequest(request, _config.getServerName());
-
-            if (CgiRequestHandler::_canProcess(request, _config.getRoutes()))
-            {
-                CgiRequestHandler cgi_obj(request, _client_fds[i].fd, _config,
-                                          &_open_processes);
-                cgi_obj.processRequest();
-            }
-            else
-            {
-                Response response(request, _config);
-                send(_client_fds[i].fd, response.getResponseBuffer().c_str(),
-                     response.getResponseBuffer().size(), 0);
-                // close(_client_fds[i].fd);
-                // _client_fds.erase(_client_fds.begin() + i);
-                _fds_to_close.push_back(_client_fds[i].fd);
-            }
+            sendResponse(request, i);
         }
     }
+}
+
+void Server::sendResponse(Request& request, int fd_index)
+{
+    Config config = _matchHostConfig(request);
+
+    if (CgiRequestHandler::_canProcess(request, config.getRoutes()))
+    {
+        CgiRequestHandler cgi_obj(request, _client_fds[fd_index].fd, config,
+                                  &_open_processes);
+        cgi_obj.processRequest();
+    }
+    else
+    {
+        Response response(request, config);
+        send(_client_fds[fd_index].fd, response.getResponseBuffer().c_str(),
+             response.getResponseBuffer().size(), 0);
+        _fds_to_close.push_back(_client_fds[fd_index].fd);
+    }
+	Log::logRequest(request, config.getServerName());
+}
+
+/**
+ * @brief check if the request host is one of the twin server and return the
+ * right config to answer the client.
+ *
+ * @param request
+ * @return
+ */
+const Config& Server::_matchHostConfig(Request& request)
+{
+    std::string hostname = request.getHost();
+    std::vector<Server*>::iterator it_twin_servers = _twin_servers.begin();
+
+    for (; it_twin_servers != _twin_servers.end(); it_twin_servers++)
+    {
+        Config& config = (*it_twin_servers)->getConfig();
+        if (hostname.find(config.getServerName()) != std::string::npos)
+            return (config);
+    }
+    return (_config);
 }
 
 void Server::closePendingFds(void)
@@ -290,11 +301,10 @@ void Server::closePendingFds(void)
         if (client_it != _client_fds.end())
         {
             close(client_it->fd);
-            _client_fds.erase(client_it); // Erase after closing
-        } // Remove the FD from _fds_to_close
-        //
+            _client_fds.erase(client_it);
+        }
         it_fd = _fds_to_close.erase(it_fd);
     }
 }
 
-void Server::addTwinServer(Server *server) {_twin_servers.push_back(server);}
+void Server::addTwinServer(Server* server) { _twin_servers.push_back(server); }
