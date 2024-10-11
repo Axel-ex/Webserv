@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/25 14:20:49 by achabrer          #+#    #+#             */
-/*   Updated: 2024/10/10 12:10:53 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/10 15:09:19 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include <vector>
 #include <map>
+#include <deque>
 
 typedef struct pollfd t_pollfd;
 
@@ -84,9 +85,11 @@ std::string toString(T val)
 }
 
 extern bool stopFlag;
+extern std::deque<t_chldProcess> finished_pids;
 
 void sigHandler(int signum);
 void sigHandler2(int signum);
+void sigchldHandler(int signum);
 
 namespace ServerTools
 {

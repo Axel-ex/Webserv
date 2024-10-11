@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/10 14:38:52 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/10 15:48:45 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -128,15 +128,7 @@ void Server::checkTimeouts()
 void Server::finishCgiResponse(t_chldProcess child)
 {
     t_client_process client = _open_processes[child.pid];
-    // int fd_position = 0;
-    // for (size_t i = 0; i < _client_fds.size(); i++)
-    // {
-    //     if (_client_fds[i].fd == client.client_fd)
-    //     {
-    //         fd_position = i;
-    //         break;
-    //     }
-    // }
+
     if (child.type == EXITED)
     {
         if (WEXITSTATUS(child.status) == 0)
@@ -179,11 +171,9 @@ void Server::finishCgiResponse(t_chldProcess child)
                                   std::map<int, std::string>());
         }
     }
-    // close(client.client_fd);
 	_fds_to_close.push_back(client.client_fd);
     close(client.cgi_fd);
     _open_processes.erase(child.pid);
-    // _client_fds.erase(_client_fds.begin() + fd_position);
 }
 
 void Server::checkFinishedProcesses(void)
@@ -223,8 +213,6 @@ void Server::serveClients(void)
 
                 std::memset(read_buffer, 0, sizeof(read_buffer));
                 ssize_t n = _readFd(i, read_buffer, sizeof(read_buffer));
-
-                // TODO: the continue statement should be replaced
                 if (n < 0)
                     continue;
                 request_buffer.appendBuffer(read_buffer, n);
@@ -250,8 +238,6 @@ void Server::serveClients(void)
                 Response response(request, _config);
                 send(_client_fds[i].fd, response.getResponseBuffer().c_str(),
                      response.getResponseBuffer().size(), 0);
-                // close(_client_fds[i].fd);
-                // _client_fds.erase(_client_fds.begin() + i);
 				_fds_to_close.push_back(_client_fds[i].fd);
             }
         }
