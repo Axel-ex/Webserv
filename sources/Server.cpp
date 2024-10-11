@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/11 12:39:58 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 14:37:04 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -230,8 +230,6 @@ void Server::serveClients(void)
 
                 std::memset(read_buffer, 0, sizeof(read_buffer));
                 ssize_t n = _readFd(i, read_buffer, sizeof(read_buffer));
-                if (n < 0)
-                    continue;
                 request_buffer.appendBuffer(read_buffer, n);
             }
             if (request_buffer.getBuffer().empty())
@@ -247,6 +245,13 @@ void Server::serveClients(void)
     }
 }
 
+/**
+ * @brief Match the request hostname to respond to the client with the right
+ * server config
+ *
+ * @param request
+ * @param fd_index
+ */
 void Server::sendResponse(Request& request, int fd_index)
 {
     Config config = _matchHostConfig(request);
@@ -264,11 +269,11 @@ void Server::sendResponse(Request& request, int fd_index)
              response.getResponseBuffer().size(), 0);
         _fds_to_close.push_back(_client_fds[fd_index].fd);
     }
-	Log::logRequest(request, config.getServerName());
+    Log::logRequest(request, config.getServerName());
 }
 
 /**
- * @brief check if the request host is one of the twin server and return the
+ * @brief check if the request host is one of the virtual server and return the
  * right config to answer the client.
  *
  * @param request
@@ -277,11 +282,11 @@ void Server::sendResponse(Request& request, int fd_index)
 const Config& Server::_matchHostConfig(Request& request)
 {
     std::string hostname = request.getHost();
-    std::vector<Server*>::iterator it_twin_servers = _twin_servers.begin();
+    std::vector<Server*>::iterator it_virtual_servers = _virtual_servers.begin();
 
-    for (; it_twin_servers != _twin_servers.end(); it_twin_servers++)
+    for (; it_virtual_servers != _virtual_servers.end(); it_virtual_servers++)
     {
-        Config& config = (*it_twin_servers)->getConfig();
+        Config& config = (*it_virtual_servers)->getConfig();
         if (hostname.find(config.getServerName()) != std::string::npos)
             return (config);
     }
@@ -307,4 +312,4 @@ void Server::closePendingFds(void)
     }
 }
 
-void Server::addTwinServer(Server* server) { _twin_servers.push_back(server); }
+void Server::addVirtualServer(Server* server) { _virtual_servers.push_back(server); }

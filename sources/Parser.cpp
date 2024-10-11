@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/18 08:46:08 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/11 10:21:42 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 14:32:14 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,7 +47,7 @@ void Parser ::parse(const std::string& config_file, Cluster& cluster)
     _tokenize(file_content);
     _parseTokenList(cluster);
     _loadErrors(cluster);
-    _findTwinServers(cluster);
+    _findVirtualServers(cluster);
 }
 
 std::string Parser ::_readFile(const std::string& path)
@@ -197,7 +197,8 @@ void Parser ::_checkInvalidDirective(void) const
 }
 
 /**
- * @brief parse server block
+ * @brief parse server block and create Server instance from the parsed
+ * information
  *
  * @param it token list iterator
  */
@@ -251,7 +252,8 @@ void Parser ::_parseServerDirective(std::list<Token>::iterator& it,
 }
 
 /**
- * @brief parse location block
+ * @brief parse location block and create route for the config passed as
+ * parameter
  *
  * @param it token list iterator
  */
@@ -325,7 +327,9 @@ void Parser::_parseLocationDirective(std::list<Token>::iterator& it,
 }
 
 /**
- * @brief load default error pages into the configs.
+ * @brief load default error pages into the configs. Error page are first loaded
+ * from the paths specified in the config file, and the missing error are loaded
+ * from a default location.
  */
 void Parser::_loadErrors(Cluster& cluster) const
 {
@@ -360,7 +364,13 @@ void Parser::_loadErrors(Cluster& cluster) const
     }
 }
 
-void Parser::_findTwinServers(Cluster& cluster) const
+/**
+ * @brief find servers which should run on ports already used by other server,
+ * and store them in a separate vector of our cluster
+ *
+ * @param cluster
+ */
+void Parser::_findVirtualServers(Cluster& cluster) const
 {
     std::vector<int> already_in_use;
     std::vector<Server>& servers = cluster.getServers();
@@ -373,11 +383,12 @@ void Parser::_findTwinServers(Cluster& cluster) const
         std::vector<int> ports = it_servers->getConfig().getPorts();
         for (size_t i = 0; i < ports.size(); i++)
         {
-			//if a server is running on a port already in use, we make it a "twin server"
+            // if a server is running on a port already in use, we make it a
+            // "twin server"
             if (std::find(already_in_use.begin(), already_in_use.end(),
                           ports[i]) != already_in_use.end())
             {
-                cluster.addTwinServer(*it_servers);
+                cluster.addVirtualServer(*it_servers);
                 it_servers = servers.erase(it_servers);
                 erased = true;
                 break;

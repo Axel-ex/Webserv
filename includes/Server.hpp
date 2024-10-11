@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/11 11:58:53 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/11 12:12:39 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 14:35:23 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,7 @@ class Server
         void closePendingFds(void);
 
         Config& getConfig(void);
-        void addTwinServer(Server* server);
+        void addVirtualServer(Server* server);
 
         class ServerError : public std::exception
         {
@@ -76,7 +76,7 @@ class Server
 
     private:
         Config _config;
-        std::vector<Server*> _twin_servers;
+        std::vector<Server*> _virtual_servers;
         std::deque<t_pollfd> _client_fds;
         std::deque<int> _fds_to_close;
 
