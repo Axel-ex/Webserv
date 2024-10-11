@@ -12,11 +12,15 @@ Cluster::Cluster(std::string config_file)
 
     Log::setLogLevel(DEBUG);
     parser.parse(config_file, *this);
-	Log::clearScreen();
+    Log::clearScreen();
 }
 
 Cluster::~Cluster(void) {}
 
+/**
+ * @brief collect pollfd from all the servers, bind virtual servers with their
+ * associated server instance.
+ */
 void Cluster::init(void)
 {
     std::vector<t_pollfd> poll_fds;
@@ -31,8 +35,18 @@ void Cluster::init(void)
             _server_ptr.push_back(&_servers[i]);
         }
     }
+    _bindVirtualServers();
+    for (size_t i = 0; i < _virtual_servers.size(); i++)
+        _virtual_servers[i].announce();
 }
 
+/**
+ * @brief main event loop. poll the vector of poll_fda. If an event is detected,
+ * match a server instance with the fd receiving the event. This operation
+ * creates a new client fd which is stored in the right server instance.
+ * Then for each server check timeout processes, store the finish processes in a
+ * structure for further processing and serve clients.
+ */
 void Cluster::start(void)
 {
     while (!stopFlag)
@@ -52,7 +66,8 @@ void Cluster::start(void)
         }
 
         // check if any of the fds detected an event and call
-        // acceptIncomingConnections on the appropriated server
+        // acceptIncomingConnections on the appropriated server (match a server
+        // pointer with its pollfd)
         for (size_t i = 0; i < _poll_fds.size(); ++i)
             if (_poll_fds[i].revents & POLLIN)
                 _server_ptr[i]->acceptIncomingConnections(_poll_fds[i]);
@@ -67,4 +82,40 @@ void Cluster::start(void)
     }
 }
 
+/**
+ * @brief look in the virtual server vector (server with repeated port number)
+ * and associate a _virtual_server with its associated Server instance
+ */
+void Cluster::_bindVirtualServers(void)
+{
+    for (std::vector<Server>::iterator it_virtual_servers =
+             _virtual_servers.begin();
+         it_virtual_servers != _virtual_servers.end(); ++it_virtual_servers)
+    {
+        std::vector<int> virtual_ports =
+            it_virtual_servers->getConfig().getPorts();
+        if (virtual_ports.size() > 1)
+            Log::log(
+                WARNING,
+                "The config contains a virtual server with more then one port");
+        for (size_t i = 0; i < virtual_ports.size(); ++i)
+        {
+            int port = virtual_ports[i];
+
+            // Look for a server that shares the port
+            std::vector<Server>::iterator it_server = std::find_if(
+                _servers.begin(), _servers.end(), ServerTools::MatchPort(port));
+
+            // bind it with the appropriate Server instance
+            if (it_server != _servers.end())
+                it_server->addVirtualServer(&(*it_virtual_servers));
+        }
+    }
+}
+
 std::vector<Server>& Cluster::getServers(void) { return _servers; }
+
+void Cluster::addVirtualServer(Server& server)
+{
+    _virtual_servers.push_back(server);
+}

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/16 10:11:15 by achabrer          #+#    #+#             */
-/*   Updated: 2024/10/10 10:57:06 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/11 14:32:13 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,12 +14,12 @@
 #define PARSER_HPP_
 
 #include "../includes/Cluster.hpp"
+#include "../includes/utils.hpp"
 #include <exception>
 #include <list>
 #include <map>
 #include <string>
 #include <vector>
-#include "../includes/utils.hpp"
 
 class Config;
 
@@ -57,7 +57,7 @@ class Parser
         void _parseLocationDirective(std::list<Token>::iterator& it,
                                      Config& config) const;
         void _loadErrors(Cluster& cluster) const;
-		void _checkDuplicatedPorts(Cluster &cluster) const;
+        void _findVirtualServers(Cluster& cluster) const;
 
         // Helper
         void _matchBrackets(void) const;
@@ -71,7 +71,7 @@ class Parser
 
         // Debug
         void _debugTokenList(void) const;
-		void _debugConfigs(Cluster &cluster) const;
+        void _debugConfigs(Cluster& cluster) const;
         static std::string _tokenTypeToString(TokenType type);
 };
 
