@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/12 10:36:43 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/12 10:41:05 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -231,7 +231,6 @@ void GetRequestHandler::_createAutoIndexResponse(const std::string& true_path,
         // Build the relative path for each item (file or folder)
         std::string item_name = entry->d_name;
         std::string item_path = route_path + "/" + item_name;
-        // std::string item_path = route_path + "/" + item_name;
 
         // Check if it's a directory (we want to append "/" for directories)
         struct stat item_stat;
