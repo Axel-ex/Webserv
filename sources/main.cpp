@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 20:08:09 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/08 12:44:33 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/12 12:42:33 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 {
     std::signal(SIGPIPE, SIG_IGN);
     std::signal(SIGINT, sigHandler);
-    std::signal(SIGCHLD, sigchldHandler);
+    // std::signal(SIGCHLD, sigchldHandler);
 
 	//TODO: make it work with the cluster
 
