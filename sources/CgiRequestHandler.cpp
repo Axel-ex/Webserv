@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/10/09 15:17:38 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/12 10:32:14 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,17 +40,20 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, const Confi
 	_resource = request.getResource();
 	_protocol = request.getProtocol();
 	_headers = request.getHeaders();
-	_body = request.getBody() + "\0";
+
+	_body = request.getBody();
 	_client_fd = fd;
 	_location = ServerTools::getBestRoute(request, config.getRoutes());
+	
+	if (_resource == _location.url || _resource == _location.url + "/")
+			_resource = _location.url + "/" + _location.index;
 	// ===============================================
-
-	_open_processes = open_processes;
 
 	_document_root = _location.root.substr(0, _location.root.find(_location.url));
 	if (!_document_root.empty() && _document_root[0] == '.')
 		_document_root.erase(0, 1);
 
+	_open_processes = open_processes;
 	decode(); // --> decode hexadecimal values in the requested URI
 	_extension = CgiTools::getFileExtension(_decoded_resource);
 	_scriptName = getScriptName();
@@ -95,7 +98,17 @@ bool CgiRequestHandler::_canProcess(const Request &request, const std::vector<Ro
 	Route best_route = ServerTools::getBestRoute(request, routes);
 	if (best_route.url.empty() || best_route.cgi_extension.empty() || best_route.cgi_path.empty())
 		return (false);
+	else if (best_route.autoindex && best_route.index.empty())
+		return (false);
+	else if (request.getResource() == best_route.url || request.getResource() == best_route.url + "/")
+	{
+		if (best_route.index.empty())
+			return (false);
+		else
+			return (true);
+	}
 	return (CgiTools::isExtensionAllowed(request.getResource(), best_route.cgi_extension));
+	// return (CgiTools::isExtensionAllowed(request.getResource(), best_route.cgi_extension) || ((request.getResource() == best_route.url || request.getResource() == best_route.url + "/")));
 }
 
 std::string CgiRequestHandler::getRootPath(void) const
