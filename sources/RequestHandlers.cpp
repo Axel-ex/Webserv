@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/10 11:09:29 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/12 10:36:43 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -169,8 +169,8 @@ void GetRequestHandler ::processRequest(const Request& request,
     std::string cont_type;
     struct stat info;
 
-    if (resource.empty() || resource == "/")
-        req_path = best_route.root + "/" + best_route.index;
+       if (resource == best_route.url || resource == best_route.url + "/")
+        req_path = best_route.root +  "/" + best_route.index;
     else
         req_path = best_route.root + resource;
 
@@ -231,6 +231,7 @@ void GetRequestHandler::_createAutoIndexResponse(const std::string& true_path,
         // Build the relative path for each item (file or folder)
         std::string item_name = entry->d_name;
         std::string item_path = route_path + "/" + item_name;
+        // std::string item_path = route_path + "/" + item_name;
 
         // Check if it's a directory (we want to append "/" for directories)
         struct stat item_stat;
