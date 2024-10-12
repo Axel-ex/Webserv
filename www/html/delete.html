@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete File</title>
+</head>
+<body>
+    <h1>Delete a File</h1>
+
+    <form id="deleteForm">
+        <label for="fileName">Enter the name of the file to delete:</label>
+        <input type="text" id="fileName" name="fileName" required>
+        <button type="submit">Delete File</button>
+    </form>
+
+    <p id="result"></p>
+
+    <script>
+        document.getElementById('deleteForm').addEventListener('submit', function (e) {
+            e.preventDefault();  // Prevent form submission from refreshing the page
+
+            const fileName = document.getElementById('fileName').value;
+
+            // Log the file name and the User-Agent header for debugging purposes
+            console.log("File name to delete:", fileName);
+            const userAgent = navigator.userAgent;
+            console.log("User-Agent:", userAgent);
+
+            // API endpoint is /delete-file/<file-name> (encoded file name)
+            const url = `${encodeURIComponent(fileName)}`;  // Encode the file name
+
+            // Send the DELETE request with the file name in the URL
+            fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'User-Agent': userAgent  // Add the User-Agent header
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('result').innerText = 'File deleted successfully!';
+                } else {
+                    return response.text().then(text => { throw new Error(text); });
+                }
+            })
+            .catch(error => {
+                document.getElementById('result').innerText = 'Unable to delete file !';
+            });
+        });
+    </script>
+
+</body>
+</html>
