@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/21 15:24:44 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/25 15:10:49 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/27 15:03:38 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,7 +86,7 @@ int getStatusCode(int error_code)
 
 void sendErrorPage(int client_fd, std::string file_path, int status_code)
 {
-	Log::log(DEBUG, "Using error page: " + toString(RED) + file_path + toString(RESET));
+	// Log::log(DEBUG, "Using error page: " + toString(RED) + file_path + toString(RESET));
 	std::ifstream file(file_path.c_str());
 	if (file.is_open())
 	{

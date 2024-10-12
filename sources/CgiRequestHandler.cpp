@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/09/26 12:00:14 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/09/27 16:14:18 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,14 +33,13 @@ std::string CgiRequestHandler::getInterpreter(void) const
 }
 
 CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &location)
-{
-
+{			
 	// ============ REQUEST INFORMATION ==============
 	_method = request.getMethod();
 	_resource = request.getResource();
 	_protocol = request.getProtocol();
 	_headers = request.getHeaders();
-	_body = request.getBody() + "\0";
+	_body = request.getBody()/*  + "\0" */;
 	_client_fd = fd;
 	_location = location;
 	if (_resource == location.url || _resource == location.url + "/")
@@ -59,19 +58,12 @@ CgiRequestHandler::CgiRequestHandler(const Request &request, int fd, Route &loca
 	_request_headers = parseHttpHeader();
 	_query_str = getQueryString();
 
+//  110662
+//  112372
+
 	getPathInfo();
 	initCgiEnv();
 	initChEnv();
-
-	Log::log(DEBUG, toString(YELLOW) + "METHOD: " + toString(RESET) + _method);
-	Log::log(DEBUG, toString(YELLOW) + "SCRIPT NAME: " + toString(RESET) + _scriptName);
-	Log::log(DEBUG, toString(YELLOW) + "SCRIPT INTERPRETER: " + toString(RESET) + _interpreter);
-	Log::log(DEBUG, toString(YELLOW) + "SCRIPT PATH: " + toString(RESET) + _scriptPath);
-	Log::log(DEBUG, toString(YELLOW) + "SCRIPT EXTENSION: " + toString(RESET) + _extension);
-	Log::log(DEBUG, toString(YELLOW) + "DOCUMENT ROOT: " + toString(RESET) + getRootPath());
-	Log::log(DEBUG, toString(YELLOW) + "QUERY STRING: " + toString(RESET) + _query_str);
-	Log::log(DEBUG, toString(YELLOW) + "PATH INFO: " + toString(RESET) + _pathInfo);
-	Log::log(DEBUG, toString(YELLOW) + "PATH TRANSLATED: " + toString(RESET) + _pathTranslated);
 }
 
 CgiRequestHandler::~CgiRequestHandler()
@@ -115,8 +107,6 @@ void CgiRequestHandler::initCgiEnv()
 	{
 		_env["CONTENT_LENGTH"] = toString(_body.size());
 		_env["CONTENT_TYPE"] = getContentType(_headers);
-		Log::log(DEBUG, toString(YELLOW) + "CONTENT TYPE: " + toString(RESET) + _env["CONTENT_TYPE"]);
-		Log::log(DEBUG, toString(YELLOW) + "CONTENT LENGTH: " + toString(RESET) + _env["CONTENT_LENGTH"]);
 	}
 	_env["GATEWAY_INTERFACE"] = "CGI/1.1";
 	_env["SCRIPT_NAME"] = _scriptName;

@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/09/26 15:24:36 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/12 09:29:50 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -157,14 +157,19 @@ void Server::_checkTimeouts()
 	long now;
 	long elapsed;
 	std::map<pid_t, t_client_process>::iterator it = CgiRequestHandler::_open_processes.begin();
+	if (it == CgiRequestHandler::_open_processes.end())
+		return;
 	for (; it != CgiRequestHandler::_open_processes.end(); it++)
 	{
 		now = getTime();
 		elapsed = now - it->second.start_time;
-		Log::log(WARNING, ("Process [" + toString(RED) + toString(it->first) + toString(RESET) + "]" + " running for: " + toString(elapsed) + " seconds."));
+		Log::log(WARNING, ("Process [" + toString(RED) + toString(it->first) +
+						   toString(RESET) + "]" + " running for: " + toString(elapsed) +
+						   " seconds."));
 		if (elapsed > CGI_TIMEOUT)
 		{
-			Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(it->first) + RESET + "]: Exceeded the time limit."));
+			Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(it->first) +
+							 RESET + "]: Exceeded the time limit."));
 			sendHttpErrorResponse(it->second.client_fd, ETIMEDOUT);
 			kill(it->first, SIGKILL);
 		}
@@ -181,7 +186,10 @@ void Server::_sigchldHandler(int signum)
 	pid_t pid;
 	while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
 	{
-		std::map<pid_t, t_client_process>::iterator it = CgiRequestHandler::_open_processes.find(pid);
+		std::map<pid_t, t_client_process>::iterator it =
+			CgiRequestHandler::_open_processes.find(pid);
+		// if (it == CgiRequestHandler::_open_processes.end())
+		// 	return ;
 		int fd_position = 0;
 		int client_fd = it->second.client_fd;
 		for (size_t i = 0; i < _fds.size(); i++)
@@ -196,7 +204,8 @@ void Server::_sigchldHandler(int signum)
 		{
 			if (WEXITSTATUS(status) == 0)
 			{
-				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS FINISHED ITS EXECUTION."));
+				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) +
+								 toString(pid) + RESET + "] HAS FINISHED ITS EXECUTION."));
 				char buffer[BUFSIZ];
 				std::string response;
 				std::string ok = "HTTP/1.1 200 OK\r\n";
@@ -208,7 +217,9 @@ void Server::_sigchldHandler(int signum)
 			}
 			else
 			{
-				Log::log(ERROR, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] FINISHED WITH EXIT CODE: " + toString(WEXITSTATUS(status))));
+				Log::log(ERROR, ("CGI PROCESS [" + toString(RED) +
+								 toString(pid) + RESET + "] FINISHED WITH EXIT CODE: " +
+								 toString(WEXITSTATUS(status))));
 				sendHttpErrorResponse(it->second.client_fd, 500);
 			}
 		}
@@ -216,10 +227,13 @@ void Server::_sigchldHandler(int signum)
 		{
 			int signal = WTERMSIG(status);
 			if (signal == SIGKILL)
-				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] HAS BEEN KILLED."));
+				Log::log(DEBUG, ("CGI PROCESS [" + toString(RED) +
+								 toString(pid) + RESET + "] HAS BEEN KILLED."));
 			else
 			{
-				Log::log(ERROR, ("CGI PROCESS [" + toString(RED) + toString(pid) + RESET + "] RECEIVED THE SIGNAL: " + toString(signal)));
+				Log::log(ERROR, ("CGI PROCESS [" + toString(RED) +
+								 toString(pid) + RESET + "] RECEIVED THE SIGNAL: " +
+								 toString(signal)));
 				sendHttpErrorResponse(it->second.client_fd, 500);
 			}
 		}
@@ -326,3 +340,4 @@ void Server::_serveClients(void)
 		}
 	}
 }
+
