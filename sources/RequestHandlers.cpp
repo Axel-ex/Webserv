@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/12 10:42:24 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/12 11:00:30 by achabrer         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -526,7 +526,7 @@ void DeleteRequestHandler ::processRequest(const Request& request,
     std::string user_agent;
 
     user_agent = _GetUserAgent(request.getHeaders());
-    if (user_agent != "Chrome" && user_agent != "Firefox" &&
+    if (user_agent != "Chrome" && user_agent != "Firefox" && user_agent != "Mozilla" &&
         user_agent != "Safari" && user_agent != "Edge" && user_agent != "Opera")
     {
         _createErrorResponse(BAD_REQUEST, response);
