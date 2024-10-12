@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 09:47:14 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/12 10:41:05 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/12 10:42:24 by Axel             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -169,8 +169,8 @@ void GetRequestHandler ::processRequest(const Request& request,
     std::string cont_type;
     struct stat info;
 
-       if (resource == best_route.url || resource == best_route.url + "/")
-        req_path = best_route.root +  "/" + best_route.index;
+    if (resource == best_route.url || resource == best_route.url + "/")
+        req_path = best_route.root + "/" + best_route.index;
     else
         req_path = best_route.root + resource;
 
@@ -261,8 +261,8 @@ void GetRequestHandler::_createRedirectResponse(Response& response,
 {
     std::string header =
         "HTTP/1.1 " + toString(route.redirect_url.first) + " Redirect\r\n";
-	header +=  "Location: " + route.redirect_url.second + "\r\n\r\n";
-	response.setHeaders(header);
+    header += "Location: " + route.redirect_url.second + "\r\n\r\n";
+    response.setHeaders(header);
 }
 
 // =============================================================================
