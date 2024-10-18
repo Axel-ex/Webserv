@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/12 10:05:43 by Axel              #+#    #+#             */
-/*   Updated: 2024/10/11 18:27:26 by Axel             ###   ########.fr       */
+/*   Updated: 2024/10/12 12:52:17 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -217,14 +217,13 @@ void Server::serveClients(void)
         {
             char read_buffer[1024];
             RequestBuffer request_buffer;
-            clock_t start = clock();
+            clock_t start = ServerTools::getTime();
 
             // Read from client chunks. set a TIMEOUT for long request.
             while (!request_buffer.isRequestOver())
             {
-                clock_t curr = clock();
-                double elapsed =
-                    static_cast<double>(curr - start) / CLOCKS_PER_SEC;
+                clock_t curr = ServerTools::getTime();
+                double elapsed = curr - start;
                 if (elapsed > SERVER_TIMEOUT)
                     break;
 

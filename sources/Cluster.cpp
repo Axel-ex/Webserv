@@ -76,7 +76,7 @@ void Cluster::start(void)
         // Check timeout and serve_clients
         for (size_t i = 0; i < _servers.size(); i++)
         {
-            _servers[i].checkTimeouts();
+            // _servers[i].checkTimeouts();
             _servers[i].checkFinishedProcesses();
             _servers[i].serveClients();
         }

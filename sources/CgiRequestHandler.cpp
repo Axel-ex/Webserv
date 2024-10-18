@@ -6,7 +6,7 @@
 /*   By: ebmarque <ebmarque@student.42porto.com     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/09 15:36:42 by ebmarque          #+#    #+#             */
-/*   Updated: 2024/10/12 10:32:14 by ebmarque         ###   ########.fr       */
+/*   Updated: 2024/10/12 12:50:09 by ebmarque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -181,60 +181,118 @@ void CgiRequestHandler::initChEnv(void)
 // 									PROCESSING REQUESTED SCRIPT
 // ==========================================================================================
 
+#include <ctime>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <iostream>
+
 void CgiRequestHandler::processRequest()
 {
-	pid_t pid;
-	if (open(_scriptPath.c_str(), F_OK) == -1)
-	{
-		CgiTools::sendHttpErrorResponse(_client_fd, errno, _server_config.getErrorPath());
-		return;
-	}
-	if (pipe(_pipe_in) < 0 || pipe(_pipe_out) < 0)
-		throw CgiError("Error in pipe().");
-	if ((pid = fork()) < 0)
-		throw CgiError("Error in fork().");
-	if (pid == 0)
-	{
-		close(_pipe_out[0]);
-		dup2(_pipe_out[1], STDOUT_FILENO);
-		close(_pipe_out[1]);
+    pid_t pid;
+    int status;
 
-		close(_pipe_in[1]);
-		dup2(_pipe_in[0], STDIN_FILENO);
-		close(_pipe_in[0]);
+    clock_t start = ServerTools::getTime();
 
-		if (execve(_argv[0], _argv, _ch_env) < 0)
-		{
-			CgiTools::sendHttpErrorResponse(_client_fd, errno, _server_config.getErrorPath());
-			throw CgiError("Execve() could not execute: " + _scriptPath + " -> errno: " + toString(errno));
-		}
-	}
-	else
-	{
-		close(_pipe_out[1]);
-		if (_method == "POST")
-		{
-			int bytesWritten = 0;
-			int bytesRemaining = _body.length();
-			while (bytesRemaining > 0)
-			{
-				int bytesToWrite = std::min(BUFSIZ, bytesRemaining);
-				if (write(_pipe_in[1], _body.c_str() + bytesWritten, bytesToWrite) == -1)
-				{
-					CgiTools::sendHttpErrorResponse(_client_fd, 500, _server_config.getErrorPath());
-					close(_pipe_in[1]);
-					throw CgiError("write() failed.");
-				} 
-				bytesWritten += bytesToWrite;
-				bytesRemaining -= bytesToWrite;
-			}
-		}
-		close(_pipe_in[1]);
+    if (open(_scriptPath.c_str(), F_OK) == -1)
+    {
+        CgiTools::sendHttpErrorResponse(_client_fd, errno, _server_config.getErrorPath());
+        return;
+    }
+    if (pipe(_pipe_in) < 0 || pipe(_pipe_out) < 0)
+        throw CgiError("Error in pipe().");
+    if ((pid = fork()) < 0)
+        throw CgiError("Error in fork().");
 
-		t_client_process c_process = {_method, ServerTools::getTime(), _client_fd, _pipe_out[0]};
-		(*_open_processes)[pid] = c_process;
-	}
+    if (pid == 0)
+    {
+        close(_pipe_out[0]);
+        dup2(_pipe_out[1], STDOUT_FILENO);
+        close(_pipe_out[1]);
+
+        close(_pipe_in[1]);
+        dup2(_pipe_in[0], STDIN_FILENO);
+        close(_pipe_in[0]);
+
+        if (execve(_argv[0], _argv, _ch_env) < 0)
+        {
+            CgiTools::sendHttpErrorResponse(_client_fd, errno, _server_config.getErrorPath());
+            throw CgiError("Execve() could not execute: " + _scriptPath + " -> errno: " + toString(errno));
+        }
+    }
+    else
+    {
+
+        close(_pipe_out[1]);
+        if (_method == "POST")
+        {
+            int bytesWritten = 0;
+            int bytesRemaining = _body.length();
+            while (bytesRemaining > 0)
+            {
+                int bytesToWrite = std::min(BUFSIZ, bytesRemaining);
+                if (write(_pipe_in[1], _body.c_str() + bytesWritten, bytesToWrite) == -1)
+                {
+                    CgiTools::sendHttpErrorResponse(_client_fd, 500, _server_config.getErrorPath());
+                    close(_pipe_in[1]);
+                    throw CgiError("write() failed.");
+                }
+                bytesWritten += bytesToWrite;
+                bytesRemaining -= bytesToWrite;
+            }
+        }
+        close(_pipe_in[1]);
+
+        bool timeoutOccurred = false;
+        while (true)
+        {
+            clock_t curr = ServerTools::getTime();
+            double elapsed = curr - start;
+            if (elapsed > CGI_TIMEOUT)
+            {
+                timeoutOccurred = true;
+                break;
+            }
+
+            pid_t result = waitpid(pid, &status, WNOHANG);
+            if (result == 0)
+            {
+                usleep(1000);
+                continue;
+            }
+            else if (result == pid)
+            {
+                if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+                {
+                    char buffer[BUFSIZ];
+                    std::string response;
+                    std::string ok = "HTTP/1.1 200 OK\r\n";
+                    ssize_t bytesRead;
+                    while ((bytesRead = read(_pipe_out[0], buffer, BUFSIZ)) > 0)
+                        response += std::string(buffer, bytesRead);
+                    send(_client_fd, ok.c_str(), ok.length(), 0);
+                    send(_client_fd, response.c_str(), response.length(), 0);
+                }
+                else
+                {
+                    CgiTools::sendHttpErrorResponse(_client_fd, 500, _server_config.getErrorPath());
+                }
+				close(_client_fd);
+                break;
+            }
+        }
+        if (timeoutOccurred)
+        {
+			Log::log(WARNING, ("Process [" + toString(RED) + toString(pid) +
+                           toString(RESET) + "]" +
+                           " killed after " + toString(CGI_TIMEOUT) + " seconds."));
+            kill(pid, SIGKILL);
+            CgiTools::sendHttpErrorResponse(_client_fd, ETIMEDOUT, _server_config.getErrorPath()); // Gateway Timeout
+        }
+        close(_pipe_out[0]);
+    }
 }
+
 
 // =========================================================================================
 //									AUXILIAR FUNCTIONS AND METHODS
