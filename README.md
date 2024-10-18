@@ -9,17 +9,16 @@ Inspired by the flexibility of Nginx, Webserv allows users to define server beha
 
 ### Usage
 
-git clone this project cd in the root of the project:
+git clone this project cd in the root of the project and make:
 
 ```
-cmake -B ./build
-
-cmake --build ./build
+cd Webserv
+make
 ```
 
-it will create the executables in the build folder. our executable can be executed as so:
+The executable can be executed as so:
 
-```./build/webserv```
+```./webserv```
 
 ### Key features
 - Socket Programming: Direct management of client connections, request parsing, and response generation using low-level socket APIs.
